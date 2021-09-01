@@ -24,7 +24,6 @@ patch:
 major:
 	make version VERSION=major
 
-
 .PHONY: clean
 # target: clean - Display callable targets
 clean:
@@ -51,4 +50,13 @@ mypy: $(VIRTUAL_ENV)
 example: $(VIRTUAL_ENV)
 	@$(VIRTUAL_ENV)/bin/pip install uvicorn asgi-tools
 	@$(VIRTUAL_ENV)/bin/uvicorn --port 5000 example:app
+
+.PHONY: upload
+# target: upload - Upload module on PyPi
+upload: $(VIRTUAL_ENV) clean
+	@$(VIRTUAL_ENV)/bin/pip install twine wheel
+	@$(VIRTUAL_ENV)/bin/python setup.py sdist bdist_wheel
+	@$(VIRTUAL_ENV)/bin/twine upload dist/*.tar.gz || true
+	@$(VIRTUAL_ENV)/bin/twine upload dist/*.whl || true
+	@$(VIRTUAL_ENV)/bin/pip install -e $(CURDIR)
 
