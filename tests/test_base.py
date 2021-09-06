@@ -2,7 +2,7 @@ import pytest
 import peewee as pw
 
 
-async def test_sync(models):
+async def test_sync(models, manager):
     User, _, _ = models
 
     with pytest.raises(RuntimeError):
@@ -25,12 +25,26 @@ async def test_sync(models):
         for user in User.select():
             pass
 
+    with manager.allow_sync():
+        User.create_table(True)
+        User.create(name='Mickey')
+        assert User.get()
+        User.delete().execute()
 
-def test_base():
+    with pytest.raises(RuntimeError):
+        User.create(name='Mickey')
+
+
+def test_databases():
     from peewee_aio import Manager
 
-    assert Manager('sqlite:///:memory:')
-    assert Manager('aiosqlite:///:memory:')
+    manager = Manager('sqlite://:memory:')
+    assert manager
+    assert manager.aio_database
+    assert manager.pw_database
+    assert manager.pw_database.database == ':memory:'
+
+    assert Manager('aiosqlite://:memory:')
 
     assert Manager('mysql://localhost')
     assert Manager('aiomysql://localhost')

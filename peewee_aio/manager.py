@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import typing as t
-from contextlib import asynccontextmanager
+
+from contextlib import asynccontextmanager, contextmanager
 
 from aio_databases import Database
 from peewee import (
@@ -31,7 +32,7 @@ class Manager:
     """Manage database and models."""
 
     aio_database: Database
-    database: PWDatabase
+    pw_database: PWDatabase
     models: t.Set[PWModel]
 
     def __init__(self, database: t.Union[Database, str], **backend_options):
@@ -40,17 +41,17 @@ class Manager:
             database = Database(database, logger=logger, **backend_options)
 
         self.aio_database = database
-        self.database = get_db(database.backend.db_type)
+        self.pw_database = get_db(database)
         self.models = set()
 
     def register(self, Model: PWModel):
         """Register a model with the manager."""
-        Model._meta.database = self.database
+        Model._meta.database = self.pw_database
         self.models.add(Model)
         return Model
 
-    # Working with DB
-    # ---------------
+    # Working with AIO-Databases
+    # --------------------------
 
     async def connect(self):
         await self.aio_database.connect()
@@ -99,6 +100,19 @@ class Manager:
 
     # Working with Peewee
     # -------------------
+
+    @contextmanager
+    def allow_sync(self):
+        db = self.pw_database
+        db.enabled = True
+
+        try:
+            yield self
+        finally:
+            if not db.is_closed():
+                db.close()
+
+            db.enabled = False
 
     def run(self, query: Query, *, iterate: bool = False) -> t.Any:
         if isinstance(query, (Select, ModelRaw)):
@@ -240,7 +254,7 @@ class Manager:
             pass
 
         query = Select([query], [fn.COUNT(SQL('1'))])
-        query._database = self.database
+        query._database = self.pw_database
         return await self.fetchval(query)
 
 
