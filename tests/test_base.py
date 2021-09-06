@@ -38,13 +38,17 @@ async def test_sync(models, manager):
 def test_databases():
     from peewee_aio import Manager
 
-    manager = Manager('sqlite://:memory:')
+    manager = Manager('sqlite:///:memory:')
     assert manager
     assert manager.aio_database
     assert manager.pw_database
     assert manager.pw_database.database == ':memory:'
 
-    assert Manager('aiosqlite://:memory:')
+    manager = Manager('aiosqlite:///db.sqlite')
+    assert manager
+    assert manager.aio_database
+    assert manager.pw_database
+    assert manager.pw_database.database == 'db.sqlite'
 
     assert Manager('mysql://localhost')
     assert Manager('aiomysql://localhost')

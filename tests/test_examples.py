@@ -4,7 +4,7 @@ import peewee
 def test_readme():
     from peewee_aio import Manager
 
-    manager = Manager('sqlite://:memory:')
+    manager = Manager('sqlite:///:memory:')
 
     @manager.register
     class TestModel(peewee.Model):
