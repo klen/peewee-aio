@@ -4,7 +4,7 @@ import pytest
 
 
 CONNECTIONS = {
-    'sqlite': 'aiosqlite:///:memory:',
+    'sqlite': 'aiosqlite://:memory:',
     'mysql': 'mysql://root@127.0.0.1:3306/tests',
     'postgres': 'aiopg://test:test@localhost:5432/tests',
 
