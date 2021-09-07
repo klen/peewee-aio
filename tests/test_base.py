@@ -3,7 +3,7 @@ import peewee as pw
 
 
 async def test_sync(models, manager):
-    User, _, _ = models
+    _, User, _ = models
 
     with pytest.raises(RuntimeError):
         User.create(name='Mickey')
@@ -59,7 +59,7 @@ def test_databases():
 
 
 async def test_manager(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = manager
 
     # Execute
     await manager.execute(User.insert(name='Mickey'))
@@ -127,7 +127,7 @@ async def test_manager(models, manager, transaction):
 
 
 async def test_errors(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = manager
     await manager.create(User, id=1, name='Mickey')
 
     with pytest.raises(pw.IntegrityError):

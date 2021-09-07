@@ -50,6 +50,10 @@ class Manager:
         self.models.add(Model)
         return Model
 
+    def __iter__(self):
+        """Iterate through registered models."""
+        return iter(sort_models(self.models))
+
     # Working with AIO-Databases
     # --------------------------
 
