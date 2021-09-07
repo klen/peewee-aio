@@ -89,14 +89,6 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return ModelInsert(cls, insert=query, columns=columns)
 
     @classmethod
-    def replace(cls, __data=None, **insert) -> ModelInsert:
-        return cls.insert(__data, **insert).on_conflict('REPLACE')
-
-    @classmethod
-    def replace_many(cls, rows, fields=None) -> ModelInsert:
-        return (cls.insert_many(rows=rows, fields=fields).on_conflict('REPLACE'))
-
-    @classmethod
     def raw(cls, sql, *params) -> ModelRaw:
         return ModelRaw(cls, sql, params)
 
