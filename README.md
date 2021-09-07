@@ -2,6 +2,10 @@
 
 Async support for [Peewee ORM](https://github.com/coleifer/peewee)
 
+[![Tests Status](https://github.com/klen/peewee-aio/workflows/tests/badge.svg)](https://github.com/klen/peewee-aio/actions)
+[![PYPI Version](https://img.shields.io/pypi/v/peewee-aio)](https://pypi.org/project/peewee-aio/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/peewee-aio)](https://pypi.org/project/peewee-aio/)
+
 ## Features
 
 * Make [Peewee ORM](https://github.com/coleifer/peewee) to work async
