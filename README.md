@@ -17,10 +17,10 @@ Async support for [Peewee ORM](https://github.com/coleifer/peewee)
 
 ## Installation
 
-**peewee-orm** should be installed using pip:
+**peewee-aio** should be installed using pip:
 
 ```shell
-$ pip install peewee-orm
+$ pip install peewee-aio
 ```
 
 You can install optional database drivers with:
