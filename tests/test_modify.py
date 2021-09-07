@@ -93,10 +93,10 @@ async def test_save(models, manager, transaction):
 
 
 async def test_delete(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = manager
 
     source = await manager.create(User, name='Mickey')
-    await manager.delete(User.delete())
+    await manager.execute(User.delete())
     res = await manager.run(User.select())
     assert not res
 

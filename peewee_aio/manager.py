@@ -9,7 +9,6 @@ from peewee import (
     BaseQuery,
     Context,
     Database as PWDatabase,
-    Delete,
     Model as PWModel,
     ModelRaw,
     Query,
@@ -46,6 +45,7 @@ class Manager:
 
     def register(self, Model: PWModel):
         """Register a model with the manager."""
+        Model._meta.manager = self
         Model._meta.database = self.pw_database
         self.models.add(Model)
         return Model
@@ -227,22 +227,16 @@ class Manager:
         inst = await self.save(inst, force_insert=True)
         return inst
 
-    async def delete(self, source: t.Union[Delete, PWModel],
-                     recursive: bool = True, delete_nullable: bool = False):
+    async def delete(self, source: PWModel, recursive: bool = True, delete_nullable: bool = False):
+        if recursive:
+            for query, fk in reversed(list(source.dependencies(delete_nullable))):
+                if fk.null and not delete_nullable:
+                    await self.execute(fk.model.update(**{fk.name: None}).where(query))
 
-        if isinstance(source, PWModel):
-            if recursive:
-                for query, fk in reversed(list(source.dependencies(delete_nullable))):
-                    if fk.null and not delete_nullable:
-                        await self.execute(fk.model.update(**{fk.name: None}).where(query))
+                else:
+                    await self.execute(fk.model.delete().where(query))
 
-                    else:
-                        await self.execute(fk.model.delete().where(query))
-
-                await self.execute(source.delete().where(source._pk_expr()))
-
-        else:
-            await self.execute(source)
+        await self.execute(source.delete().where(source._pk_expr()))
 
     async def count(self, query: Query, clear_limit: bool = False):
         query = query.order_by()
