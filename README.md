@@ -35,6 +35,7 @@ $ pip install peewee-aio[mysql]
 
     manager = Manager('sqlite:///:memory:')
 
+    @manager.register
     class TestModel(peewee.Model):
         text = peewee.CharField()
 
