@@ -100,7 +100,16 @@ async def test_delete(models, manager, transaction):
     res = await manager.run(User.select())
     assert not res
 
+    await manager.create(User, name='John')
+
     source = await manager.create(User, name='Mickey')
-    await manager.delete(source)
-    res = await manager.run(User.select())
-    assert not res
+    await manager.delete_instance(source)
+    res = await manager.get_or_none(User, User.id == source.id)
+    assert res is None
+
+    source = await manager.create(User, name='Mickey')
+    await manager.delete_by_id(User, source.id)
+    res = await manager.get_or_none(User, User.id == source.id)
+    assert res is None
+
+    assert await manager.run(User.select())

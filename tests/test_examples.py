@@ -7,7 +7,7 @@ def test_readme():
     manager = Manager('sqlite:///:memory:')
 
     @manager.register
-    class TestModel(peewee.Model):
+    class TestModel(manager.Model):
         text = peewee.CharField()
 
     async def handler():
@@ -16,20 +16,30 @@ def test_readme():
         async with manager:
 
             # Create the table in database
-            await manager.create_tables(TestModel, safe=True)
+            await TestModel.create_table()
 
             # Create a record
-            test = await manager.create(TestModel, text="I'm working!")
+            test = await TestModel.create(text="I'm working!")
             assert test
             assert test.id
 
             # Iterate through records
-            async for test in manager.run(TestModel.select()):
+            async for test in TestModel.select():
                 assert test
                 assert test.id
 
+            # Change records
+            test.text = "I'm changed"
+            await test.save()
+
+            # Update records
+            await TestModel.update({'text': "I'm updated'"}).where(TestModel.id == test.id)
+
+            # Delete records
+            await TestModel.delete().where(TestModel.id == test.id)
+
             # Drop the table in database
-            await manager.drop_tables(TestModel, safe=True)
+            await TestModel.drop_table()
 
     import asyncio
     asyncio.run(handler())

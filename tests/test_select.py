@@ -24,6 +24,15 @@ async def test_get(models, manager, transaction):
     with pytest.raises(User.DoesNotExist):
         await manager.get(User, id=999)
 
+    res = await manager.get_or_none(User, User.id == user1.id)
+    assert res == user1
+
+    res = await manager.get_or_none(User, User.id == 999)
+    assert res is None
+
+    res = await manager.get_by_id(User, user1.id)
+    assert res == user1
+
 
 async def test_get_or_create(models, manager, transaction):
     User, _, _ = models

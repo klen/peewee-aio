@@ -22,6 +22,13 @@ from peewee import (
 )
 
 from .databases import get_db
+from .model import AIOModel
+
+# py37
+try:
+    from functools import cached_property  # type: ignore
+except ImportError:
+    from cached_property import cached_property  # type: ignore
 
 
 TMODEL = t.TypeVar('TMODEL', bound=PWModel)
@@ -53,6 +60,11 @@ class Manager:
     def __iter__(self):
         """Iterate through registered models."""
         return iter(sort_models(self.models))
+
+    @cached_property
+    def Model(self) -> t.Type[AIOModel]:
+        Meta = type('Meta', (), {'manager': self})
+        return type('Model', (AIOModel,), {'Meta': Meta})
 
     # Working with AIO-Databases
     # --------------------------
@@ -118,11 +130,34 @@ class Manager:
 
             db.enabled = False
 
+    # Query methods
+    # -------------
+
     def run(self, query: Query, *, iterate: bool = False) -> t.Any:
         if isinstance(query, (Select, ModelRaw)):
             return RunWrapper(self, query)
 
         return self.execute(query)
+
+    async def count(self, query: Query, clear_limit: bool = False):
+        query = query.order_by()
+        if clear_limit:
+            query._limit = query._offset = None
+
+        try:
+            if query._having is None and query._group_by is None and \
+               query._windows is None and query._distinct is None and \
+               query._simple_distinct is not True:
+                query = query.select(SQL('1'))
+        except AttributeError:
+            pass
+
+        query = Select([query], [fn.COUNT(SQL('1'))])
+        query._database = self.pw_database
+        return await self.fetchval(query)
+
+    # Model methods
+    # -------------
 
     async def create_tables(self, *Models: t.Type[PWModel], safe=True, **opts):
         for Model in sort_models(Models):
@@ -150,18 +185,28 @@ class Manager:
             ctx = schema._drop_table(**opts)
             await self.execute(ctx)
 
-    async def get(self, source: t.Union[t.Type[TMODEL], Query], *args, **kwargs) -> TMODEL:
-        query, model = ((source, source.model) if isinstance(source, Query)
-                        else (source.select(), source))
-
+    async def get_or_none(self, Model: t.Type[TMODEL], *args, **kwargs) -> t.Optional[TMODEL]:
+        query = Model.select()
         query = query.where(*args) if args else query
         query = query.filter(**kwargs) if kwargs else query
+        return await self.fetchone(query)
 
-        res = await self.fetchone(query)
+    async def get(self, Model: t.Type[TMODEL], *args, **kwargs) -> TMODEL:
+        res = await self.get_or_none(Model, *args, **kwargs)
         if res is None:
-            raise model.DoesNotExist
-
+            raise Model.DoesNotExist
         return res
+
+    async def get_by_id(self, Model: t.Type[TMODEL], pk) -> TMODEL:
+        return await self.get(Model, Model._meta.primary_key == pk)
+
+    async def set_by_id(self, Model: t.Type[PWModel], key, value) -> t.Any:
+        qs = Model.insert(value) if key is None else \
+            Model.update(value).where(Model._meta.primary_key == key)
+        return await self.execute(qs)
+
+    async def delete_by_id(self, Model: t.Type[PWModel], pk):
+        return await self.execute(Model.delete().where(Model._meta.primary_key == pk))
 
     async def get_or_create(self, Model: t.Type[TMODEL],
                             defaults: t.Dict = None, **kwargs) -> t.Tuple[TMODEL, bool]:
@@ -170,6 +215,14 @@ class Manager:
                 return (await self.get(Model, **kwargs), False)
             except Model.DoesNotExist:
                 return (await self.create(Model, **dict(defaults or {}, **kwargs)), True)
+
+    async def create(self, Model: t.Type[TMODEL], **values) -> TMODEL:
+        inst = Model(**values)
+        inst = await self.save(inst, force_insert=True)
+        return inst
+
+    # Instance methods
+    # ----------------
 
     async def save(self, inst: TMODEL,  # noqa
                    force_insert: bool = False, only: t.Sequence = None) -> TMODEL:
@@ -222,38 +275,17 @@ class Manager:
         inst._dirty.clear()
         return inst
 
-    async def create(self, Model: t.Type[TMODEL], **values) -> TMODEL:
-        inst = Model(**values)
-        inst = await self.save(inst, force_insert=True)
-        return inst
-
-    async def delete(self, source: PWModel, recursive: bool = True, delete_nullable: bool = False):
+    async def delete_instance(
+            self, inst: PWModel, recursive: bool = True, delete_nullable: bool = False):
         if recursive:
-            for query, fk in reversed(list(source.dependencies(delete_nullable))):
+            for query, fk in reversed(list(inst.dependencies(delete_nullable))):
                 if fk.null and not delete_nullable:
                     await self.execute(fk.model.update(**{fk.name: None}).where(query))
 
                 else:
                     await self.execute(fk.model.delete().where(query))
 
-        await self.execute(source.delete().where(source._pk_expr()))
-
-    async def count(self, query: Query, clear_limit: bool = False):
-        query = query.order_by()
-        if clear_limit:
-            query._limit = query._offset = None
-
-        try:
-            if query._having is None and query._group_by is None and \
-               query._windows is None and query._distinct is None and \
-               query._simple_distinct is not True:
-                query = query.select(SQL('1'))
-        except AttributeError:
-            pass
-
-        query = Select([query], [fn.COUNT(SQL('1'))])
-        query._database = self.pw_database
-        return await self.fetchval(query)
+        await self.execute(inst.delete().where(inst._pk_expr()))
 
 
 DEFAULT_CONSTRUCTOR = lambda r: r  # noqa
