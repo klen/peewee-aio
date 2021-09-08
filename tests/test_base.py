@@ -57,6 +57,12 @@ def test_databases():
     assert Manager('postgres://localhost')
     assert Manager('aiopg://localhost')
 
+    manager = Manager('dummy://localhost')
+    assert manager
+    assert manager.aio_database
+    assert manager.pw_database
+    assert manager.pw_database.database == ''
+
 
 async def test_manager(models, manager, transaction):
     _, User, _ = manager
