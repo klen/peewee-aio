@@ -71,7 +71,12 @@ async def test_select(TestModel, schema):
     async for data in TestModel.select():
         assert data == inst
 
+    assert await TestModel.select().exists()
     assert await TestModel.select().count() == 1
+    assert await TestModel.select().get() == inst
+    assert await TestModel.select().peek() == inst
+    assert await TestModel.select().first() == inst
+    assert await TestModel.select(peewee.fn.MAX(TestModel.id)).scalar() == 1
 
 
 async def test_update(TestModel, schema):

@@ -5,7 +5,8 @@ from __future__ import annotations
 import typing as t
 
 from peewee import (
-    Model, ModelBase,
+    database_required,
+    Model, ModelBase, SQL,
     ModelDelete as ModelDelete_,
     ModelInsert as ModelInsert_,
     ModelRaw as ModelRaw_,
@@ -114,11 +115,32 @@ class AIOQuery:
 
 class ModelSelect(AIOQuery, ModelSelect_):
 
+    def __aiter__(self):
+        return self.model._meta.manager.run(self).__aiter__()
+
+    @database_required
+    async def scalar(self, database, as_tuple=False):
+        row = await self.tuples().peek(database)
+        return row[0] if row and not as_tuple else row
+
+    @database_required
+    async def exists(self, database):
+        clone = self.columns(SQL('1'))
+        clone._limit = 1
+        clone._offset = None
+        return bool(await clone.scalar())
+
+    @database_required
+    async def peek(self, database, n=1):
+        if n == 1:
+            return await self.model._meta.manager.fetchone(self)
+        return await self.model._meta.manager.fetchmany(n, self)
+
     async def count(self):
         return await self.model._meta.manager.count(self)
 
-    def __aiter__(self):
-        return self.model._meta.manager.run(self).__aiter__()
+    async def get(self):
+        return await self.first()
 
 
 class ModelUpdate(AIOQuery, ModelUpdate_):
