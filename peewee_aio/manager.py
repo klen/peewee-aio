@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 
 from contextlib import asynccontextmanager, contextmanager
+from weakref import WeakSet
 
 from aio_databases import Database
 from peewee import (
@@ -39,16 +40,16 @@ class Manager:
 
     aio_database: Database
     pw_database: PWDatabase
-    models: t.Set[PWModel]
+    models: 'WeakSet[t.Type[PWModel]]'
 
     def __init__(self, database: t.Union[Database, str], **backend_options):
         """Initialize dialect and database."""
         if not isinstance(database, Database):
             database = Database(database, logger=logger, **backend_options)
 
+        self.models = WeakSet()
         self.aio_database = database
         self.pw_database = get_db(database)
-        self.models = set()
 
     def register(self, Model: PWModel):
         """Register a model with the manager."""
@@ -64,9 +65,7 @@ class Manager:
     @cached_property
     def Model(self) -> t.Type[AIOModel]:
         Meta = type('Meta', (), {'manager': self})
-        Model = type('Model', (AIOModel,), {'Meta': Meta})
-        self.models.add(Model)
-        return Model
+        return type('Model', (AIOModel,), {'Meta': Meta})
 
     # Working with AIO-Databases
     # --------------------------
