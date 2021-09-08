@@ -65,7 +65,7 @@ def test_databases():
 
 
 async def test_manager(models, manager, transaction):
-    _, User, _ = manager
+    _, User, _ = models
 
     # Execute
     await manager.execute(User.insert(name='Mickey'))
@@ -133,7 +133,7 @@ async def test_manager(models, manager, transaction):
 
 
 async def test_errors(models, manager, transaction):
-    _, User, _ = manager
+    _, User, _ = models
     await manager.create(User, id=1, name='Mickey')
 
     with pytest.raises(pw.IntegrityError):

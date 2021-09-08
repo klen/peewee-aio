@@ -51,7 +51,7 @@ def models(manager):
     manager.register(User)
     manager.register(UserToRole)
 
-    return User, Role, UserToRole
+    return Role, User, UserToRole
 
 
 @pytest.fixture(scope='session')

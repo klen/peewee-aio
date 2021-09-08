@@ -3,7 +3,7 @@ import peewee as pw
 
 
 async def test_get(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     res = await manager.run(User.select())
     assert not res
@@ -48,7 +48,7 @@ async def test_get_or_create(models, manager, transaction):
 
 
 async def test_select(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     await manager.run(User.insert(name='Mickey'))
     [user] = await manager.run(User.select())
@@ -64,7 +64,7 @@ async def test_select(models, manager, transaction):
 
 
 async def test_select_fk(models, manager, transaction):
-    User, Role, UserToRole = models
+    Role, User, UserToRole = models
 
     user = await manager.create(User, name='Mickey')
     role = await manager.create(Role, name='admin')
@@ -85,7 +85,7 @@ async def test_select_fk(models, manager, transaction):
 
 
 async def test_select_tuples(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     await manager.run(User.insert(name='Mickey'))
     [data] = await manager.run(User.select().tuples())
@@ -93,7 +93,7 @@ async def test_select_tuples(models, manager, transaction):
 
 
 async def test_select_dicts(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     await manager.run(User.insert(name='Mickey'))
     [data] = await manager.run(User.select().dicts())
@@ -102,7 +102,7 @@ async def test_select_dicts(models, manager, transaction):
 
 
 async def test_scalar(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     await manager.run(User.insert(name='Mickey'))
     await manager.run(User.insert(name='John'))
@@ -111,7 +111,7 @@ async def test_scalar(models, manager, transaction):
 
 
 async def test_count(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     await manager.run(User.insert(name='Mickey'))
     await manager.run(User.insert(name='John'))
@@ -124,7 +124,7 @@ async def test_count(models, manager, transaction):
 
 
 async def test_raw(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     sql = "select id, name from user"
     if manager.aio_database.backend.db_type == 'postgresql':

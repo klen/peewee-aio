@@ -64,7 +64,9 @@ class Manager:
     @cached_property
     def Model(self) -> t.Type[AIOModel]:
         Meta = type('Meta', (), {'manager': self})
-        return type('Model', (AIOModel,), {'Meta': Meta})
+        Model = type('Model', (AIOModel,), {'Meta': Meta})
+        self.models.add(Model)
+        return Model
 
     # Working with AIO-Databases
     # --------------------------

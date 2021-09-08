@@ -1,5 +1,5 @@
 async def test_insert(models, manager, transaction):
-    User, Role, UserToRole = models
+    Role, User, UserToRole = models
 
     res = await manager.run(User.select())
     assert not res
@@ -22,7 +22,7 @@ async def test_insert(models, manager, transaction):
 
 
 async def test_insert_many(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     query = User.insert_many([
         {'name': 'Mickey'},
@@ -38,7 +38,7 @@ async def test_insert_many(models, manager, transaction):
 
 
 async def test_create(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     user = await manager.create(User, name='Mickey')
     assert user
@@ -48,7 +48,8 @@ async def test_create(models, manager, transaction):
 
 async def test_create_uid(models, manager, transaction):
     from uuid import UUID
-    _, Role, _ = models
+
+    Role, _, _ = models
 
     role = await manager.create(Role, name='admin')
     assert role
@@ -57,7 +58,7 @@ async def test_create_uid(models, manager, transaction):
 
 
 async def test_update(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     user = await manager.create(User, name='Mickey')
     query = User.update(name='John').where(User.id == user.id)
@@ -68,7 +69,7 @@ async def test_update(models, manager, transaction):
 
 
 async def test_save(models, manager, transaction):
-    User, _, _ = models
+    _, User, _ = models
 
     res = await manager.run(User.select())
     assert not res
@@ -93,7 +94,7 @@ async def test_save(models, manager, transaction):
 
 
 async def test_delete(models, manager, transaction):
-    _, User, _ = manager
+    _, User, _ = models
 
     source = await manager.create(User, name='Mickey')
     await manager.execute(User.delete())
