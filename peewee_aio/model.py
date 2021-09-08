@@ -85,6 +85,10 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return ModelInsert(cls, cls._normalize_data(__data, insert))
 
     @classmethod
+    def insert_many(cls, rows, fields=None) -> ModelInsert:
+        return ModelInsert(cls, insert=rows, columns=fields)
+
+    @classmethod
     def insert_from(cls, query, fields) -> ModelInsert:
         columns = [getattr(cls, field) if isinstance(field, str) else field for field in fields]
         return ModelInsert(cls, insert=query, columns=columns)

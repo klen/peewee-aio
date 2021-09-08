@@ -79,6 +79,16 @@ async def test_select(TestModel, schema):
     assert await TestModel.select(peewee.fn.MAX(TestModel.id)).scalar() == 1
 
 
+async def test_insert(TestModel, schema):
+    assert await TestModel.insert(data='inserted')
+
+    test = await TestModel.get_or_none()
+    assert test.data == 'inserted'
+
+    assert await TestModel.insert_many([{'data': f"data{n}"} for n in range(4)])
+    assert await TestModel.select().count() == 5
+
+
 async def test_update(TestModel, schema):
     inst = await TestModel.create(data='data')
 
