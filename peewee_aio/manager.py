@@ -51,7 +51,7 @@ class Manager:
         self.aio_database = database
         self.pw_database = get_db(database)
 
-    def register(self, Model: PWModel):
+    def register(self, Model: t.Type[PWModel]):
         """Register a model with the manager."""
         Model._meta.manager = self
         Model._meta.database = self.pw_database

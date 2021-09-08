@@ -8,7 +8,6 @@ async def TestModel(manager):
     class TestModel(manager.Model):
         data = peewee.CharField()
 
-    assert TestModel in manager
     return TestModel
 
 
@@ -19,21 +18,23 @@ async def schema(TestModel):
     await TestModel.drop_table()
 
 
-async def test_base(TestModel):
+async def test_base():
+    from peewee_aio import Model
+
+    assert Model
+
+
+async def test_model(TestModel, manager):
     assert TestModel
-    assert TestModel._meta.manager
-    assert TestModel._meta.database
-
-
-async def test_register(TestModel):
+    assert TestModel._meta.manager is manager
+    assert TestModel._meta.database is manager.pw_database
 
     class ChildModel(TestModel):
         is_active = peewee.BooleanField(default=True)
 
     return ChildModel
-    assert ChildModel in manager
-    return ChildModel._meta.database
-    return ChildModel._meta.manager
+    return ChildModel._meta.manager is manager
+    return ChildModel._meta.database is manager.pw_database
 
 
 async def test_create(TestModel, schema):

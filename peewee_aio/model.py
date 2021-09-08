@@ -22,10 +22,8 @@ class AIOModelBase(ModelBase):
     def __new__(cls, name, bases, attrs):
         cls = super(AIOModelBase, cls).__new__(cls, name, bases, attrs)
         meta = cls._meta
-        if getattr(meta, 'manager', None):
-            meta.manager.models.add(cls)
-            if not meta.database:
-                meta.database = meta.manager.pw_database
+        if getattr(meta, 'manager', None) and not meta.database:
+            meta.database = meta.manager.pw_database
 
         return cls
 
