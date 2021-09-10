@@ -36,9 +36,12 @@ $ pip install peewee-aio
 You can install optional database drivers with:
 
 ```shell
-$ pip install peewee-aio[sqlite]
-$ pip install peewee-aio[postgresql]
-$ pip install peewee-aio[mysql]
+$ pip install peewee-aio[aiosqlite]
+$ pip install peewee-aio[aiomysql]
+$ pip install peewee-aio[aiopg]
+$ pip install peewee-aio[asyncpg]
+$ pip install peewee-aio[trio_mysql]
+$ pip install peewee-aio[triopg]
 ```
 
 ### Quickstart
@@ -47,7 +50,7 @@ $ pip install peewee-aio[mysql]
     import peewee
     from peewee_aio import Manager
 
-    manager = Manager('sqlite:///:memory:')
+    manager = Manager('aiosqlite:///:memory:')
 
     class TestModel(manager.Model):
         text = peewee.CharField()
