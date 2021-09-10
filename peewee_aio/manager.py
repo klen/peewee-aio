@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import contextmanager
 from weakref import WeakSet
 
 from aio_databases import Database
@@ -10,6 +10,7 @@ from peewee import (
     BaseQuery,
     Context,
     Database as PWDatabase,
+    EXCEPTIONS,
     Model as PWModel,
     ModelRaw,
     Query,
@@ -17,6 +18,7 @@ from peewee import (
     SchemaManager,
     Select,
     __exception_wrapper__,
+    IntegrityError,
     fn,
     logger,
     sort_models,
@@ -82,30 +84,30 @@ class Manager:
     __aexit__ = disconnect
 
     async def execute(self, sql: t.Any, *params, **opts) -> t.Any:
-        async with process(sql, params, True) as (sql, params, _):
+        with process(sql, params, True) as (sql, params, _):
             return await self.aio_database.execute(sql, *params, **opts)
 
     async def fetchval(self, sql: t.Any, *params, **opts) -> t.Any:
-        async with process(sql, params, True) as (sql, params, _):
+        with process(sql, params, True) as (sql, params, _):
             return await self.aio_database.fetchval(sql, *params, **opts)
 
     async def fetchall(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
-        async with process(sql, params, raw) as (sql, params, constructor):
+        with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchall(sql, *params, **opts)
             return constructor(res)
 
     async def fetchmany(self, size: int, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
-        async with process(sql, params, raw) as (sql, params, constructor):
+        with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchmany(size, sql, *params, **opts)
             return constructor(res)
 
     async def fetchone(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
-        async with process(sql, params, raw) as (sql, params, constructor):
+        with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchone(sql, *params, **opts)
             return constructor(res)
 
     async def iterate(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.AsyncIterator:
-        async with process(sql, params, raw) as (sql, params, constructor):
+        with process(sql, params, raw) as (sql, params, constructor):
             async for res in self.aio_database.iterate(sql, *params, **opts):
                 yield constructor(res)
 
@@ -290,10 +292,11 @@ class Manager:
 
 
 DEFAULT_CONSTRUCTOR = lambda r: r  # noqa
+EXCEPTIONS['UniqueViolationError'] = IntegrityError
 
 
-@asynccontextmanager
-async def process(query: t.Any, params: t.Sequence, raw: bool) -> t.AsyncGenerator:
+@contextmanager
+def process(query: t.Any, params: t.Sequence, raw: bool) -> t.Generator:
     constructor = DEFAULT_CONSTRUCTOR
 
     if isinstance(query, BaseQuery):

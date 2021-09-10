@@ -134,6 +134,7 @@ async def test_manager(models, manager, transaction):
 
 async def test_errors(models, manager, transaction):
     _, User, _ = models
+    await manager.execute(User.delete())
     await manager.create(User, id=1, name='Mickey')
 
     with pytest.raises(pw.IntegrityError):

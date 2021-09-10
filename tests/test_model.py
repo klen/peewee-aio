@@ -77,6 +77,7 @@ async def test_delete_instance(TestModel, schema):
 
 
 async def test_select(TestModel, schema):
+    await TestModel.delete()
     inst = await TestModel.create(data='data')
 
     assert [inst] == await TestModel.select().where(TestModel.id == inst.id)
@@ -89,10 +90,11 @@ async def test_select(TestModel, schema):
     assert await TestModel.select().get() == inst
     assert await TestModel.select().peek() == inst
     assert await TestModel.select().first() == inst
-    assert await TestModel.select(peewee.fn.MAX(TestModel.id)).scalar() == 1
+    assert await TestModel.select(peewee.fn.MAX(TestModel.id)).scalar()
 
 
 async def test_insert(TestModel, schema):
+    await TestModel.delete()
     assert await TestModel.insert(data='inserted')
 
     test = await TestModel.get_or_none()

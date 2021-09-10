@@ -10,6 +10,16 @@ Async support for [Peewee ORM](https://github.com/coleifer/peewee)
 
 * Make [Peewee ORM](https://github.com/coleifer/peewee) to work async
 * Supports PostgresQL, MySQL, SQLite
+* Supports [asyncio](https://docs.python.org/3/library/asyncio.html) and
+  [trio](https://github.com/python-trio/trio)
+* Drivers supported:
+    - [aiosqlite](https://github.com/omnilib/aiosqlite)
+    - [aiomysql](https://github.com/aio-libs/aiomysql)
+    - [aiopg](https://github.com/aio-libs/aiopg)
+    - [asyncpg](https://github.com/MagicStack/asyncpg)
+    - [triopg](https://github.com/python-trio/triopg)
+    - [trio_mysql](https://github.com/python-trio/trio-mysql)
+
 
 ## Requirements
 
