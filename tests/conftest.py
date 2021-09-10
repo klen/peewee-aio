@@ -49,7 +49,8 @@ async def manager(db_url):
     from peewee_aio import Manager
 
     async with Manager(db_url, convert_params=True) as manager:
-        yield manager
+        async with manager.connection():
+            yield manager
 
 
 @pytest.fixture(scope='session')

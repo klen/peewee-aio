@@ -59,32 +59,33 @@ $ pip install peewee-aio[triopg]
 
         # Initialize the database
         async with manager:
+            async with manager.connection():
 
-            # Create the table in database
-            await TestModel.create_table()
+                # Create the table in database
+                await TestModel.create_table()
 
-            # Create a record
-            test = await TestModel.create(text="I'm working!")
-            assert test
-            assert test.id
-
-            # Iterate through records
-            async for test in TestModel.select():
+                # Create a record
+                test = await TestModel.create(text="I'm working!")
                 assert test
                 assert test.id
 
-            # Change records
-            test.text = "I'm changed'
-            await test.save()
+                # Iterate through records
+                async for test in TestModel.select():
+                    assert test
+                    assert test.id
 
-            # Update records
-            await TestModel.update({'text': "I'm updated'"}).where(TestModel.id == test.id)
+                # Change records
+                test.text = "I'm changed'
+                await test.save()
 
-            # Delete records
-            await TestModel.delete().where(TestModel.id == test.id)
+                # Update records
+                await TestModel.update({'text': "I'm updated'"}).where(TestModel.id == test.id)
 
-            # Drop the table in database
-            await TestModel.drop_table()
+                # Delete records
+                await TestModel.delete().where(TestModel.id == test.id)
+
+                # Drop the table in database
+                await TestModel.drop_table()
 
     # Run the handler with your async library
     import asyncio

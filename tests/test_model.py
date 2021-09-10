@@ -42,6 +42,10 @@ async def test_create(TestModel, schema):
     assert inst
     assert inst.id
 
+    inst2, created = await TestModel.get_or_create(data='data')
+    assert inst == inst2
+    assert not created
+
 
 async def test_get(TestModel, schema):
     source = await TestModel.create(data='data')

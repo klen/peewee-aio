@@ -12,34 +12,37 @@ def test_readme():
 
     async def handler():
 
-        # Initialize the database
+        # Initialize the database (pool)
         async with manager:
 
-            # Create the table in database
-            await TestModel.create_table()
+            # Get a connection
+            async with manager.connection():
 
-            # Create a record
-            test = await TestModel.create(text="I'm working!")
-            assert test
-            assert test.id
+                # Create the table in database
+                await TestModel.create_table()
 
-            # Iterate through records
-            async for test in TestModel.select():
+                # Create a record
+                test = await TestModel.create(text="I'm working!")
                 assert test
                 assert test.id
 
-            # Change records
-            test.text = "I'm changed"
-            await test.save()
+                # Iterate through records
+                async for test in TestModel.select():
+                    assert test
+                    assert test.id
 
-            # Update records
-            await TestModel.update({'text': "I'm updated'"}).where(TestModel.id == test.id)
+                # Change records
+                test.text = "I'm changed"
+                await test.save()
 
-            # Delete records
-            await TestModel.delete().where(TestModel.id == test.id)
+                # Update records
+                await TestModel.update({'text': "I'm updated'"}).where(TestModel.id == test.id)
 
-            # Drop the table in database
-            await TestModel.drop_table()
+                # Delete records
+                await TestModel.delete().where(TestModel.id == test.id)
+
+                # Drop the table in database
+                await TestModel.drop_table()
 
     import asyncio
     asyncio.run(handler())
