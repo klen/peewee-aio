@@ -38,11 +38,18 @@ async def test_model(TestModel, manager):
 
 
 async def test_create(TestModel, schema):
+
+    class TestModel(TestModel):
+
+        async def save(self, **kwargs):
+            self.data += '-custom'
+            return await super().save(**kwargs)
+
     inst = await TestModel.create(data='data')
     assert inst
     assert inst.id
 
-    inst2, created = await TestModel.get_or_create(data='data')
+    inst2, created = await TestModel.get_or_create(data='data-custom')
     assert inst == inst2
     assert not created
 
@@ -123,3 +130,25 @@ async def test_delete(TestModel, schema):
 
     test = await TestModel.get_or_none(TestModel.id == inst.id)
     assert test is None
+
+
+async def test_backref(TestModel, manager, schema):
+
+    class Ref(manager.Model):
+        data = peewee.CharField()
+
+        test = peewee.ForeignKeyField(TestModel)
+
+    await Ref.drop_table()
+    await Ref.create_table()
+
+    source = await TestModel.create(data='data')
+
+    from peewee_aio.model import ModelSelect
+
+    assert isinstance(source.ref_set, ModelSelect)
+
+    ref = await Ref.create(data='ref', test=source)
+    assert ref == await source.ref_set.first()
+    await Ref.drop_table()
+

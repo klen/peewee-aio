@@ -67,7 +67,8 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     async def create(cls, **kwargs) -> AIOModel:
-        return await cls._meta.manager.create(cls, **kwargs)
+        inst = cls(**kwargs)
+        return await inst.save(force_insert=True)
 
     # Queryset methods
     # ----------------
