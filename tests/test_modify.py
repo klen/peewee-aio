@@ -60,12 +60,13 @@ async def test_create_uid(models, manager, transaction):
 async def test_update(models, manager, transaction):
     _, User, _ = models
 
-    user = await manager.create(User, name='Mickey')
-    query = User.update(name='John').where(User.id == user.id)
+    await manager.create(User, name='Mickey')
+    await manager.create(User, name='John')
+    query = User.update(name='Timmy')
     upd = await manager.run(query)
-    assert upd == 1
-    user = await manager.get(User, id=user.id)
-    assert user.name == 'John'
+    assert upd == 2
+    user = await manager.get(User)
+    assert user.name == 'Timmy'
 
 
 async def test_save(models, manager, transaction):

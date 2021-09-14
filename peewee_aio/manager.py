@@ -11,6 +11,8 @@ from peewee import (
     Context,
     Database as PWDatabase,
     EXCEPTIONS,
+    Insert,
+    IntegrityError,
     Model as PWModel,
     ModelRaw,
     Query,
@@ -18,7 +20,6 @@ from peewee import (
     SchemaManager,
     Select,
     __exception_wrapper__,
-    IntegrityError,
     fn,
     logger,
     sort_models,
@@ -83,9 +84,16 @@ class Manager:
 
     __aexit__ = disconnect
 
-    async def execute(self, sql: t.Any, *params, **opts) -> t.Any:
-        with process(sql, params, True) as (sql, params, _):
-            return await self.aio_database.execute(sql, *params, **opts)
+    async def execute(self, query: t.Any, *params, **opts) -> t.Any:
+        with process(query, params, True) as (sql, params, _):
+            res = await self.aio_database.execute(sql, *params, **opts)
+            if res is None:
+                return res
+
+            if isinstance(query, Insert) and query._query_type == Insert.SIMPLE:
+                return res[1]
+
+            return res[0]
 
     async def fetchval(self, sql: t.Any, *params, **opts) -> t.Any:
         with process(sql, params, True) as (sql, params, _):

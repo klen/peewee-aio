@@ -1,5 +1,3 @@
-import logging
-
 import pytest
 
 
@@ -23,6 +21,8 @@ BACKENDS = {
 
 @pytest.fixture(scope='session', autouse=True)
 def setup_logging():
+    import logging
+
     logger = logging.getLogger('peewee')
     logger.setLevel(logging.DEBUG)
 

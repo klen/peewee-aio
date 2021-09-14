@@ -12,7 +12,28 @@ from peewee import (
     ModelRaw as ModelRaw_,
     ModelSelect as ModelSelect_,
     ModelUpdate as ModelUpdate_,
+    ForeignKeyAccessor,
+    ForeignKeyField
 )
+
+
+class AIOForeignKeyAccessor(ForeignKeyAccessor):
+
+    async def get_rel_instance(self, instance):
+        value = instance.__data__.get(self.name)
+        if value is not None or self.name in instance.__rel__:
+            if self.name not in instance.__rel__ and self.field.lazy_load:
+                obj = await self.rel_model.get(self.field.rel_field == value)
+                instance.__rel__[self.name] = obj
+            return instance.__rel__.get(self.name, value)
+        elif not self.field.null:
+            raise self.rel_model.DoesNotExist
+        return value
+
+
+class AIOForeignKeyField(ForeignKeyField):
+
+    accessor_class = AIOForeignKeyAccessor
 
 
 class AIOModelBase(ModelBase):
@@ -24,6 +45,12 @@ class AIOModelBase(ModelBase):
         meta = cls._meta
         if getattr(meta, 'manager', None) and not meta.database:
             meta.database = meta.manager.pw_database
+
+        # Patch foreign keys
+        for value in meta.fields.values():
+            if isinstance(value, ForeignKeyField):
+                setattr(
+                    value.model, value.name, AIOForeignKeyAccessor(value.model, value, value.name))
 
         return cls
 

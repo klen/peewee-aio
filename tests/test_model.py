@@ -106,7 +106,7 @@ async def test_select(TestModel, schema):
 
 async def test_insert(TestModel, schema):
     await TestModel.delete()
-    assert await TestModel.insert(data='inserted')
+    await TestModel.insert(data='inserted')
 
     test = await TestModel.get_or_none()
     assert test.data == 'inserted'
@@ -150,5 +150,12 @@ async def test_backref(TestModel, manager, schema):
 
     ref = await Ref.create(data='ref', test=source)
     assert ref == await source.ref_set.first()
-    await Ref.drop_table()
 
+    ref = await Ref.get(data='ref')
+    test = await ref.test
+    assert test == source
+
+    test = await ref.test
+    assert test == source
+
+    await Ref.drop_table()
