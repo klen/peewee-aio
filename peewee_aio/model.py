@@ -19,16 +19,21 @@ from peewee import (
 
 class AIOForeignKeyAccessor(ForeignKeyAccessor):
 
-    async def get_rel_instance(self, instance):
+    def get_rel_instance(self, instance: Model) -> t.Union[
+            Model, None, t.Coroutine[t.Any, t.Any, Model]]:
         value = instance.__data__.get(self.name)
         if value is not None or self.name in instance.__rel__:
             if self.name not in instance.__rel__ and self.field.lazy_load:
-                obj = await self.rel_model.get(self.field.rel_field == value)
-                instance.__rel__[self.name] = obj
+                return self.load_rel(instance, value)
             return instance.__rel__.get(self.name, value)
         elif not self.field.null:
             raise self.rel_model.DoesNotExist
         return value
+
+    async def load_rel(self, instance: Model, value: t.Any) -> Model:
+        obj = await self.rel_model.get(self.field.rel_field == value)
+        instance.__rel__[self.name] = obj
+        return obj
 
 
 class AIOForeignKeyField(ForeignKeyField):

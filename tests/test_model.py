@@ -151,11 +151,15 @@ async def test_backref(TestModel, manager, schema):
     ref = await Ref.create(data='ref', test=source)
     assert ref == await source.ref_set.first()
 
+    # Load foreing keys
     ref = await Ref.get(data='ref')
     test = await ref.test
     assert test == source
 
-    test = await ref.test
-    assert test == source
+    assert ref.test == source
+
+    ref = await Ref.select(Ref, TestModel).join(TestModel).first()
+    assert ref
+    assert ref.test == source
 
     await Ref.drop_table()
