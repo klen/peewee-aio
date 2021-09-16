@@ -38,6 +38,7 @@ async def test_model(TestModel, manager):
 
 
 async def test_create(TestModel, schema):
+    await TestModel.delete()
 
     class TestModel(TestModel):
 
@@ -160,6 +161,7 @@ async def test_backref(TestModel, manager, schema):
     assert test == source
 
     assert ref.test == source
+    assert await ref.test == source
 
     ref = await Ref.select(Ref, TestModel).join(TestModel).first()
     assert ref
@@ -169,3 +171,9 @@ async def test_backref(TestModel, manager, schema):
     assert ref.test == source
 
     await Ref.drop_table()
+
+
+async def test_await_model(TestModel):
+    test = TestModel(id=1)
+    assert await test == test
+    assert await test == test

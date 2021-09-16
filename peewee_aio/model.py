@@ -144,6 +144,15 @@ class AIOModel(Model, metaclass=AIOModelBase):
     async def delete_instance(self, **kwargs):
         return await self._meta.manager.delete_instance(self, **kwargs)
 
+    # Support await syntax
+    # --------------------
+
+    def __await__(self):
+        return self.__anext__().__await__()
+
+    async def __anext__(self):
+        return self
+
 
 class AIOQuery:
 
