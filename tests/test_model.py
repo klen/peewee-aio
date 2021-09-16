@@ -49,9 +49,19 @@ async def test_create(TestModel, schema):
     inst = await TestModel.create(data='data')
     assert inst
     assert inst.id
+    assert inst.data == 'data-custom'
 
-    inst2, created = await TestModel.get_or_create(data='data-custom')
-    assert inst == inst2
+
+async def test_get_or_create(TestModel, schema):
+    with pytest.raises(peewee.DatabaseError):
+        inst, created = await TestModel.get_or_create(defaults={})
+
+    inst, created = await TestModel.get_or_create(data='data')
+    assert inst
+    assert created
+
+    inst2, created = await TestModel.get_or_create(data='data')
+    assert inst2 == inst
     assert not created
 
 

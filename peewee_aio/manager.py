@@ -12,7 +12,7 @@ from peewee import (
     Database as PWDatabase,
     EXCEPTIONS,
     Insert,
-    IntegrityError,
+    IntegrityError, InternalError,
     Model as PWModel,
     ModelRaw,
     Query,
@@ -301,6 +301,7 @@ class Manager:
 
 DEFAULT_CONSTRUCTOR = lambda r: r  # noqa
 EXCEPTIONS['UniqueViolationError'] = IntegrityError
+EXCEPTIONS['NotNullViolationError'] = InternalError
 
 
 @contextmanager
