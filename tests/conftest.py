@@ -11,11 +11,11 @@ CONNECTIONS = {
     'triopg': 'triopg://test:test@localhost:5432/tests',
 }
 BACKENDS = {
-    'trio-mysql',
     'aiosqlite',
     'aiomysql',
     'aiopg',
     'asyncpg',
+    'trio-mysql',
 }
 
 

@@ -119,6 +119,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     def insert_many(cls, rows, fields=None) -> ModelInsert:
+        rows = [row.__data__ if isinstance(row, Model) else row for row in rows]
         return ModelInsert(cls, insert=rows, columns=fields)
 
     @classmethod

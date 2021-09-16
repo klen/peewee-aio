@@ -114,6 +114,9 @@ async def test_insert(TestModel, schema):
     assert await TestModel.insert_many([{'data': f"data{n}"} for n in range(4)])
     assert await TestModel.select().count() == 5
 
+    assert await TestModel.insert_many([TestModel(data=f"data{n}") for n in range(4)])
+    assert await TestModel.select().count() == 9
+
 
 async def test_update(TestModel, schema):
     inst = await TestModel.create(data='data')
@@ -160,6 +163,9 @@ async def test_backref(TestModel, manager, schema):
 
     ref = await Ref.select(Ref, TestModel).join(TestModel).first()
     assert ref
+    assert ref.test == source
+
+    ref = await Ref(data='ref', test=test).save()
     assert ref.test == source
 
     await Ref.drop_table()
