@@ -94,8 +94,12 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await cls._meta.manager.delete_by_id(cls, pk)
 
     @classmethod
-    async def get_or_create(cls, **kwargs) -> t.Tuple[AIOModel, bool]:
-        return await cls._meta.manager.get_or_create(cls, **kwargs)
+    async def get_or_create(cls, defaults: t.Dict = None, **kwargs) -> t.Tuple[AIOModel, bool]:
+        async with cls._meta.manager.aio_database.transaction():
+            try:
+                return (await cls.get(**kwargs), False)
+            except cls.DoesNotExist:
+                return (await cls.create(**dict(defaults or {}, **kwargs)), True)
 
     @classmethod
     async def create(cls, **kwargs) -> AIOModel:
