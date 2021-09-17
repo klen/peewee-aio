@@ -45,10 +45,11 @@ class Manager:
     pw_database: PWDatabase
     models: 'WeakSet[t.Type[PWModel]]'
 
-    def __init__(self, database: t.Union[Database, str], **backend_options):
+    def __init__(self, database: t.Union[Database, str], convert_params=True, **backend_options):
         """Initialize dialect and database."""
         if not isinstance(database, Database):
-            database = Database(database, logger=logger, **backend_options)
+            database = Database(
+                database, logger=logger, convert_params=convert_params, **backend_options)
 
         self.models = WeakSet()
         self.aio_database = database
