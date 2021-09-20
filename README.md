@@ -60,7 +60,7 @@ $ pip install peewee-aio[triopg]
         # Initialize the database's pool (optional)
         async with manager:
 
-            # Get a connection
+            # Acquire a connection
             async with manager.connection():
 
                 # Create the table in database
