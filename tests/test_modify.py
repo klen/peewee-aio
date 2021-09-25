@@ -1,6 +1,4 @@
-async def test_insert(models, manager, transaction):
-    Role, User, UserToRole = models
-
+async def test_insert(manager, Role, User, UserToRole, transaction):
     res = await manager.run(User.select())
     assert not res
 
@@ -21,9 +19,7 @@ async def test_insert(models, manager, transaction):
     assert user_to_role
 
 
-async def test_insert_many(models, manager, transaction):
-    _, User, _ = models
-
+async def test_insert_many(manager, User, transaction):
     query = User.insert_many([
         {'name': 'Mickey'},
         {'name': 'John'},
@@ -37,19 +33,15 @@ async def test_insert_many(models, manager, transaction):
     assert user2.name == 'John'
 
 
-async def test_create(models, manager, transaction):
-    _, User, _ = models
-
+async def test_create(manager, User, transaction):
     user = await manager.create(User, name='Mickey')
     assert user
     assert user.id
     assert user.name == 'Mickey'
 
 
-async def test_create_uid(models, manager, transaction):
+async def test_create_uid(manager, Role, transaction):
     from uuid import UUID
-
-    Role, _, _ = models
 
     role = await manager.create(Role, name='admin')
     assert role
@@ -57,9 +49,7 @@ async def test_create_uid(models, manager, transaction):
     assert UUID(str(role.id))
 
 
-async def test_update(models, manager, transaction):
-    _, User, _ = models
-
+async def test_update(manager, User, transaction):
     await manager.create(User, name='Mickey')
     await manager.create(User, name='John')
     query = User.update(name='Timmy')
@@ -69,9 +59,7 @@ async def test_update(models, manager, transaction):
     assert user.name == 'Timmy'
 
 
-async def test_save(models, manager, transaction):
-    _, User, _ = models
-
+async def test_save(manager, User, transaction):
     res = await manager.run(User.select())
     assert not res
 
@@ -94,9 +82,7 @@ async def test_save(models, manager, transaction):
     assert user.name == 'John'
 
 
-async def test_delete(models, manager, transaction):
-    _, User, _ = models
-
+async def test_delete(manager, User, transaction):
     source = await manager.create(User, name='Mickey')
     await manager.execute(User.delete())
     res = await manager.run(User.select())

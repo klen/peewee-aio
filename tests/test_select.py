@@ -2,9 +2,7 @@ import pytest
 import peewee as pw
 
 
-async def test_get(models, manager, transaction):
-    _, User, _ = models
-
+async def test_get(manager, User, transaction):
     res = await manager.run(User.select())
     assert not res
 
@@ -34,9 +32,7 @@ async def test_get(models, manager, transaction):
     assert res == user1
 
 
-async def test_get_or_create(models, manager, transaction):
-    User, _, _ = models
-
+async def test_get_or_create(manager, User, transaction):
     user1, created = await manager.get_or_create(User, name='Mickey')
     assert created
     assert user1
@@ -47,9 +43,7 @@ async def test_get_or_create(models, manager, transaction):
     assert user2 == user1
 
 
-async def test_select(models, manager, transaction):
-    _, User, _ = models
-
+async def test_select(manager, User, transaction):
     await manager.run(User.insert(name='Mickey'))
     [user] = await manager.run(User.select())
     assert user
@@ -63,9 +57,7 @@ async def test_select(models, manager, transaction):
     assert list(res) == [user]
 
 
-async def test_select_fk(models, manager, transaction):
-    Role, User, UserToRole = models
-
+async def test_select_fk(manager, Role, User, UserToRole, transaction):
     user = await manager.create(User, name='Mickey')
     role = await manager.create(Role, name='admin')
 
@@ -84,35 +76,27 @@ async def test_select_fk(models, manager, transaction):
         assert obj.user
 
 
-async def test_select_tuples(models, manager, transaction):
-    _, User, _ = models
-
+async def test_select_tuples(manager, User, transaction):
     await manager.run(User.insert(name='Mickey'))
     [data] = await manager.run(User.select().tuples())
     assert data == (data[0], data[1], 'Mickey', True)
 
 
-async def test_select_dicts(models, manager, transaction):
-    _, User, _ = models
-
+async def test_select_dicts(manager, User, transaction):
     await manager.run(User.insert(name='Mickey'))
     [data] = await manager.run(User.select().dicts())
     assert data == {
         'id': data['id'], 'created': data['created'], 'name': 'Mickey', 'is_active': True}
 
 
-async def test_scalar(models, manager, transaction):
-    _, User, _ = models
-
+async def test_scalar(manager, User, transaction):
     await manager.run(User.insert(name='Mickey'))
     await manager.run(User.insert(name='John'))
     count = await manager.fetchval(User.select(pw.fn.Count(User.id)))
     assert count == 2
 
 
-async def test_count(models, manager, transaction):
-    _, User, _ = models
-
+async def test_count(manager, User, transaction):
     await manager.run(User.insert(name='Mickey'))
     await manager.run(User.insert(name='John'))
 
@@ -123,9 +107,7 @@ async def test_count(models, manager, transaction):
     assert count == 1
 
 
-async def test_raw(models, manager, transaction):
-    _, User, _ = models
-
+async def test_raw(manager, User, transaction):
     sql = "select id, name from user"
     if manager.aio_database.backend.db_type == 'postgresql':
         sql = 'select "id", "name" from "user"'
@@ -134,3 +116,19 @@ async def test_raw(models, manager, transaction):
     res = await manager.run(User.raw(sql))
     assert res
     assert isinstance(res[0], User)
+
+
+async def test_prefetch(manager, User, Comment, transaction):
+    user = await manager.create(User, name='Mickey')
+    qs = Comment.insert_many([{'body': f"body{n}", 'user': user} for n in range(3)])
+    await manager.run(qs)
+
+    res = await manager.prefetch(User.select())
+    assert res
+
+    res = await manager.prefetch(User.select(), Comment)
+    assert res
+    user = res[0]
+    assert user.comment_set
+    assert isinstance(user.comment_set, list)
+    assert len(user.comment_set) == 3

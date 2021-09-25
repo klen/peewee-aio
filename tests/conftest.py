@@ -1,5 +1,7 @@
 import pytest
 
+from .models import *  # noqa
+
 
 CONNECTIONS = {
     'aiosqlite': 'aiosqlite:///:memory:',
@@ -54,21 +56,10 @@ async def manager(db_url):
 
 
 @pytest.fixture(scope='session')
-def models(manager):
-    from .models import Role, User, UserToRole
-
-    manager.register(Role)
-    manager.register(User)
-    manager.register(UserToRole)
-
-    return Role, User, UserToRole
-
-
-@pytest.fixture(scope='session')
-async def schema(models, manager):
-    await manager.create_tables(*models, safe=True)
-    yield models
-    await manager.drop_tables(*models, safe=True)
+async def schema(manager, User, Role, UserToRole, Comment):
+    await manager.create_tables()
+    yield (User, Role, UserToRole, Comment)
+    await manager.drop_tables()
 
 
 @pytest.fixture

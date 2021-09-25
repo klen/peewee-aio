@@ -2,9 +2,7 @@ import pytest
 import peewee as pw
 
 
-async def test_sync(models, manager):
-    _, User, _ = models
-
+async def test_sync(User, manager):
     with pytest.raises(RuntimeError):
         User.create(name='Mickey')
 
@@ -64,9 +62,7 @@ def test_databases():
     assert manager.pw_database.database == ''
 
 
-async def test_manager(models, manager, transaction):
-    _, User, _ = models
-
+async def test_manager(manager, User, transaction):
     # Execute
     await manager.execute(User.insert(name='Mickey'))
     await manager.execute(User.insert(name='John'))
@@ -132,8 +128,7 @@ async def test_manager(models, manager, transaction):
         assert data.name in ['Mickey', 'John', 'Timmy']
 
 
-async def test_errors(models, manager, transaction):
-    _, User, _ = models
+async def test_errors(manager, User, transaction):
     await manager.execute(User.delete())
     await manager.create(User, id=1, name='Mickey')
 

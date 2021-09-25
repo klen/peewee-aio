@@ -10,17 +10,15 @@ def backend():
 async def manager(db_url):
     from peewee_aio import Manager
 
-    return Manager(db_url, convert_params=True)
+    return Manager(db_url)
 
 
-async def test_base(models, manager):
+async def test_base(manager, User):
     import trio_asyncio
-
-    _, User, _ = models
 
     async with trio_asyncio.open_loop():
         async with manager:
-            await manager.create_tables(*models)
+            await manager.create_tables()
 
             res = await manager.run(User.select())
             assert not res
@@ -51,4 +49,4 @@ async def test_base(models, manager):
             assert user1
             assert user2
 
-            await manager.drop_tables(*models)
+            await manager.drop_tables()

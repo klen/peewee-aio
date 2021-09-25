@@ -160,14 +160,18 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
 class AIOQuery:
 
+    def __init__(self, *args, **kwargs):
+        super(AIOQuery, self).__init__(*args, **kwargs)
+        self.manager = self.model._meta.manager
+
     def __await__(self):
-        return self.model._meta.manager.run(self).__await__()
+        return self.manager.run(self).__await__()
 
 
 class ModelSelect(AIOQuery, ModelSelect_):
 
     def __aiter__(self):
-        return self.model._meta.manager.run(self).__aiter__()
+        return self.manager.run(self).__aiter__()
 
     @database_required
     async def scalar(self, database, as_tuple=False):
@@ -184,14 +188,17 @@ class ModelSelect(AIOQuery, ModelSelect_):
     @database_required
     async def peek(self, database, n=1):
         if n == 1:
-            return await self.model._meta.manager.fetchone(self)
-        return await self.model._meta.manager.fetchmany(n, self)
+            return await self.manager.fetchone(self)
+        return await self.manager.fetchmany(n, self)
 
     async def count(self):
-        return await self.model._meta.manager.count(self)
+        return await self.manager.count(self)
 
     async def get(self):
         return await self.first()
+
+    async def prefetch(self, *subqueries):
+        return await self.manager.prefetch(self, *subqueries)
 
 
 class ModelUpdate(AIOQuery, ModelUpdate_):

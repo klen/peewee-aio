@@ -5,14 +5,14 @@ import typing as t
 from contextlib import contextmanager
 from weakref import WeakSet
 
-from aio_databases import Database
+from aio_databases.database import Database, ConnectionContext, TransactionContext
 from peewee import (
     BaseQuery,
     Context,
     Database as PWDatabase,
     EXCEPTIONS,
     Insert,
-    IntegrityError, InternalError,
+    IntegrityError, InternalError, OperationalError,
     Model as PWModel,
     ModelRaw,
     Query,
@@ -22,6 +22,7 @@ from peewee import (
     __exception_wrapper__,
     fn,
     logger,
+    prefetch_add_subquery,
     sort_models,
 )
 
@@ -68,6 +69,7 @@ class Manager:
 
     @cached_property
     def Model(self) -> t.Type[AIOModel]:
+        """Generate an async model class for the manager."""
         Meta = type('Meta', (), {'manager': self})
         return type('Model', (AIOModel,), {'Meta': Meta})
 
@@ -75,17 +77,20 @@ class Manager:
     # --------------------------
 
     async def connect(self):
+        """Connect to the database (initialize the database's pool)"""
         await self.aio_database.connect()
         return self
 
     __aenter__ = connect
 
     async def disconnect(self, *args):
+        """Disconnect from the database (close a pool, connections)"""
         await self.aio_database.disconnect()
 
     __aexit__ = disconnect
 
     async def execute(self, query: t.Any, *params, **opts) -> t.Any:
+        """Execute a given query with the given params."""
         with process(query, params, True) as (sql, params, _):
             res = await self.aio_database.execute(sql, *params, **opts)
             if res is None:
@@ -97,33 +102,40 @@ class Manager:
             return res[0]
 
     async def fetchval(self, sql: t.Any, *params, **opts) -> t.Any:
+        """Execute the given SQL and fetch a value."""
         with process(sql, params, True) as (sql, params, _):
             return await self.aio_database.fetchval(sql, *params, **opts)
 
     async def fetchall(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
+        """Execute the given SQL and fetch all."""
         with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchall(sql, *params, **opts)
             return constructor(res)
 
     async def fetchmany(self, size: int, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
+        """Execute the given SQL and fetch many of the size."""
         with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchmany(size, sql, *params, **opts)
             return constructor(res)
 
     async def fetchone(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
+        """Execute the given SQL and fetch one."""
         with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchone(sql, *params, **opts)
             return constructor(res)
 
     async def iterate(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.AsyncIterator:
+        """Execute the given SQL and iterate through results."""
         with process(sql, params, raw) as (sql, params, constructor):
             async for res in self.aio_database.iterate(sql, *params, **opts):
                 yield constructor(res)
 
-    def connection(self, *params, **opts):
+    def connection(self, *params, **opts) -> ConnectionContext:
+        """Initialize a connection to the database.."""
         return self.aio_database.connection(*params, **opts)
 
-    def transaction(self, *params, **opts):
+    def transaction(self, *params, **opts) -> TransactionContext:
+        """Initialize a transaction to the database.."""
         return self.aio_database.transaction(*params, **opts)
 
     # Working with Peewee
@@ -131,6 +143,7 @@ class Manager:
 
     @contextmanager
     def allow_sync(self):
+        """Enable sync operations for Peewee ORM."""
         db = self.pw_database
         db.enabled = True
 
@@ -146,12 +159,14 @@ class Manager:
     # -------------
 
     def run(self, query: Query, *, iterate: bool = False) -> t.Any:
+        """Run the given Peewee ORM Query."""
         if isinstance(query, (Select, ModelRaw)):
             return RunWrapper(self, query)
 
         return self.execute(query)
 
     async def count(self, query: Query, clear_limit: bool = False):
+        """Execute the given Peewee ORM Query and get a count of rows."""
         query = query.order_by()
         if clear_limit:
             query._limit = query._offset = None
@@ -168,10 +183,40 @@ class Manager:
         query._database = self.pw_database
         return await self.fetchval(query)
 
+    async def prefetch(self, sq: BaseQuery, *subqueries):
+        """Prefetch results for the given query and subqueries.."""
+        if not subqueries:
+            return await self.run(sq)
+
+        fixed_queries = prefetch_add_subquery(sq, subqueries)
+        deps: t.Dict[PWModel, t.Dict] = {}
+        rel_map: t.Dict[PWModel, t.List] = {}
+        for pq in reversed(fixed_queries):
+            query_model = pq.model
+            if pq.fields:
+                for rel_model in pq.rel_models:
+                    rel_map.setdefault(rel_model, [])
+                    rel_map[rel_model].append(pq)
+
+            deps.setdefault(query_model, {})
+            id_map = deps[query_model]
+            has_relations = bool(rel_map.get(query_model))
+            result = await self.run(pq.query)
+            for instance in result:
+                if pq.fields:
+                    pq.store_instance(instance, id_map)
+                if has_relations:
+                    for rel in rel_map[query_model]:
+                        rel.populate_instance(instance, deps[rel.model])
+
+        return result
+
     # Model methods
     # -------------
 
     async def create_tables(self, *Models: t.Type[PWModel], safe=True, **opts):
+        """Create tables for the given models or all registered with the manager."""
+        Models = Models or tuple(self.models)
         for Model in sort_models(Models):
             schema: SchemaManager = Model._schema
 
@@ -189,9 +234,15 @@ class Manager:
 
             # Create indexes
             for query in schema._create_indexes(safe=safe):
-                await self.execute(query)
+                try:
+                    await self.execute(query)
+                except OperationalError:
+                    if not safe:
+                        raise
 
     async def drop_tables(self, *Models: t.Type[PWModel], **opts):
+        """Drop tables for the given models or all registered with the manager."""
+        Models = Models or tuple(self.models)
         for Model in reversed(sort_models(Models)):
             schema: SchemaManager = Model._schema
             ctx = schema._drop_table(**opts)
@@ -303,6 +354,7 @@ class Manager:
 DEFAULT_CONSTRUCTOR = lambda r: r  # noqa
 EXCEPTIONS['UniqueViolationError'] = IntegrityError
 EXCEPTIONS['NotNullViolationError'] = InternalError
+EXCEPTIONS['DuplicateTableError'] = OperationalError
 
 
 @contextmanager

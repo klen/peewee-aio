@@ -2,7 +2,7 @@ import peewee
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 async def TestModel(manager):
 
     class TestModel(manager.Model):
@@ -90,6 +90,31 @@ async def test_get(TestModel, schema):
     inst = await TestModel.get_by_id(source.id)
     assert inst
     assert inst == source
+
+
+async def test_prefetch(manager):
+    class BaseModel(manager.Model):
+        data = peewee.CharField()
+
+    class RelModel(manager.Model):
+        data = peewee.CharField()
+        base = peewee.ForeignKeyField(BaseModel)
+
+    await BaseModel.create_table(safe=True)
+    await RelModel.create_table(safe=True)
+
+    source = await BaseModel.create(data='data')
+    res = await BaseModel.select().prefetch()
+    assert res
+
+    await RelModel.insert_many([dict(base=source, data=f"{n}") for n in range(3)])
+    res = await BaseModel.select().prefetch(RelModel)
+    assert res
+    assert res[0].relmodel_set
+    assert len(res[0].relmodel_set) == 3
+
+    await RelModel.drop_table(safe=True)
+    await BaseModel.drop_table(safe=True)
 
 
 async def test_save(TestModel, schema):
