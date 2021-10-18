@@ -1,0 +1,5 @@
+aio-databases[aiopg,aiomysql,aiosqlite,asyncpg,trio_mysql,triopg]
+pytest
+pytest-aio[trio] >= 1.3.2
+pytest-mypy
+trio_asyncio

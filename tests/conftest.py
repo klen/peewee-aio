@@ -1,3 +1,4 @@
+import sys
 import pytest
 
 from .models import *  # noqa
@@ -37,11 +38,14 @@ def backend(request):
 # Supported drivers/databases
 @pytest.fixture(scope='session')
 def db_url(backend, aiolib):
+    if backend == 'aiomysql' and sys.version_info >= (3, 10):
+        return pytest.skip('aiomysql doesnt support python 3.10')
+
     if aiolib[0] == 'trio' and backend not in {'trio-mysql', 'triopg'}:
-        return pytest.skip()
+        return pytest.skip('invalid backend')
 
     if aiolib[0] == 'asyncio' and backend not in {'aiosqlite', 'aiomysql', 'aiopg', 'asyncpg'}:
-        return pytest.skip()
+        return pytest.skip('invalid backend')
 
     return CONNECTIONS[backend]
 
