@@ -63,6 +63,8 @@ def test_databases():
 
 
 async def test_manager(manager, User, transaction):
+    assert manager.current_conn
+
     # Execute
     await manager.execute(User.insert(name='Mickey'))
     await manager.execute(User.insert(name='John'))

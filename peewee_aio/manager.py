@@ -76,6 +76,10 @@ class Manager:
     # Working with AIO-Databases
     # --------------------------
 
+    @property
+    def current_conn(self):
+        return self.aio_database.current_conn
+
     async def connect(self):
         """Connect to the database (initialize the database's pool)"""
         await self.aio_database.connect()
