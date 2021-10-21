@@ -1,7 +1,7 @@
 """Support Peewee ORM with asyncio."""
 
 
-__version__ = "0.10.1"
+__version__ = "0.11.0"
 
 
 from .model import AIOModel as Model  # noqa
