@@ -67,13 +67,13 @@ async def test_select_fk(manager, Role, User, UserToRole, transaction):
 
     [obj] = await manager.run(query)
     assert obj
-    assert obj.role
-    assert obj.user
+    assert obj.role.id
+    assert obj.user.id
 
     async for obj in manager.run(query):
         assert obj
-        assert obj.role
-        assert obj.user
+        assert obj.role.id
+        assert obj.user.id
 
 
 async def test_select_tuples(manager, User, transaction):

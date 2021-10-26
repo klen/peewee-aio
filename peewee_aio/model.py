@@ -52,10 +52,9 @@ class AIOModelBase(ModelBase):
             meta.database = meta.manager.pw_database
 
         # Patch foreign keys
-        for value in meta.fields.values():
-            if isinstance(value, ForeignKeyField):
-                setattr(
-                    value.model, value.name, AIOForeignKeyAccessor(value.model, value, value.name))
+        for field in meta.fields.values():
+            if isinstance(field, ForeignKeyField):
+                setattr(cls, field.name, AIOForeignKeyAccessor(field.model, field, field.name))
 
         return cls
 
@@ -172,6 +171,16 @@ class ModelSelect(AIOQuery, ModelSelect_):
 
     def __aiter__(self):
         return self.manager.run(self).__aiter__()
+
+    def __getitem__(self, value):
+        limit, offset = 1, value
+        if isinstance(value, slice):
+            limit, offset = value.stop - value.start, value.start
+
+        qs = self.limit(limit).offset(offset)
+        if limit == 1:
+            return qs.get()
+        return qs
 
     @database_required
     async def scalar(self, database, as_tuple=False):
