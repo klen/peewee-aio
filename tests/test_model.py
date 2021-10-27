@@ -120,6 +120,14 @@ async def test_insert(TestModel, schema):
     assert await TestModel.select().count() == 9
 
 
+async def test_insert_many(TestModel, schema):
+    with pytest.raises(peewee.Insert.DefaultValuesException):
+        await TestModel.insert_many([])
+
+    await TestModel.insert_many([dict(data=f"t{n}") for n in range(3)])
+    assert await TestModel.select().count() == 3
+
+
 async def test_update(TestModel, schema):
     inst = await TestModel.create(data='data')
 
