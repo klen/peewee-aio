@@ -105,6 +105,17 @@ class AIOModel(Model, metaclass=AIOModelBase):
         inst = cls(**kwargs)
         return await inst.save(force_insert=True)
 
+    @classmethod
+    async def bulk_create(cls, model_list: t.List[Model], batch_size: int = None):
+        # TODO: To implement
+        raise NotImplementedError('AIOModel doesnt support `bulk_create`')
+
+    @classmethod
+    async def bulk_update(
+            cls, model_list: t.List[Model], fields: t.Sequence, batch_size: int = None):
+        # TODO: To implement
+        raise NotImplementedError('AIOModel doesnt support `bulk_update`')
+
     # Queryset methods
     # ----------------
 
