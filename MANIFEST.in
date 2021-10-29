@@ -1,1 +1,3 @@
+include CHANGELOG.md LICENSE README.md
+
 recursive-include requirements *.txt
