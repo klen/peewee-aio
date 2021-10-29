@@ -124,8 +124,13 @@ async def test_insert_many(TestModel, schema):
     with pytest.raises(peewee.Insert.DefaultValuesException):
         await TestModel.insert_many([])
 
-    await TestModel.insert_many([dict(data=f"t{n}") for n in range(3)])
+    qs = TestModel.insert_many([dict(data=f"t{n}") for n in range(3)])
+
+    await qs
     assert await TestModel.select().count() == 3
+
+    await qs.on_conflict_ignore()
+    assert await TestModel.select().count() == 6
 
 
 async def test_update(TestModel, schema):

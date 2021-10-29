@@ -121,12 +121,12 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return ModelInsert(cls, cls._normalize_data(__data, insert))
 
     @classmethod
-    async def insert_many(cls, rows: t.Sequence, fields=None) -> t.List[Model]:
+    def insert_many(cls, rows: t.Sequence, fields=None) -> ModelInsert:
         rows = [row.__data__ if isinstance(row, Model) else row for row in rows]
         if not rows:
             raise ModelInsert.DefaultValuesException('Error: no rows to insert.')
 
-        return await ModelInsert(cls, insert=rows, columns=fields)
+        return ModelInsert(cls, insert=rows, columns=fields)
 
     @classmethod
     def insert_from(cls, query, fields) -> ModelInsert:
