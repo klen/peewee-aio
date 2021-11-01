@@ -164,7 +164,7 @@ class Manager:
 
     def run(self, query: Query, *, iterate: bool = False) -> t.Any:
         """Run the given Peewee ORM Query."""
-        if isinstance(query, (Select, ModelRaw)):
+        if isinstance(query, (Select, ModelRaw)) or query._returning:
             return RunWrapper(self, query)
 
         return self.execute(query)

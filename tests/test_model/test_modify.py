@@ -65,6 +65,20 @@ async def test_insert_many(TestModel, schema):
     assert await TestModel.select().count() == 6
 
 
+async def test_insert_many_returning(TestModel, schema, manager):
+    qs = TestModel.insert_many([dict(data=f"t{n}") for n in range(1, 4)])
+    qs = qs.returning(TestModel)
+    if manager.aio_database.backend.db_type not in {'postgresql'}:
+        return pytest.skip('only postgres is supported')
+
+    res = await qs
+    assert res
+    for idx, tm in enumerate(res, 1):
+        assert isinstance(tm, TestModel)
+        assert tm.id == idx
+        assert tm.data == f"t{idx}"
+
+
 async def test_update(TestModel, schema):
     inst = await TestModel.create(data='data')
 
