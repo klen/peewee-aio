@@ -3,7 +3,7 @@ import peewee as pw
 from playhouse import db_url
 
 
-class Database:
+class Database(pw.Database):
 
     enabled: bool = False
 
@@ -36,7 +36,7 @@ _backend_to_db = {
 _backend_to_db['postgresql'] = _backend_to_db['postgres']
 
 
-def get_db(db: aiodb.Database) -> pw.Database:
+def get_db(db: aiodb.Database) -> Database:
     url = db.backend.url
     if url.path and not url.path.startswith('/'):
         url = url._replace(path=f"/{url.path}")

@@ -10,7 +10,6 @@ from aio_databases.backends import ABCConnection
 from peewee import (
     BaseQuery,
     Context,
-    Database as PWDatabase,
     EXCEPTIONS,
     Insert,
     IntegrityError, InternalError, OperationalError,
@@ -27,7 +26,7 @@ from peewee import (
     sort_models,
 )
 
-from .databases import get_db
+from .databases import get_db, Database as PWDatabase
 from .model import AIOModel
 
 
@@ -159,7 +158,7 @@ class Manager:
 
     def run(self, query: Query) -> t.Any:
         """Run the given Peewee ORM Query."""
-        if isinstance(query, (Select, ModelRaw)) or query._returning:
+        if isinstance(query, (Select, ModelRaw)) or getattr(query, '_returning', None):
             return RunWrapper(self, query)
 
         return self.execute(query)
@@ -295,21 +294,22 @@ class Manager:
                    force_insert: bool = False, only: t.Sequence = None) -> TMODEL:
         field_dict = inst.__data__.copy()
         pk_field = pk_value = None
-        if inst._meta.primary_key is not False:
-            pk_field = inst._meta.primary_key
+        meta = inst._meta  # type: ignore
+        if meta.primary_key is not False:
+            pk_field = meta.primary_key
             pk_value = inst._pk
 
         if only is not None:
             field_dict = inst._prune_fields(field_dict, only)
 
-        elif inst._meta.only_save_dirty and not force_insert:
+        elif meta.only_save_dirty and not force_insert:
             field_dict = inst._prune_fields(field_dict, inst.dirty_fields)
             if not field_dict:
                 inst._dirty.clear()
                 return inst
 
         inst._populate_unsaved_relations(field_dict)
-        if inst._meta.auto_increment and pk_field and pk_value is None:
+        if meta.auto_increment and pk_field and pk_value is None:
             field_dict.pop(pk_field.name, None)
 
         if pk_field is None:
@@ -318,7 +318,7 @@ class Manager:
         else:
             # Update
             if pk_value is not None and not force_insert:
-                if inst._meta.composite_key:
+                if meta.composite_key:
                     for pk_part_name in pk_field.field_names:
                         field_dict.pop(pk_part_name, None)
                 else:
@@ -336,7 +336,7 @@ class Manager:
                 else:
                     pk = await self.execute(query)
 
-                if pk is not None and (inst._meta.auto_increment or pk_value is None):
+                if pk is not None and (meta.auto_increment or pk_value is None):
                     inst._pk = pk
 
         inst._dirty.clear()
