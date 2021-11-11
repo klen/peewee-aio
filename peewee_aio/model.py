@@ -5,7 +5,6 @@ from __future__ import annotations
 import typing as t
 
 from peewee import (
-    database_required,
     Model, ModelBase, SQL,
     ModelDelete as ModelDelete_,
     ModelInsert as ModelInsert_,
@@ -48,8 +47,8 @@ class AIOModelBase(ModelBase):
     def __new__(cls, name, bases, attrs):
         cls = super(AIOModelBase, cls).__new__(cls, name, bases, attrs)
         meta = cls._meta
-        if getattr(meta, 'manager', None) and not meta.database:
-            meta.database = meta.manager.pw_database
+        if getattr(cls, '_manager', None) and not meta.database:
+            meta.database = cls._manager.pw_database
 
         # Patch foreign keys
         for field in meta.fields.values():
@@ -61,40 +60,42 @@ class AIOModelBase(ModelBase):
 
 class AIOModel(Model, metaclass=AIOModelBase):
 
+    _manager: 'Manager'
+
     # Class methods
     # -------------
 
     @classmethod
     async def create_table(cls, safe=True, **kwargs):
-        return await cls._meta.manager.create_tables(cls, safe=safe, **kwargs)
+        return await cls._manager.create_tables(cls, safe=safe, **kwargs)
 
     @classmethod
     async def drop_table(cls, safe=True, **kwargs):
-        return await cls._meta.manager.drop_tables(cls, safe=safe, **kwargs)
+        return await cls._manager.drop_tables(cls, safe=safe, **kwargs)
 
     @classmethod
     async def get_or_none(cls, *args, **kwargs) -> t.Optional[AIOModel]:
-        return await cls._meta.manager.get_or_none(cls, *args, **kwargs)
+        return await cls._manager.get_or_none(cls, *args, **kwargs)
 
     @classmethod
     async def get(cls, *args, **kwargs) -> AIOModel:
-        return await cls._meta.manager.get(cls, *args, **kwargs)
+        return await cls._manager.get(cls, *args, **kwargs)
 
     @classmethod
     async def get_by_id(cls, pk) -> AIOModel:
-        return await cls._meta.manager.get_by_id(cls, pk)
+        return await cls._manager.get_by_id(cls, pk)
 
     @classmethod
     async def set_by_id(cls, key, value):
-        return await cls._meta.manager.set_by_id(cls, key, value)
+        return await cls._manager.set_by_id(cls, key, value)
 
     @classmethod
     async def delete_by_id(cls, pk):
-        return await cls._meta.manager.delete_by_id(cls, pk)
+        return await cls._manager.delete_by_id(cls, pk)
 
     @classmethod
     async def get_or_create(cls, defaults: t.Dict = None, **kwargs) -> t.Tuple[AIOModel, bool]:
-        async with cls._meta.manager.aio_database.transaction():
+        async with cls._manager.aio_database.transaction():
             try:
                 return (await cls.get(**kwargs), False)
             except cls.DoesNotExist:
@@ -106,13 +107,12 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await inst.save(force_insert=True)
 
     @classmethod
-    async def bulk_create(cls, model_list: t.List[Model], batch_size: int = None):
+    async def bulk_create(cls, **_):
         # TODO: To implement
         raise NotImplementedError('AIOModel doesnt support `bulk_create`')
 
     @classmethod
-    async def bulk_update(
-            cls, model_list: t.List[Model], fields: t.Sequence, batch_size: int = None):
+    async def bulk_update(cls, **_):
         # TODO: To implement
         raise NotImplementedError('AIOModel doesnt support `bulk_update`')
 
@@ -156,10 +156,10 @@ class AIOModel(Model, metaclass=AIOModelBase):
     # ----------------
 
     async def save(self, **kwargs):
-        return await self._meta.manager.save(self, **kwargs)
+        return await self._manager.save(self, **kwargs)
 
     async def delete_instance(self, **kwargs):
-        return await self._meta.manager.delete_instance(self, **kwargs)
+        return await self._manager.delete_instance(self, **kwargs)
 
     # Support await syntax
     # --------------------
@@ -173,12 +173,14 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
 class AIOQuery:
 
+    model: AIOModel
+
     def __init__(self, *args, **kwargs):
         super(AIOQuery, self).__init__(*args, **kwargs)
-        self.manager = self.model._meta.manager
+        self.manager = self.model._manager
 
     def __await__(self):
-        return self.manager.run(self).__await__()
+        return self.manager.run(self).__await__()  # type: ignore
 
 
 class ModelSelect(AIOQuery, ModelSelect_):
@@ -191,28 +193,31 @@ class ModelSelect(AIOQuery, ModelSelect_):
         if isinstance(value, slice):
             limit, offset = value.stop - value.start, value.start
 
-        qs = self.limit(limit).offset(offset)
+        qs = self.limit(limit).offset(offset)  # type: ignore
         if limit == 1:
             return qs.get()
         return qs
 
-    @database_required
-    async def scalar(self, database, as_tuple=False):
-        row = await self.tuples().peek(database)
+    async def scalar(self, as_tuple=False):
+        row = await self.tuples().peek()
         return row[0] if row and not as_tuple else row
 
-    @database_required
-    async def exists(self, database):
-        clone = self.columns(SQL('1'))
+    async def exists(self):
+        clone: ModelSelect = self.columns(SQL('1'))  # type: ignore
         clone._limit = 1
         clone._offset = None
         return bool(await clone.scalar())
 
-    @database_required
-    async def peek(self, database, n=1):
+    async def peek(self, n=1):
         if n == 1:
             return await self.manager.fetchone(self)
         return await self.manager.fetchmany(n, self)
+
+    def first(self, n=1):
+        if self._limit != n:
+            self._limit = n
+            self._cursor_wrapper = None
+        return self.peek(n=n)
 
     async def count(self):
         return await self.manager.count(self)
@@ -238,3 +243,6 @@ class ModelDelete(AIOQuery, ModelDelete_):
 
 class ModelRaw(AIOQuery, ModelRaw_):
     pass
+
+
+from .manager import Manager

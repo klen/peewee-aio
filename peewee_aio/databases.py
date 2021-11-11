@@ -12,7 +12,7 @@ class Database:
             raise RuntimeError(
                 'Sync operations are not available. Use `manager.allow_sync` to enable.')
 
-        return super(Database, self).execute(*args, **kwargs)
+        return super(Database, self).execute(*args, **kwargs)  # type: ignore
 
 
 class SqliteDatabase(Database, pw.SqliteDatabase):

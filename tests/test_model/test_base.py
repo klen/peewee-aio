@@ -9,15 +9,13 @@ async def test_base():
 
 async def test_model(TestModel, manager):
     assert TestModel
-    assert TestModel._meta.manager is manager
+    assert TestModel._manager is manager
     assert TestModel._meta.database is manager.pw_database
 
     class ChildModel(TestModel):
         is_active = peewee.BooleanField(default=True)
 
     return ChildModel
-    return ChildModel._meta.manager is manager
-    return ChildModel._meta.database is manager.pw_database
 
 
 async def test_backref(TestModel, manager, schema):

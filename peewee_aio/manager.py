@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from weakref import WeakSet
 
 from aio_databases.database import Database, ConnectionContext, TransactionContext
+from aio_databases.backends import ABCConnection
 from peewee import (
     BaseQuery,
     Context,
@@ -29,14 +30,9 @@ from peewee import (
 from .databases import get_db
 from .model import AIOModel
 
-# py37
-try:
-    from functools import cached_property  # type: ignore
-except ImportError:
-    from cached_property import cached_property  # type: ignore
-
 
 TMODEL = t.TypeVar('TMODEL', bound=PWModel)
+TMANAGER = t.TypeVar('TMANAGER', bound='Manager')
 
 
 class Manager:
@@ -56,38 +52,37 @@ class Manager:
         self.aio_database = database
         self.pw_database = get_db(database)
 
-    def register(self, Model: t.Type[PWModel]):
+        class Model(AIOModel):
+            _manager = self
+
+        self.Model = Model
+
+    def register(self, Model: t.Type[TMODEL]) -> t.Type[TMODEL]:
         """Register a model with the manager."""
-        Model._meta.manager = self
+        Model._manager = self  # type: ignore
         Model._meta.database = self.pw_database
         self.models.add(Model)
         return Model
 
-    def __iter__(self):
+    def __iter__(self) -> t.Iterator:
         """Iterate through registered models."""
         return iter(sort_models(self.models))
-
-    @cached_property
-    def Model(self) -> t.Type[AIOModel]:
-        """Generate an async model class for the manager."""
-        Meta = type('Meta', (), {'manager': self})
-        return type('Model', (AIOModel,), {'Meta': Meta})
 
     # Working with AIO-Databases
     # --------------------------
 
     @property
-    def current_conn(self):
+    def current_conn(self) -> t.Optional[ABCConnection]:
         return self.aio_database.current_conn
 
-    async def connect(self):
+    async def connect(self: TMANAGER) -> TMANAGER:
         """Connect to the database (initialize the database's pool)"""
         await self.aio_database.connect()
         return self
 
     __aenter__ = connect
 
-    async def disconnect(self, *args):
+    async def disconnect(self, *_):
         """Disconnect from the database (close a pool, connections)"""
         await self.aio_database.disconnect()
 
@@ -162,16 +157,16 @@ class Manager:
     # Query methods
     # -------------
 
-    def run(self, query: Query, *, iterate: bool = False) -> t.Any:
+    def run(self, query: Query) -> t.Any:
         """Run the given Peewee ORM Query."""
         if isinstance(query, (Select, ModelRaw)) or query._returning:
             return RunWrapper(self, query)
 
         return self.execute(query)
 
-    async def count(self, query: Query, clear_limit: bool = False):
+    async def count(self, query: Select, clear_limit: bool = False) -> t.Any:
         """Execute the given Peewee ORM Query and get a count of rows."""
-        query = query.order_by()
+        query = query.order_by()  # type: ignore
         if clear_limit:
             query._limit = query._offset = None
 
@@ -187,11 +182,12 @@ class Manager:
         query._database = self.pw_database
         return await self.fetchval(query)
 
-    async def prefetch(self, sq: BaseQuery, *subqueries):
+    async def prefetch(self, sq: Query, *subqueries) -> t.Any:
         """Prefetch results for the given query and subqueries.."""
         if not subqueries:
             return await self.run(sq)
 
+        result = None
         fixed_queries = prefetch_add_subquery(sq, subqueries)
         deps: t.Dict[PWModel, t.Dict] = {}
         rel_map: t.Dict[PWModel, t.List] = {}
@@ -254,8 +250,12 @@ class Manager:
 
     async def get_or_none(self, Model: t.Type[TMODEL], *args, **kwargs) -> t.Optional[TMODEL]:
         query = Model.select()
-        query = query.where(*args) if args else query
-        query = query.filter(**kwargs) if kwargs else query
+        if kwargs:
+            query = query.filter(**kwargs)
+
+        if args:
+            query = query.where(*args)
+
         return await self.fetchone(query)
 
     async def get(self, Model: t.Type[TMODEL], *args, **kwargs) -> TMODEL:
@@ -384,10 +384,9 @@ class RunWrapper:
     def __init__(self, manager: Manager, query: BaseQuery):
         self.query = query
         self.manager = manager
-        self.gen: t.Optional[t.AsyncIterator] = None
+        self.gen = self.manager.iterate(self.query)
 
     def __aiter__(self) -> RunWrapper:
-        self.gen = self.manager.iterate(self.query)
         return self
 
     def __await__(self):
@@ -410,7 +409,7 @@ class Constructor:
 
     __slots__ = 'query', 'processor'
 
-    def __init__(self, query: Query):
+    def __init__(self, query: BaseQuery):
         self.query = query
         self.processor: t.Optional[t.Callable] = None
 
