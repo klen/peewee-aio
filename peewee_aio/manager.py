@@ -1,37 +1,25 @@
 from __future__ import annotations
 
 import typing as t
-
 from contextlib import contextmanager
 from weakref import WeakSet
 
-from aio_databases.database import Database, ConnectionContext, TransactionContext
 from aio_databases.backends import ABCConnection
-from peewee import (
-    BaseQuery,
-    Context,
-    EXCEPTIONS,
-    Insert,
-    IntegrityError, InternalError, OperationalError,
-    Model as PWModel,
-    ModelRaw,
-    Query,
-    SQL,
-    SchemaManager,
-    Select,
-    __exception_wrapper__,
-    fn,
-    logger,
-    prefetch_add_subquery,
-    sort_models,
-)
+from aio_databases.database import (ConnectionContext, Database,
+                                    TransactionContext)
+from peewee import (EXCEPTIONS, SQL, BaseQuery, Context, Insert,
+                    IntegrityError, InternalError)
+from peewee import Model as PWModel
+from peewee import (ModelRaw, OperationalError, Query, SchemaManager, Select,
+                    __exception_wrapper__, fn, logger, prefetch_add_subquery,
+                    sort_models)
 
-from .databases import get_db, Database as PWDatabase
+from .databases import Database as PWDatabase
+from .databases import get_db
 from .model import AIOModel
 
-
-TMODEL = t.TypeVar('TMODEL', bound=PWModel)
-TMANAGER = t.TypeVar('TMANAGER', bound='Manager')
+TMODEL = t.TypeVar("TMODEL", bound=PWModel)
+TMANAGER = t.TypeVar("TMANAGER", bound="Manager")
 
 
 class Manager:
@@ -39,13 +27,19 @@ class Manager:
 
     aio_database: Database
     pw_database: PWDatabase
-    models: 'WeakSet[t.Type[PWModel]]'
+    models: "WeakSet[t.Type[PWModel]]"
 
-    def __init__(self, database: t.Union[Database, str], convert_params=True, **backend_options):
+    def __init__(
+        self, database: t.Union[Database, str], convert_params=True, **backend_options
+    ):
         """Initialize dialect and database."""
         if not isinstance(database, Database):
             database = Database(
-                database, logger=logger, convert_params=convert_params, **backend_options)
+                database,
+                logger=logger,
+                convert_params=convert_params,
+                **backend_options
+            )
 
         self.models = WeakSet()
         self.aio_database = database
@@ -110,7 +104,9 @@ class Manager:
             res = await self.aio_database.fetchall(sql, *params, **opts)
             return constructor(res)
 
-    async def fetchmany(self, size: int, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
+    async def fetchmany(
+        self, size: int, sql: t.Any, *params, raw: bool = False, **opts
+    ) -> t.Any:
         """Execute the given SQL and fetch many of the size."""
         with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchmany(size, sql, *params, **opts)
@@ -122,7 +118,9 @@ class Manager:
             res = await self.aio_database.fetchone(sql, *params, **opts)
             return constructor(res)
 
-    async def iterate(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.AsyncIterator:
+    async def iterate(
+        self, sql: t.Any, *params, raw: bool = False, **opts
+    ) -> t.AsyncIterator:
         """Execute the given SQL and iterate through results."""
         with process(sql, params, raw) as (sql, params, constructor):
             async for res in self.aio_database.iterate(sql, *params, **opts):
@@ -158,7 +156,7 @@ class Manager:
 
     def run(self, query: Query) -> t.Any:
         """Run the given Peewee ORM Query."""
-        if isinstance(query, (Select, ModelRaw)) or getattr(query, '_returning', None):
+        if isinstance(query, (Select, ModelRaw)) or getattr(query, "_returning", None):
             return RunWrapper(self, query)
 
         return self.execute(query)
@@ -170,14 +168,18 @@ class Manager:
             query._limit = query._offset = None
 
         try:
-            if query._having is None and query._group_by is None and \
-               query._windows is None and query._distinct is None and \
-               query._simple_distinct is not True:
-                query = query.select(SQL('1'))
+            if (
+                query._having is None
+                and query._group_by is None
+                and query._windows is None
+                and query._distinct is None
+                and query._simple_distinct is not True
+            ):
+                query = query.select(SQL("1"))
         except AttributeError:
             pass
 
-        query = Select([query], [fn.COUNT(SQL('1'))])
+        query = Select([query], [fn.COUNT(SQL("1"))])
         query._database = self.pw_database
         return await self.fetchval(query)
 
@@ -247,7 +249,9 @@ class Manager:
             ctx = schema._drop_table(**opts)
             await self.execute(ctx)
 
-    async def get_or_none(self, Model: t.Type[TMODEL], *args, **kwargs) -> t.Optional[TMODEL]:
+    async def get_or_none(
+        self, Model: t.Type[TMODEL], *args, **kwargs
+    ) -> t.Optional[TMODEL]:
         query = Model.select()
         if kwargs:
             query = query.filter(**kwargs)
@@ -267,20 +271,27 @@ class Manager:
         return await self.get(Model, Model._meta.primary_key == pk)
 
     async def set_by_id(self, Model: t.Type[PWModel], key, value) -> t.Any:
-        qs = Model.insert(value) if key is None else \
-            Model.update(value).where(Model._meta.primary_key == key)
+        qs = (
+            Model.insert(value)
+            if key is None
+            else Model.update(value).where(Model._meta.primary_key == key)
+        )
         return await self.execute(qs)
 
     async def delete_by_id(self, Model: t.Type[PWModel], pk):
         return await self.execute(Model.delete().where(Model._meta.primary_key == pk))
 
-    async def get_or_create(self, Model: t.Type[TMODEL],
-                            defaults: t.Dict = None, **kwargs) -> t.Tuple[TMODEL, bool]:
+    async def get_or_create(
+        self, Model: t.Type[TMODEL], defaults: t.Dict = None, **kwargs
+    ) -> t.Tuple[TMODEL, bool]:
         async with self.aio_database.transaction():
             try:
                 return (await self.get(Model, **kwargs), False)
             except Model.DoesNotExist:
-                return (await self.create(Model, **dict(defaults or {}, **kwargs)), True)
+                return (
+                    await self.create(Model, **dict(defaults or {}, **kwargs)),
+                    True,
+                )
 
     async def create(self, Model: t.Type[TMODEL], **values) -> TMODEL:
         inst = Model(**values)
@@ -290,8 +301,13 @@ class Manager:
     # Instance methods
     # ----------------
 
-    async def save(self, inst: TMODEL,  # noqa
-                   force_insert: bool = False, only: t.Sequence = None) -> TMODEL:
+    async def save(
+        self,
+        inst: TMODEL,  # noqa
+        force_insert: bool = False,
+        only: t.Sequence = None,
+        on_conflict_ignore: bool = False,
+    ) -> TMODEL:
         field_dict = inst.__data__.copy()
         pk_field = pk_value = None
         meta = inst._meta  # type: ignore
@@ -313,7 +329,7 @@ class Manager:
             field_dict.pop(pk_field.name, None)
 
         if pk_field is None:
-            await self.execute(inst.insert(**field_dict))
+            await self.execute(inst.insert(**field_dict).on_confict_ignore(on_conflict_ignore))
 
         else:
             # Update
@@ -324,13 +340,13 @@ class Manager:
                 else:
                     field_dict.pop(pk_field.name, None)
                 if not field_dict:
-                    raise ValueError('no data to save!')
+                    raise ValueError("no data to save!")
 
                 await self.execute(inst.update(**field_dict).where(inst._pk_expr()))
 
             # Insert
             else:
-                query = inst.insert(**field_dict)
+                query = inst.insert(**field_dict).on_conflict_ignore(on_conflict_ignore)
                 if query._returning:
                     pk = await self.fetchval(query)
                 else:
@@ -343,7 +359,8 @@ class Manager:
         return inst
 
     async def delete_instance(
-            self, inst: PWModel, recursive: bool = True, delete_nullable: bool = False):
+        self, inst: PWModel, recursive: bool = True, delete_nullable: bool = False
+    ):
         if recursive:
             for query, fk in reversed(list(inst.dependencies(delete_nullable))):
                 if fk.null and not delete_nullable:
@@ -356,9 +373,9 @@ class Manager:
 
 
 DEFAULT_CONSTRUCTOR = lambda r: r  # noqa
-EXCEPTIONS['UniqueViolationError'] = IntegrityError
-EXCEPTIONS['NotNullViolationError'] = InternalError
-EXCEPTIONS['DuplicateTableError'] = OperationalError
+EXCEPTIONS["UniqueViolationError"] = IntegrityError
+EXCEPTIONS["NotNullViolationError"] = InternalError
+EXCEPTIONS["DuplicateTableError"] = OperationalError
 
 
 @contextmanager
@@ -379,7 +396,7 @@ def process(query: t.Any, params: t.Sequence, raw: bool) -> t.Generator:
 
 class RunWrapper:
 
-    __slots__ = 'manager', 'query', 'gen'
+    __slots__ = "manager", "query", "gen"
 
     def __init__(self, manager: Manager, query: BaseQuery):
         self.query = query
@@ -398,7 +415,7 @@ class RunWrapper:
 
 class FakeCursor:
 
-    __slots__ = 'description',
+    __slots__ = ("description",)
 
     def __init__(self, res: t.Mapping):
         self.description = [[k] for k in res.keys()]
@@ -407,14 +424,15 @@ class FakeCursor:
 class Constructor:
     """Process results."""
 
-    __slots__ = 'query', 'processor'
+    __slots__ = "query", "processor"
 
     def __init__(self, query: BaseQuery):
         self.query = query
         self.processor: t.Optional[t.Callable] = None
 
-    def __call__(self, res: t.Union[
-            t.Mapping, t.Sequence[t.Mapping]]) -> t.Union[t.Any, t.Sequence[t.Any]]:
+    def __call__(
+        self, res: t.Union[t.Mapping, t.Sequence[t.Mapping]]
+    ) -> t.Union[t.Any, t.Sequence[t.Any]]:
         """Process rows."""
         if not res:  # None or empty sequence
             return res

@@ -4,28 +4,24 @@ from __future__ import annotations
 
 import typing as t
 
-from peewee import (
-    Model, ModelBase, SQL,
-    ModelDelete as ModelDelete_,
-    ModelInsert as ModelInsert_,
-    ModelRaw as ModelRaw_,
-    ModelSelect as ModelSelect_,
-    ModelUpdate as ModelUpdate_,
-    ForeignKeyAccessor,
-    ForeignKeyField
-)
+from peewee import SQL, ForeignKeyAccessor, ForeignKeyField, Model, ModelBase
+from peewee import ModelDelete as ModelDelete_
+from peewee import ModelInsert as ModelInsert_
+from peewee import ModelRaw as ModelRaw_
+from peewee import ModelSelect as ModelSelect_
+from peewee import ModelUpdate as ModelUpdate_
 
 
 class AIOForeignKeyAccessor(ForeignKeyAccessor):
-
-    def get_rel_instance(self, instance: Model) -> t.Union[
-            Model, None, t.Coroutine[t.Any, t.Any, Model]]:
+    def get_rel_instance(
+        self, instance: Model
+    ) -> t.Union[Model, None, t.Coroutine[t.Any, t.Any, Model]]:
         value = instance.__data__.get(self.name)
         if value is not None or self.name in instance.__rel__:
             if self.name not in instance.__rel__ and self.field.lazy_load:
                 return self.load_rel(instance, value)
             return instance.__rel__.get(self.name, value)
-        elif not self.field.null:
+        if not self.field.null:
             raise self.rel_model.DoesNotExist
         return value
 
@@ -42,25 +38,29 @@ class AIOForeignKeyField(ForeignKeyField):
 
 class AIOModelBase(ModelBase):
 
-    inheritable = ModelBase.inheritable & {'manager'}
+    inheritable = ModelBase.inheritable & {"manager"}
 
     def __new__(cls, name, bases, attrs):
         cls = super(AIOModelBase, cls).__new__(cls, name, bases, attrs)
         meta = cls._meta
-        if getattr(cls, '_manager', None) and not meta.database:
+        if getattr(cls, "_manager", None) and not meta.database:
             meta.database = cls._manager.pw_database
 
         # Patch foreign keys
         for field in meta.fields.values():
             if isinstance(field, ForeignKeyField):
-                setattr(cls, field.name, AIOForeignKeyAccessor(field.model, field, field.name))
+                setattr(
+                    cls,
+                    field.name,
+                    AIOForeignKeyAccessor(field.model, field, field.name),
+                )
 
         return cls
 
 
 class AIOModel(Model, metaclass=AIOModelBase):
 
-    _manager: 'Manager'
+    _manager: "Manager"
 
     # Class methods
     # -------------
@@ -94,7 +94,9 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await cls._manager.delete_by_id(cls, pk)
 
     @classmethod
-    async def get_or_create(cls, defaults: t.Dict = None, **kwargs) -> t.Tuple[AIOModel, bool]:
+    async def get_or_create(
+        cls, defaults: t.Dict = None, **kwargs
+    ) -> t.Tuple[AIOModel, bool]:
         async with cls._manager.aio_database.transaction():
             try:
                 return (await cls.get(**kwargs), False)
@@ -109,19 +111,21 @@ class AIOModel(Model, metaclass=AIOModelBase):
     @classmethod
     async def bulk_create(cls, **_):
         # TODO: To implement
-        raise NotImplementedError('AIOModel doesnt support `bulk_create`')
+        raise NotImplementedError("AIOModel doesnt support `bulk_create`")
 
     @classmethod
     async def bulk_update(cls, **_):
         # TODO: To implement
-        raise NotImplementedError('AIOModel doesnt support `bulk_update`')
+        raise NotImplementedError("AIOModel doesnt support `bulk_update`")
 
     # Queryset methods
     # ----------------
 
     @classmethod
     def select(cls, *fields) -> ModelSelect:
-        return ModelSelect(cls, fields or cls._meta.sorted_fields, is_default=not fields)
+        return ModelSelect(
+            cls, fields or cls._meta.sorted_fields, is_default=not fields
+        )
 
     @classmethod
     def update(cls, __data=None, **update) -> ModelUpdate:
@@ -135,13 +139,15 @@ class AIOModel(Model, metaclass=AIOModelBase):
     def insert_many(cls, rows: t.Sequence, fields=None) -> ModelInsert:
         rows = [row.__data__ if isinstance(row, Model) else row for row in rows]
         if not rows:
-            raise ModelInsert.DefaultValuesException('Error: no rows to insert.')
+            raise ModelInsert.DefaultValuesException("Error: no rows to insert.")
 
         return ModelInsert(cls, insert=rows, columns=fields)
 
     @classmethod
     def insert_from(cls, query, fields) -> ModelInsert:
-        columns = [getattr(cls, field) if isinstance(field, str) else field for field in fields]
+        columns = [
+            getattr(cls, field) if isinstance(field, str) else field for field in fields
+        ]
         return ModelInsert(cls, insert=query, columns=columns)
 
     @classmethod
@@ -176,7 +182,7 @@ class AIOQuery:
     model: AIOModel
 
     def __init__(self, *args, **kwargs):
-        super(AIOQuery, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.manager = self.model._manager
 
     def __await__(self):
@@ -184,7 +190,6 @@ class AIOQuery:
 
 
 class ModelSelect(AIOQuery, ModelSelect_):
-
     def __aiter__(self):
         return self.manager.run(self).__aiter__()
 
@@ -203,7 +208,7 @@ class ModelSelect(AIOQuery, ModelSelect_):
         return row[0] if row and not as_tuple else row
 
     async def exists(self):
-        clone: ModelSelect = self.columns(SQL('1'))  # type: ignore
+        clone: ModelSelect = self.columns(SQL("1"))  # type: ignore
         clone._limit = 1
         clone._offset = None
         return bool(await clone.scalar())
@@ -245,4 +250,4 @@ class ModelRaw(AIOQuery, ModelRaw_):
     pass
 
 
-from .manager import Manager
+from .manager import Manager  # noqa

@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2021-11-29
+### Added
+- AIOModel.save now supports `on_select_ignore` keyword argument
+
 ## [0.12.4] - 2021-11-01
 ### Fixed
 - Fixed `returning` clause
@@ -22,7 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 
-[Unreleased]: https://github.com/klen/peewee-aio/compare/0.12.4...HEAD
+[Unreleased]: https://github.com/klen/peewee-aio/compare/0.13.0...HEAD
+[0.13.0]: https://github.com/klen/peewee-aio/compare/0.12.4...0.13.0
 [0.12.4]: https://github.com/klen/peewee-aio/compare/0.12.3...0.12.4
 [0.12.3]: https://github.com/klen/peewee-aio/compare/0.12.1...0.12.3
 [0.12.1]: https://github.com/klen/peewee-aio/compare/0.1.0...0.12.1
