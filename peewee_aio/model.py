@@ -94,9 +94,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await cls._manager.delete_by_id(cls, pk)
 
     @classmethod
-    async def get_or_create(
-        cls, defaults: t.Dict = None, **kwargs
-    ) -> t.Tuple[AIOModel, bool]:
+    async def get_or_create(cls, defaults: t.Dict = None, **kwargs) -> t.Tuple[AIOModel, bool]:
         async with cls._manager.aio_database.transaction():
             try:
                 return (await cls.get(**kwargs), False)
@@ -123,9 +121,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     def select(cls, *fields) -> ModelSelect:
-        return ModelSelect(
-            cls, fields or cls._meta.sorted_fields, is_default=not fields
-        )
+        return ModelSelect(cls, fields or cls._meta.sorted_fields, is_default=not fields)
 
     @classmethod
     def update(cls, __data=None, **update) -> ModelUpdate:
@@ -145,9 +141,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     def insert_from(cls, query, fields) -> ModelInsert:
-        columns = [
-            getattr(cls, field) if isinstance(field, str) else field for field in fields
-        ]
+        columns = [getattr(cls, field) if isinstance(field, str) else field for field in fields]
         return ModelInsert(cls, insert=query, columns=columns)
 
     @classmethod

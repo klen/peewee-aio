@@ -5,14 +5,11 @@ from contextlib import contextmanager
 from weakref import WeakSet
 
 from aio_databases.backends import ABCConnection
-from aio_databases.database import (ConnectionContext, Database,
-                                    TransactionContext)
-from peewee import (EXCEPTIONS, SQL, BaseQuery, Context, Insert,
-                    IntegrityError, InternalError)
+from aio_databases.database import ConnectionContext, Database, TransactionContext
+from peewee import EXCEPTIONS, SQL, BaseQuery, Context, Insert, IntegrityError, InternalError
 from peewee import Model as PWModel
-from peewee import (ModelRaw, OperationalError, Query, SchemaManager, Select,
-                    __exception_wrapper__, fn, logger, prefetch_add_subquery,
-                    sort_models)
+from peewee import (ModelRaw, OperationalError, Query, SchemaManager, Select, __exception_wrapper__,
+                    fn, logger, prefetch_add_subquery, sort_models)
 
 from .databases import Database as PWDatabase
 from .databases import get_db
@@ -29,16 +26,11 @@ class Manager:
     pw_database: PWDatabase
     models: "WeakSet[t.Type[PWModel]]"
 
-    def __init__(
-        self, database: t.Union[Database, str], convert_params=True, **backend_options
-    ):
+    def __init__(self, database: t.Union[Database, str], convert_params=True, **backend_options):
         """Initialize dialect and database."""
         if not isinstance(database, Database):
             database = Database(
-                database,
-                logger=logger,
-                convert_params=convert_params,
-                **backend_options
+                database, logger=logger, convert_params=convert_params, **backend_options
             )
 
         self.models = WeakSet()
@@ -104,9 +96,7 @@ class Manager:
             res = await self.aio_database.fetchall(sql, *params, **opts)
             return constructor(res)
 
-    async def fetchmany(
-        self, size: int, sql: t.Any, *params, raw: bool = False, **opts
-    ) -> t.Any:
+    async def fetchmany(self, size: int, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
         """Execute the given SQL and fetch many of the size."""
         with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchmany(size, sql, *params, **opts)
@@ -118,9 +108,7 @@ class Manager:
             res = await self.aio_database.fetchone(sql, *params, **opts)
             return constructor(res)
 
-    async def iterate(
-        self, sql: t.Any, *params, raw: bool = False, **opts
-    ) -> t.AsyncIterator:
+    async def iterate(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.AsyncIterator:
         """Execute the given SQL and iterate through results."""
         with process(sql, params, raw) as (sql, params, constructor):
             async for res in self.aio_database.iterate(sql, *params, **opts):
@@ -249,9 +237,7 @@ class Manager:
             ctx = schema._drop_table(**opts)
             await self.execute(ctx)
 
-    async def get_or_none(
-        self, Model: t.Type[TMODEL], *args, **kwargs
-    ) -> t.Optional[TMODEL]:
+    async def get_or_none(self, Model: t.Type[TMODEL], *args, **kwargs) -> t.Optional[TMODEL]:
         query = Model.select()
         if kwargs:
             query = query.filter(**kwargs)
@@ -359,7 +345,7 @@ class Manager:
         return inst
 
     async def delete_instance(
-        self, inst: PWModel, recursive: bool = True, delete_nullable: bool = False
+        self, inst: PWModel, recursive: bool = False, delete_nullable: bool = False
     ):
         if recursive:
             for query, fk in reversed(list(inst.dependencies(delete_nullable))):
@@ -369,7 +355,7 @@ class Manager:
                 else:
                     await self.execute(fk.model.delete().where(query))
 
-        await self.execute(inst.delete().where(inst._pk_expr()))
+        return await self.execute(inst.delete().where(inst._pk_expr()))
 
 
 DEFAULT_CONSTRUCTOR = lambda r: r  # noqa
