@@ -1,10 +1,12 @@
-import pytest
 import peewee
+import pytest
+
+from peewee_aio.model import AIOModel
 
 
-async def test_select(TestModel, schema):
+async def test_select(TestModel: AIOModel, schema):
     await TestModel.delete()
-    inst = await TestModel.create(data='data')
+    inst = await TestModel.create(data="data")
 
     assert [inst] == await TestModel.select().where(TestModel.id == inst.id)
 
@@ -24,11 +26,11 @@ async def test_select_items(TestModel, schema):
     qs = TestModel.select()
     t1 = await qs[0]
     assert t1
-    assert t1.data == 't0'
+    assert t1.data == "t0"
 
     t2 = await qs[1]
     assert t2
-    assert t2.data == 't1'
+    assert t2.data == "t1"
 
     res = await qs[0:2]
     assert res
@@ -41,23 +43,22 @@ async def test_get_or_create(TestModel, schema):
         inst, created = await TestModel.get_or_create(defaults={})
 
     class TestModel(TestModel):
-
         async def save(self, **kwargs):
-            self.data += '-custom'
+            self.data += "-custom"
             return await super().save(**kwargs)
 
-    inst, created = await TestModel.get_or_create(data='data')
+    inst, created = await TestModel.get_or_create(data="data")
     assert inst
-    assert inst.data == 'data-custom'
+    assert inst.data == "data-custom"
     assert created
 
-    inst2, created = await TestModel.get_or_create(data='data-custom')
+    inst2, created = await TestModel.get_or_create(data="data-custom")
     assert inst2 == inst
     assert not created
 
 
 async def test_get(TestModel, schema):
-    source = await TestModel.create(data='data')
+    source = await TestModel.create(data="data")
 
     inst = await TestModel.get_or_none(TestModel.id == source.id)
     assert inst
@@ -76,7 +77,6 @@ async def test_get(TestModel, schema):
 
 
 async def test_prefetch(manager):
-
     class BaseModel(manager.Model):
         data = peewee.CharField()
 
@@ -87,7 +87,7 @@ async def test_prefetch(manager):
     await BaseModel.create_table(safe=True)
     await RelModel.create_table(safe=True)
 
-    source = await BaseModel.create(data='data')
+    source = await BaseModel.create(data="data")
     res = await BaseModel.select().prefetch()
     assert res
 

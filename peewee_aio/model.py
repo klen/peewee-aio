@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import typing as t
+from re import T
 
 from peewee import SQL, ForeignKeyAccessor, ForeignKeyField, Model, ModelBase
 from peewee import ModelDelete as ModelDelete_
@@ -74,15 +75,17 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await cls._manager.drop_tables(cls, safe=safe, **kwargs)
 
     @classmethod
-    async def get_or_none(cls, *args, **kwargs) -> t.Optional[AIOModel]:
+    async def get_or_none(
+        cls: type[TAIOModel], *args, **kwargs
+    ) -> t.Optional[TAIOModel]:
         return await cls._manager.get_or_none(cls, *args, **kwargs)
 
     @classmethod
-    async def get(cls, *args, **kwargs) -> AIOModel:
+    async def get(cls: type[TAIOModel], *args, **kwargs) -> TAIOModel:
         return await cls._manager.get(cls, *args, **kwargs)
 
     @classmethod
-    async def get_by_id(cls, pk) -> AIOModel:
+    async def get_by_id(cls: type[TAIOModel], pk) -> TAIOModel:
         return await cls._manager.get_by_id(cls, pk)
 
     @classmethod
@@ -94,7 +97,9 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await cls._manager.delete_by_id(cls, pk)
 
     @classmethod
-    async def get_or_create(cls, defaults: t.Dict = None, **kwargs) -> t.Tuple[AIOModel, bool]:
+    async def get_or_create(
+        cls: type[TAIOModel], defaults: t.Dict = None, **kwargs
+    ) -> t.Tuple[TAIOModel, bool]:
         async with cls._manager.aio_database.transaction():
             try:
                 return (await cls.get(**kwargs), False)
@@ -102,7 +107,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
                 return (await cls.create(**dict(defaults or {}, **kwargs)), True)
 
     @classmethod
-    async def create(cls, **kwargs) -> AIOModel:
+    async def create(cls: type[TAIOModel], **kwargs) -> TAIOModel:
         inst = cls(**kwargs)
         return await inst.save(force_insert=True)
 
@@ -120,8 +125,10 @@ class AIOModel(Model, metaclass=AIOModelBase):
     # ----------------
 
     @classmethod
-    def select(cls, *fields) -> ModelSelect:
-        return ModelSelect(cls, fields or cls._meta.sorted_fields, is_default=not fields)
+    def select(cls: type[TAIOModel], *fields) -> ModelSelect[TAIOModel]:
+        return ModelSelect(
+            cls, fields or cls._meta.sorted_fields, is_default=not fields
+        )
 
     @classmethod
     def update(cls, __data=None, **update) -> ModelUpdate:
@@ -141,7 +148,9 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     def insert_from(cls, query, fields) -> ModelInsert:
-        columns = [getattr(cls, field) if isinstance(field, str) else field for field in fields]
+        columns = [
+            getattr(cls, field) if isinstance(field, str) else field for field in fields
+        ]
         return ModelInsert(cls, insert=query, columns=columns)
 
     @classmethod
@@ -171,23 +180,28 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return self
 
 
-class AIOQuery:
+TAIOModel = t.TypeVar("TAIOModel", bound=AIOModel)
 
-    model: AIOModel
+
+class AIOQuery(t.Generic[TAIOModel]):
+
+    model: TAIOModel
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.manager = self.model._manager
 
-    def __await__(self):
+    def __await__(self) -> t.Generator[t.Any, None, t.List[TAIOModel]]:
         return self.manager.run(self).__await__()  # type: ignore
 
 
-class ModelSelect(AIOQuery, ModelSelect_):
-    def __aiter__(self):
+class ModelSelect(AIOQuery[TAIOModel], ModelSelect_):
+    _limit: int
+
+    def __aiter__(self) -> t.AsyncGenerator[TAIOModel, None]:
         return self.manager.run(self).__aiter__()
 
-    def __getitem__(self, value):
+    def __getitem__(self, value) -> ModelSelect[TAIOModel]:
         limit, offset = 1, value
         if isinstance(value, slice):
             limit, offset = value.stop - value.start, value.start
@@ -201,30 +215,30 @@ class ModelSelect(AIOQuery, ModelSelect_):
         row = await self.tuples().peek()
         return row[0] if row and not as_tuple else row
 
-    async def exists(self):
-        clone: ModelSelect = self.columns(SQL("1"))  # type: ignore
+    async def exists(self) -> bool:
+        clone: ModelSelect = self.columns(SQL("1"))
         clone._limit = 1
         clone._offset = None
         return bool(await clone.scalar())
 
-    async def peek(self, n=1):
+    async def peek(self, n=1) -> TAIOModel:
         if n == 1:
             return await self.manager.fetchone(self)
         return await self.manager.fetchmany(n, self)
 
-    def first(self, n=1):
+    def first(self, n=1) -> t.Coroutine[t.Any, t.Any, TAIOModel]:
         if self._limit != n:
             self._limit = n
             self._cursor_wrapper = None
         return self.peek(n=n)
 
-    async def count(self):
+    async def count(self) -> int:
         return await self.manager.count(self)
 
-    async def get(self):
+    async def get(self) -> TAIOModel:
         return await self.first()
 
-    async def prefetch(self, *subqueries):
+    async def prefetch(self, *subqueries) -> t.List[TAIOModel]:
         return await self.manager.prefetch(self, *subqueries)
 
 
