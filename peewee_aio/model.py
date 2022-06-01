@@ -5,7 +5,7 @@ from __future__ import annotations
 import typing as t
 from re import T
 
-from peewee import SQL, ForeignKeyAccessor, ForeignKeyField, Model, ModelBase
+from peewee import SQL, Expression, ForeignKeyAccessor, ForeignKeyField, Model, ModelBase
 from peewee import ModelDelete as ModelDelete_
 from peewee import ModelInsert as ModelInsert_
 from peewee import ModelRaw as ModelRaw_
@@ -240,6 +240,27 @@ class ModelSelect(AIOQuery[TAIOModel], ModelSelect_):
 
     async def prefetch(self, *subqueries) -> t.List[TAIOModel]:
         return await self.manager.prefetch(self, *subqueries)
+
+    # Type helpers
+    with_cte: t.Callable[..., ModelSelect[TAIOModel]]
+    where: t.Callable[..., ModelSelect[TAIOModel]]
+    orwhere: t.Callable[..., ModelSelect[TAIOModel]]
+    order_by: t.Callable[..., ModelSelect[TAIOModel]]
+    order_by_extend: t.Callable[..., ModelSelect[TAIOModel]]
+    limit: t.Callable[[int], ModelSelect[TAIOModel]]
+    offset: t.Callable[[int], ModelSelect[TAIOModel]]
+    paginate: t.Callable[..., ModelSelect[TAIOModel]]
+
+    columns: t.Callable[..., ModelSelect[TAIOModel]]
+    select_extend: t.Callable[..., ModelSelect[TAIOModel]]
+    from_: t.Callable[..., ModelSelect[TAIOModel]]
+    join: t.Callable[..., ModelSelect[TAIOModel]]
+    group_by: t.Callable[..., ModelSelect[TAIOModel]]
+    having: t.Callable[..., ModelSelect[TAIOModel]]
+    distinct: t.Callable[..., ModelSelect[TAIOModel]]
+    window: t.Callable[..., ModelSelect[TAIOModel]]
+    for_update: t.Callable[..., ModelSelect[TAIOModel]]
+    lateral: t.Callable[..., ModelSelect[TAIOModel]]
 
 
 class ModelUpdate(AIOQuery, ModelUpdate_):

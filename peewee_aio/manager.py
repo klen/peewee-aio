@@ -24,13 +24,18 @@ class Manager:
 
     aio_database: Database
     pw_database: PWDatabase
-    models: "WeakSet[t.Type[PWModel]]"
+    models: "WeakSet[type[PWModel]]"
 
-    def __init__(self, database: t.Union[Database, str], convert_params=True, **backend_options):
+    def __init__(
+        self, database: t.Union[Database, str], convert_params=True, **backend_options
+    ):
         """Initialize dialect and database."""
         if not isinstance(database, Database):
             database = Database(
-                database, logger=logger, convert_params=convert_params, **backend_options
+                database,
+                logger=logger,
+                convert_params=convert_params,
+                **backend_options
             )
 
         self.models = WeakSet()
@@ -42,7 +47,7 @@ class Manager:
 
         self.Model = Model
 
-    def register(self, Model: t.Type[TMODEL]) -> t.Type[TMODEL]:
+    def register(self, Model: type[TMODEL]) -> type[TMODEL]:
         """Register a model with the manager."""
         Model._manager = self  # type: ignore
         Model._meta.database = self.pw_database
@@ -96,7 +101,9 @@ class Manager:
             res = await self.aio_database.fetchall(sql, *params, **opts)
             return constructor(res)
 
-    async def fetchmany(self, size: int, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
+    async def fetchmany(
+        self, size: int, sql: t.Any, *params, raw: bool = False, **opts
+    ) -> t.Any:
         """Execute the given SQL and fetch many of the size."""
         with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchmany(size, sql, *params, **opts)
@@ -108,7 +115,9 @@ class Manager:
             res = await self.aio_database.fetchone(sql, *params, **opts)
             return constructor(res)
 
-    async def iterate(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.AsyncIterator:
+    async def iterate(
+        self, sql: t.Any, *params, raw: bool = False, **opts
+    ) -> t.AsyncIterator:
         """Execute the given SQL and iterate through results."""
         with process(sql, params, raw) as (sql, params, constructor):
             async for res in self.aio_database.iterate(sql, *params, **opts):
@@ -203,7 +212,7 @@ class Manager:
     # Model methods
     # -------------
 
-    async def create_tables(self, *Models: t.Type[PWModel], safe=True, **opts):
+    async def create_tables(self, *Models: type[PWModel], safe=True, **opts):
         """Create tables for the given models or all registered with the manager."""
         Models = Models or tuple(self.models)
         for Model in sort_models(Models):
@@ -229,7 +238,7 @@ class Manager:
                     if not safe:
                         raise
 
-    async def drop_tables(self, *Models: t.Type[PWModel], **opts):
+    async def drop_tables(self, *Models: type[PWModel], **opts):
         """Drop tables for the given models or all registered with the manager."""
         Models = Models or tuple(self.models)
         for Model in reversed(sort_models(Models)):
@@ -237,7 +246,9 @@ class Manager:
             ctx = schema._drop_table(**opts)
             await self.execute(ctx)
 
-    async def get_or_none(self, Model: t.Type[TMODEL], *args, **kwargs) -> t.Optional[TMODEL]:
+    async def get_or_none(
+        self, Model: type[TMODEL], *args, **kwargs
+    ) -> t.Optional[TMODEL]:
         query = Model.select()
         if kwargs:
             query = query.filter(**kwargs)
@@ -247,16 +258,16 @@ class Manager:
 
         return await self.fetchone(query)
 
-    async def get(self, Model: t.Type[TMODEL], *args, **kwargs) -> TMODEL:
+    async def get(self, Model: type[TMODEL], *args, **kwargs) -> TMODEL:
         res = await self.get_or_none(Model, *args, **kwargs)
         if res is None:
             raise Model.DoesNotExist
         return res
 
-    async def get_by_id(self, Model: t.Type[TMODEL], pk) -> TMODEL:
+    async def get_by_id(self, Model: type[TMODEL], pk) -> TMODEL:
         return await self.get(Model, Model._meta.primary_key == pk)
 
-    async def set_by_id(self, Model: t.Type[PWModel], key, value) -> t.Any:
+    async def set_by_id(self, Model: type[PWModel], key, value) -> t.Any:
         qs = (
             Model.insert(value)
             if key is None
@@ -264,11 +275,11 @@ class Manager:
         )
         return await self.execute(qs)
 
-    async def delete_by_id(self, Model: t.Type[PWModel], pk):
+    async def delete_by_id(self, Model: type[PWModel], pk):
         return await self.execute(Model.delete().where(Model._meta.primary_key == pk))
 
     async def get_or_create(
-        self, Model: t.Type[TMODEL], defaults: t.Dict = None, **kwargs
+        self, Model: type[TMODEL], defaults: t.Dict = None, **kwargs
     ) -> t.Tuple[TMODEL, bool]:
         async with self.aio_database.transaction():
             try:
@@ -279,7 +290,7 @@ class Manager:
                     True,
                 )
 
-    async def create(self, Model: t.Type[TMODEL], **values) -> TMODEL:
+    async def create(self, Model: type[TMODEL], **values) -> TMODEL:
         inst = Model(**values)
         inst = await self.save(inst, force_insert=True)
         return inst
@@ -315,7 +326,9 @@ class Manager:
             field_dict.pop(pk_field.name, None)
 
         if pk_field is None:
-            await self.execute(inst.insert(**field_dict).on_confict_ignore(on_conflict_ignore))
+            await self.execute(
+                inst.insert(**field_dict).on_confict_ignore(on_conflict_ignore)
+            )
 
         else:
             # Update
