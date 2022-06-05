@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from re import T
 from typing import (Any, AsyncGenerator, Callable, Coroutine, Generator, Generic, List, Optional,
-                    Sequence, TypeVar, Union)
+                    Sequence, Tuple, TypeVar, Union)
 
 from peewee import SQL, Expression, ForeignKeyAccessor, ForeignKeyField, Model, ModelBase
 from peewee import ModelDelete as ModelDelete_
@@ -12,7 +12,6 @@ from peewee import ModelInsert as ModelInsert_
 from peewee import ModelRaw as ModelRaw_
 from peewee import ModelSelect as ModelSelect_
 from peewee import ModelUpdate as ModelUpdate_
-from peewee import Tuple
 
 
 class AIOForeignKeyAccessor(ForeignKeyAccessor):
