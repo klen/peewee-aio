@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import typing as t
 from re import T
+from typing import (Any, AsyncGenerator, Callable, Coroutine, Generator, Generic, List, Optional,
+                    Sequence, TypeVar, Union)
 
 from peewee import SQL, Expression, ForeignKeyAccessor, ForeignKeyField, Model, ModelBase
 from peewee import ModelDelete as ModelDelete_
@@ -11,12 +12,13 @@ from peewee import ModelInsert as ModelInsert_
 from peewee import ModelRaw as ModelRaw_
 from peewee import ModelSelect as ModelSelect_
 from peewee import ModelUpdate as ModelUpdate_
+from peewee import Tuple
 
 
 class AIOForeignKeyAccessor(ForeignKeyAccessor):
     def get_rel_instance(
         self, instance: Model
-    ) -> t.Union[Model, None, t.Coroutine[t.Any, t.Any, Model]]:
+    ) -> Union[Model, None, Coroutine[Any, Any, Model]]:
         value = instance.__data__.get(self.name)
         if value is not None or self.name in instance.__rel__:
             if self.name not in instance.__rel__ and self.field.lazy_load:
@@ -26,7 +28,7 @@ class AIOForeignKeyAccessor(ForeignKeyAccessor):
             raise self.rel_model.DoesNotExist
         return value
 
-    async def load_rel(self, instance: Model, value: t.Any) -> Model:
+    async def load_rel(self, instance: Model, value: Any) -> Model:
         obj = await self.rel_model.get(self.field.rel_field == value)
         instance.__rel__[self.name] = obj
         return obj
@@ -75,9 +77,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await cls._manager.drop_tables(cls, safe=safe, **kwargs)
 
     @classmethod
-    async def get_or_none(
-        cls: type[TAIOModel], *args, **kwargs
-    ) -> t.Optional[TAIOModel]:
+    async def get_or_none(cls: type[TAIOModel], *args, **kwargs) -> Optional[TAIOModel]:
         return await cls._manager.get_or_none(cls, *args, **kwargs)
 
     @classmethod
@@ -98,8 +98,8 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     async def get_or_create(
-        cls: type[TAIOModel], defaults: t.Dict = None, **kwargs
-    ) -> t.Tuple[TAIOModel, bool]:
+        cls: type[TAIOModel], defaults: dict = None, **kwargs
+    ) -> Tuple[TAIOModel, bool]:
         async with cls._manager.aio_database.transaction():
             try:
                 return (await cls.get(**kwargs), False)
@@ -139,7 +139,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return ModelInsert(cls, cls._normalize_data(__data, insert))
 
     @classmethod
-    def insert_many(cls, rows: t.Sequence, fields=None) -> ModelInsert:
+    def insert_many(cls, rows: Sequence, fields=None) -> ModelInsert:
         rows = [row.__data__ if isinstance(row, Model) else row for row in rows]
         if not rows:
             raise ModelInsert.DefaultValuesException("Error: no rows to insert.")
@@ -180,10 +180,10 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return self
 
 
-TAIOModel = t.TypeVar("TAIOModel", bound=AIOModel)
+TAIOModel = TypeVar("TAIOModel", bound=AIOModel)
 
 
-class AIOQuery(t.Generic[TAIOModel]):
+class AIOQuery(Generic[TAIOModel]):
 
     model: TAIOModel
 
@@ -191,17 +191,19 @@ class AIOQuery(t.Generic[TAIOModel]):
         super().__init__(*args, **kwargs)
         self.manager = self.model._manager
 
-    def __await__(self) -> t.Generator[t.Any, None, t.List[TAIOModel]]:
+    def __await__(self) -> Generator[Any, None, List[TAIOModel]]:
         return self.manager.run(self).__await__()  # type: ignore
 
 
 class ModelSelect(AIOQuery[TAIOModel], ModelSelect_):
     _limit: int
 
-    def __aiter__(self) -> t.AsyncGenerator[TAIOModel, None]:
+    def __aiter__(self) -> AsyncGenerator[TAIOModel, None]:
         return self.manager.run(self).__aiter__()
 
-    def __getitem__(self, value) -> ModelSelect[TAIOModel]:
+    def __getitem__(
+        self, value
+    ) -> Union[ModelSelect[TAIOModel], Coroutine[Any, Any, TAIOModel]]:
         limit, offset = 1, value
         if isinstance(value, slice):
             limit, offset = value.stop - value.start, value.start
@@ -226,7 +228,7 @@ class ModelSelect(AIOQuery[TAIOModel], ModelSelect_):
             return await self.manager.fetchone(self)
         return await self.manager.fetchmany(n, self)
 
-    def first(self, n=1) -> t.Coroutine[t.Any, t.Any, TAIOModel]:
+    def first(self, n=1) -> Coroutine[Any, Any, TAIOModel]:
         if self._limit != n:
             self._limit = n
             self._cursor_wrapper = None
@@ -238,29 +240,29 @@ class ModelSelect(AIOQuery[TAIOModel], ModelSelect_):
     async def get(self) -> TAIOModel:
         return await self.first()
 
-    async def prefetch(self, *subqueries) -> t.List[TAIOModel]:
+    async def prefetch(self, *subqueries) -> List[TAIOModel]:
         return await self.manager.prefetch(self, *subqueries)
 
     # Type helpers
-    with_cte: t.Callable[..., ModelSelect[TAIOModel]]
-    where: t.Callable[..., ModelSelect[TAIOModel]]
-    orwhere: t.Callable[..., ModelSelect[TAIOModel]]
-    order_by: t.Callable[..., ModelSelect[TAIOModel]]
-    order_by_extend: t.Callable[..., ModelSelect[TAIOModel]]
-    limit: t.Callable[[int], ModelSelect[TAIOModel]]
-    offset: t.Callable[[int], ModelSelect[TAIOModel]]
-    paginate: t.Callable[..., ModelSelect[TAIOModel]]
+    with_cte: Callable[..., ModelSelect[TAIOModel]]
+    where: Callable[..., ModelSelect[TAIOModel]]
+    orwhere: Callable[..., ModelSelect[TAIOModel]]
+    order_by: Callable[..., ModelSelect[TAIOModel]]
+    order_by_extend: Callable[..., ModelSelect[TAIOModel]]
+    limit: Callable[[int], ModelSelect[TAIOModel]]
+    offset: Callable[[int], ModelSelect[TAIOModel]]
+    paginate: Callable[..., ModelSelect[TAIOModel]]
 
-    columns: t.Callable[..., ModelSelect[TAIOModel]]
-    select_extend: t.Callable[..., ModelSelect[TAIOModel]]
-    from_: t.Callable[..., ModelSelect[TAIOModel]]
-    join: t.Callable[..., ModelSelect[TAIOModel]]
-    group_by: t.Callable[..., ModelSelect[TAIOModel]]
-    having: t.Callable[..., ModelSelect[TAIOModel]]
-    distinct: t.Callable[..., ModelSelect[TAIOModel]]
-    window: t.Callable[..., ModelSelect[TAIOModel]]
-    for_update: t.Callable[..., ModelSelect[TAIOModel]]
-    lateral: t.Callable[..., ModelSelect[TAIOModel]]
+    columns: Callable[..., ModelSelect[TAIOModel]]
+    select_extend: Callable[..., ModelSelect[TAIOModel]]
+    from_: Callable[..., ModelSelect[TAIOModel]]
+    join: Callable[..., ModelSelect[TAIOModel]]
+    group_by: Callable[..., ModelSelect[TAIOModel]]
+    having: Callable[..., ModelSelect[TAIOModel]]
+    distinct: Callable[..., ModelSelect[TAIOModel]]
+    window: Callable[..., ModelSelect[TAIOModel]]
+    for_update: Callable[..., ModelSelect[TAIOModel]]
+    lateral: Callable[..., ModelSelect[TAIOModel]]
 
 
 class ModelUpdate(AIOQuery, ModelUpdate_):
