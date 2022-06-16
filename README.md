@@ -77,11 +77,11 @@ $ pip install peewee-aio[triopg]
                     assert test.id
 
                 # Change records
-                test.text = "I'm changed'
+                test.text = "I'm changed"
                 await test.save()
 
                 # Update records
-                await TestModel.update({'text': "I'm updated'"}).where(TestModel.id == test.id)
+                await TestModel.update({'text': "I'm updated!"}).where(TestModel.id == test.id)
 
                 # Delete records
                 await TestModel.delete().where(TestModel.id == test.id)
