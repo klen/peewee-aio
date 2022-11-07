@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from re import T
 from typing import (Any, AsyncGenerator, Callable, Coroutine, Generator, Generic, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
-from peewee import SQL, Expression, ForeignKeyAccessor, ForeignKeyField, Model, ModelBase
+from peewee import (SQL, DeferredForeignKey, Field, ForeignKeyAccessor, ForeignKeyField, Model,
+                    ModelBase)
 from peewee import ModelDelete as ModelDelete_
 from peewee import ModelInsert as ModelInsert_
 from peewee import ModelRaw as ModelRaw_
@@ -18,13 +18,23 @@ class AIOForeignKeyAccessor(ForeignKeyAccessor):
     def get_rel_instance(
         self, instance: Model
     ) -> Union[Model, None, Coroutine[Any, Any, Model]]:
-        value = instance.__data__.get(self.name)
-        if value is not None or self.name in instance.__rel__:
-            if self.name not in instance.__rel__ and self.field.lazy_load:
+
+        # Get from cache
+        name = self.name
+        if name in instance.__rel__:
+            return instance.__rel__[name]
+
+        value = instance.__data__.get(name)
+
+        # Lazy load
+        field = self.field
+        if field.lazy_load:
+            if value is not None:
                 return self.load_rel(instance, value)
-            return instance.__rel__.get(self.name, value)
-        if not self.field.null:
-            raise self.rel_model.DoesNotExist
+
+            if not field.null:
+                raise self.rel_model.DoesNotExist
+
         return value
 
     async def load_rel(self, instance: Model, value: Any) -> Model:
@@ -38,24 +48,65 @@ class AIOForeignKeyField(ForeignKeyField):
     accessor_class = AIOForeignKeyAccessor
 
 
+class AIODeferredForeignKey(DeferredForeignKey):
+    def set_model(self, rel_model):
+        field = AIOForeignKeyField(rel_model, _deferred=True, **self.field_kwargs)
+        self.model._meta.add_field(self.name, field)
+
+
 class AIOModelBase(ModelBase):
 
     inheritable = ModelBase.inheritable & {"manager"}
 
     def __new__(cls, name, bases, attrs):
+        # Replace fields to AIO fields
+        for attr_name, attr in attrs.items():
+            if not isinstance(attr, Field):
+                continue
+
+            if isinstance(attr, ForeignKeyField) and not isinstance(
+                attr, AIOForeignKeyField
+            ):
+                attrs[attr_name] = AIOForeignKeyField(
+                    attr.rel_model,
+                    field=attr.rel_field,
+                    backref=attr.declared_backref,
+                    on_delete=attr.on_delete,
+                    on_update=attr.on_update,
+                    deferrable=attr.deferrable,
+                    _deferred=attr.deferred,
+                    object_id_name=attr.object_id_name,
+                    lazy_load=attr.lazy_load,
+                    constraint_name=attr.constraint_name,
+                    null=attr.null,
+                    index=attr.index,
+                    unique=attr.unique,
+                    default=attr.default,
+                    primary_key=attr.primary_key,
+                    constraints=attr.constraints,
+                    sequence=attr.sequence,
+                    collation=attr.collation,
+                    unindexed=attr.unindexed,
+                    choices=attr.choices,
+                    help_text=attr.help_text,
+                    verbose_name=attr.verbose_name,
+                    index_type=attr.index_type,
+                    _hidden=attr._hidden,
+                )
+
+            elif isinstance(attr, DeferredForeignKey) and not isinstance(
+                attr, AIODeferredForeignKey
+            ):
+                attrs[attr_name] = AIODeferredForeignKey(
+                    attr.rel_model_name,
+                    **attr.field_kwargs,
+                )
+                DeferredForeignKey._unresolved.discard(attr)
+
         cls = super(AIOModelBase, cls).__new__(cls, name, bases, attrs)
         meta = cls._meta
         if getattr(cls, "_manager", None) and not meta.database:
             meta.database = cls._manager.pw_database
-
-        # Patch foreign keys
-        for field in meta.fields.values():
-            if isinstance(field, ForeignKeyField):
-                setattr(
-                    cls,
-                    field.name,
-                    AIOForeignKeyAccessor(field.model, field, field.name),
-                )
 
         return cls
 

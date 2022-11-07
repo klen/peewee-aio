@@ -19,10 +19,9 @@ async def test_model(TestModel, manager):
 
 
 async def test_backref(TestModel, manager, schema):
-
     class BaseModel(TestModel):
         class Meta:
-            table_name = 'testmodel'
+            table_name = "testmodel"
 
     class Ref(manager.Model):
         data = peewee.CharField()
@@ -32,17 +31,17 @@ async def test_backref(TestModel, manager, schema):
     await Ref.drop_table()
     await Ref.create_table()
 
-    source = await BaseModel.create(data='data')
+    source = await BaseModel.create(data="data")
 
     from peewee_aio.model import ModelSelect
 
     assert isinstance(source.ref_set, ModelSelect)
 
-    ref = await Ref.create(data='ref', test=source)
+    ref = await Ref.create(data="ref", test=source)
     assert ref == await source.ref_set.first()
 
     # Load foreing keys
-    ref = await Ref.get(data='ref')
+    ref = await Ref.get(data="ref")
     test = await ref.test
     assert test == source
 
@@ -53,10 +52,55 @@ async def test_backref(TestModel, manager, schema):
     assert ref
     assert ref.test == source
 
-    ref = await Ref(data='ref', test=test).save()
+    ref = await Ref(data="ref", test=test).save()
     assert ref.test == source
 
     await Ref.drop_table()
+
+
+async def test_fk(TestModel, manager, schema):
+    class ParentModel(manager.Model):
+        child = peewee.ForeignKeyField(TestModel, null=True)
+
+    from peewee_aio.model import AIOForeignKeyField
+
+    assert isinstance(ParentModel.child, AIOForeignKeyField)
+
+    await ParentModel.create_table()
+
+    parent = await ParentModel.create()
+    assert parent.child is None
+
+    child = await TestModel.create(data="body")
+    parent = await ParentModel.create(child=child)
+
+    assert parent.child == child
+
+    await ParentModel.drop_table()
+
+
+async def test_deferred_fk(manager):
+    class ParentModel(manager.Model):
+        child = peewee.DeferredForeignKey("ChildModel", null=True)
+
+    class ChildModel(manager.Model):
+        pass
+
+    from peewee_aio.model import AIOForeignKeyField
+
+    assert isinstance(ParentModel.child, AIOForeignKeyField)
+
+    await ChildModel.create_table()
+    await ParentModel.create_table()
+
+    child = await ChildModel.create()
+
+    parent = ParentModel(child=child.id)
+    assert await parent.child == child
+    assert parent.child == child
+
+    await ParentModel.drop_table()
+    await ChildModel.drop_table()
 
 
 async def test_await_model(TestModel):
