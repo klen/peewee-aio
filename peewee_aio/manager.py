@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-import typing as t
 from contextlib import contextmanager
+from typing import (Any, AsyncIterator, Callable, Dict, Generator, Iterator, List, Mapping,
+                    Optional, Sequence, Tuple, TypeVar, Union)
 from weakref import WeakSet
 
 from aio_databases.backends import ABCConnection
 from aio_databases.database import ConnectionContext, Database, TransactionContext
-from peewee import EXCEPTIONS, SQL, BaseQuery, Context, Insert, IntegrityError, InternalError
+from peewee import (EXCEPTIONS, PREFETCH_TYPE, SQL, BaseQuery, Context, Insert, IntegrityError,
+                    InternalError)
 from peewee import Model as PWModel
 from peewee import (ModelRaw, OperationalError, Query, SchemaManager, Select, __exception_wrapper__,
                     fn, logger, prefetch_add_subquery, sort_models)
@@ -15,8 +17,8 @@ from .databases import Database as PWDatabase
 from .databases import get_db
 from .model import AIOModel
 
-TMODEL = t.TypeVar("TMODEL", bound=PWModel)
-TMANAGER = t.TypeVar("TMANAGER", bound="Manager")
+TMODEL = TypeVar("TMODEL", bound=PWModel)
+TMANAGER = TypeVar("TMANAGER", bound="Manager")
 
 
 class Manager:
@@ -27,7 +29,7 @@ class Manager:
     models: "WeakSet[type[PWModel]]"
 
     def __init__(
-        self, database: t.Union[Database, str], convert_params=True, **backend_options
+        self, database: Union[Database, str], convert_params=True, **backend_options
     ):
         """Initialize dialect and database."""
         if not isinstance(database, Database):
@@ -35,7 +37,7 @@ class Manager:
                 database,
                 logger=logger,
                 convert_params=convert_params,
-                **backend_options
+                **backend_options,
             )
 
         self.models = WeakSet()
@@ -54,7 +56,7 @@ class Manager:
         self.models.add(Model)
         return Model
 
-    def __iter__(self) -> t.Iterator:
+    def __iter__(self) -> Iterator:
         """Iterate through registered models."""
         return iter(sort_models(self.models))
 
@@ -62,7 +64,7 @@ class Manager:
     # --------------------------
 
     @property
-    def current_conn(self) -> t.Optional[ABCConnection]:
+    def current_conn(self) -> Optional[ABCConnection]:
         return self.aio_database.current_conn
 
     async def connect(self: TMANAGER) -> TMANAGER:
@@ -78,7 +80,7 @@ class Manager:
 
     __aexit__ = disconnect
 
-    async def execute(self, query: t.Any, *params, **opts) -> t.Any:
+    async def execute(self, query: Any, *params, **opts) -> Any:
         """Execute a given query with the given params."""
         with process(query, params, True) as (sql, params, _):
             res = await self.aio_database.execute(sql, *params, **opts)
@@ -90,34 +92,34 @@ class Manager:
 
             return res[0]
 
-    async def fetchval(self, sql: t.Any, *params, **opts) -> t.Any:
+    async def fetchval(self, sql: Any, *params, **opts) -> Any:
         """Execute the given SQL and fetch a value."""
         with process(sql, params, True) as (sql, params, _):
             return await self.aio_database.fetchval(sql, *params, **opts)
 
-    async def fetchall(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
+    async def fetchall(self, sql: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch all."""
         with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchall(sql, *params, **opts)
             return constructor(res)
 
     async def fetchmany(
-        self, size: int, sql: t.Any, *params, raw: bool = False, **opts
-    ) -> t.Any:
+        self, size: int, sql: Any, *params, raw: bool = False, **opts
+    ) -> Any:
         """Execute the given SQL and fetch many of the size."""
         with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchmany(size, sql, *params, **opts)
             return constructor(res)
 
-    async def fetchone(self, sql: t.Any, *params, raw: bool = False, **opts) -> t.Any:
+    async def fetchone(self, sql: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch one."""
         with process(sql, params, raw) as (sql, params, constructor):
             res = await self.aio_database.fetchone(sql, *params, **opts)
             return constructor(res)
 
     async def iterate(
-        self, sql: t.Any, *params, raw: bool = False, **opts
-    ) -> t.AsyncIterator:
+        self, sql: Any, *params, raw: bool = False, **opts
+    ) -> AsyncIterator:
         """Execute the given SQL and iterate through results."""
         with process(sql, params, raw) as (sql, params, constructor):
             async for res in self.aio_database.iterate(sql, *params, **opts):
@@ -151,14 +153,14 @@ class Manager:
     # Query methods
     # -------------
 
-    def run(self, query: Query) -> t.Any:
+    def run(self, query: Query) -> Any:
         """Run the given Peewee ORM Query."""
         if isinstance(query, (Select, ModelRaw)) or getattr(query, "_returning", None):
             return RunWrapper(self, query)
 
         return self.execute(query)
 
-    async def count(self, query: Select, clear_limit: bool = False) -> t.Any:
+    async def count(self, query: Select, clear_limit: bool = False) -> Any:
         """Execute the given Peewee ORM Query and get a count of rows."""
         query = query.order_by()  # type: ignore
         if clear_limit:
@@ -180,15 +182,16 @@ class Manager:
         query._database = self.pw_database
         return await self.fetchval(query)
 
-    async def prefetch(self, sq: Query, *subqueries) -> t.Any:
+    async def prefetch(self, sq: Query, *subqueries, **kwargs) -> Any:
         """Prefetch results for the given query and subqueries.."""
         if not subqueries:
             return await self.run(sq)
 
         result = None
-        fixed_queries = prefetch_add_subquery(sq, subqueries)
-        deps: t.Dict[PWModel, t.Dict] = {}
-        rel_map: t.Dict[PWModel, t.List] = {}
+        prefetch_type = kwargs.pop("prefetch_type", PREFETCH_TYPE.WHERE)
+        fixed_queries = prefetch_add_subquery(sq, subqueries, prefetch_type)
+        deps: Dict[PWModel, Dict] = {}
+        rel_map: Dict[PWModel, List] = {}
         for pq in reversed(fixed_queries):
             query_model = pq.model
             if pq.fields:
@@ -248,7 +251,7 @@ class Manager:
 
     async def get_or_none(
         self, Model: type[TMODEL], *args, **kwargs
-    ) -> t.Optional[TMODEL]:
+    ) -> Optional[TMODEL]:
         query = Model.select()
         if kwargs:
             query = query.filter(**kwargs)
@@ -267,7 +270,7 @@ class Manager:
     async def get_by_id(self, Model: type[TMODEL], pk) -> TMODEL:
         return await self.get(Model, Model._meta.primary_key == pk)
 
-    async def set_by_id(self, Model: type[PWModel], key, value) -> t.Any:
+    async def set_by_id(self, Model: type[PWModel], key, value) -> Any:
         qs = (
             Model.insert(value)
             if key is None
@@ -279,8 +282,8 @@ class Manager:
         return await self.execute(Model.delete().where(Model._meta.primary_key == pk))
 
     async def get_or_create(
-        self, Model: type[TMODEL], defaults: t.Dict = None, **kwargs
-    ) -> t.Tuple[TMODEL, bool]:
+        self, Model: type[TMODEL], defaults: Dict = None, **kwargs
+    ) -> Tuple[TMODEL, bool]:
         async with self.aio_database.transaction():
             try:
                 return (await self.get(Model, **kwargs), False)
@@ -298,11 +301,11 @@ class Manager:
     # Instance methods
     # ----------------
 
-    async def save(
+    async def save(  # noqa
         self,
-        inst: TMODEL,  # noqa
+        inst: TMODEL,
         force_insert: bool = False,
-        only: t.Sequence = None,
+        only: Sequence = None,
         on_conflict_ignore: bool = False,
     ) -> TMODEL:
         field_dict = inst.__data__.copy()
@@ -378,7 +381,7 @@ EXCEPTIONS["DuplicateTableError"] = OperationalError
 
 
 @contextmanager
-def process(query: t.Any, params: t.Sequence, raw: bool) -> t.Generator:
+def process(query: Any, params: Sequence, raw: bool) -> Generator:
     constructor = DEFAULT_CONSTRUCTOR
 
     if isinstance(query, BaseQuery):
@@ -416,7 +419,7 @@ class FakeCursor:
 
     __slots__ = ("description",)
 
-    def __init__(self, res: t.Mapping):
+    def __init__(self, res: Mapping):
         self.description = [[k] for k in res.keys()]
 
 
@@ -427,23 +430,23 @@ class Constructor:
 
     def __init__(self, query: BaseQuery):
         self.query = query
-        self.processor: t.Optional[t.Callable] = None
+        self.processor: Optional[Callable] = None
 
     def __call__(
-        self, res: t.Union[t.Mapping, t.Sequence[t.Mapping]]
-    ) -> t.Union[t.Any, t.Sequence[t.Any]]:
+        self, res: Union[Mapping, Sequence[Mapping]]
+    ) -> Union[Any, Sequence[Any]]:
         """Process rows."""
         if not res:  # None or empty sequence
             return res
 
-        if isinstance(res, t.Sequence):
+        if isinstance(res, Sequence):
             processor = self.get_processor(res[0])
             return [processor(r) for r in res]
 
         processor = self.get_processor(res)
         return processor(res)
 
-    def get_processor(self, rec: t.Mapping) -> t.Callable:
+    def get_processor(self, rec: Mapping) -> Callable:
         """Get and cache a rows processor."""
         if self.processor is None:
             cursor = FakeCursor(rec)
