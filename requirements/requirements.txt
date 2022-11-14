@@ -1,3 +1,2 @@
-peewee > 3
+peewee >= 3.15.4
 aio-databases >= 0.13.2
-cached_property;python_version<'3.8'
