@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from typing import (Any, AsyncIterator, Callable, Dict, Generator, Iterator, List, Mapping,
-                    Optional, Sequence, Tuple, TypeVar, Union)
+                    Optional, Sequence, Tuple, Type, TypeVar, Union)
 from weakref import WeakSet
 
 from aio_databases.backends import ABCConnection
@@ -282,7 +282,7 @@ class Manager:
         return await self.execute(Model.delete().where(Model._meta.primary_key == pk))
 
     async def get_or_create(
-        self, Model: type[TMODEL], defaults: Dict = None, **kwargs
+        self, Model: Type[TMODEL], defaults: Optional[Dict] = None, **kwargs
     ) -> Tuple[TMODEL, bool]:
         async with self.aio_database.transaction():
             try:
@@ -305,7 +305,7 @@ class Manager:
         self,
         inst: TMODEL,
         force_insert: bool = False,
-        only: Sequence = None,
+        only: Optional[Sequence] = None,
         on_conflict_ignore: bool = False,
     ) -> TMODEL:
         field_dict = inst.__data__.copy()

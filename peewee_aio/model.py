@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import (Any, AsyncGenerator, Callable, Coroutine, Generator, Generic, List, Optional,
-                    Sequence, Tuple, TypeVar, Union)
+from typing import (Any, AsyncGenerator, Callable, Coroutine, Dict, Generator, Generic, List,
+                    Optional, Sequence, Tuple, TypeVar, Union)
 
 from peewee import (SQL, DeferredForeignKey, Field, ForeignKeyAccessor, ForeignKeyField, Model,
                     ModelBase)
@@ -148,7 +148,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     async def get_or_create(
-        cls: type[TAIOModel], defaults: dict = None, **kwargs
+        cls: type[TAIOModel], defaults: Optional[Dict] = None, **kwargs
     ) -> Tuple[TAIOModel, bool]:
         async with cls._manager.aio_database.transaction():
             try:
