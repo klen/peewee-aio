@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.3] - 2022-11-14
+
+- Fix `prefetch`, support peewee `3.15.3`
+
+## [0.14.2] - 2022-11-07
+
+### Fixed
+
+- Fix `DeferredKey` support
+
 ## [0.13.1] - 2021-12-01
 
 ### Fixed
@@ -39,7 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-[unreleased]: https://github.com/klen/peewee-aio/compare/0.13.1...HEAD
+[unreleased]: https://github.com/klen/peewee-aio/compare/0.14.3...HEAD
+[0.14.3]: https://github.com/klen/peewee-aio/compare/0.14.2...0.14.3
+[0.14.2]: https://github.com/klen/peewee-aio/compare/0.13.1...0.14.2
 [0.13.1]: https://github.com/klen/peewee-aio/compare/0.13.0...0.13.1
 [0.13.0]: https://github.com/klen/peewee-aio/compare/0.12.4...0.13.0
 [0.12.4]: https://github.com/klen/peewee-aio/compare/0.12.3...0.12.4
