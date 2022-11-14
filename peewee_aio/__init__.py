@@ -3,7 +3,7 @@
 # isort: skip_file
 
 
-__version__ = "0.14.6"
+__version__ = "0.14.7"
 
 
 from .model import AIOModel as Model
