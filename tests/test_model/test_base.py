@@ -4,7 +4,7 @@ import peewee
 async def test_base():
     from peewee_aio import Model
 
-    assert Model
+    assert Model  # type: ignore
 
 
 async def test_model(TestModel, manager):
