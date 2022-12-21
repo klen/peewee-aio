@@ -99,3 +99,21 @@ async def test_prefetch(manager):
 
     await RelModel.drop_table(safe=True)
     await BaseModel.drop_table(safe=True)
+
+
+async def test_union(TestModel, schema):
+    from peewee_aio.model import ModelCompoundSelectQuery
+
+    await TestModel.delete()
+    await TestModel.insert_many([TestModel(data=f"t{n}") for n in range(3)])
+
+    qs = (
+        TestModel.select().where(TestModel.data == "t1")
+        | TestModel.select().where(TestModel.data == "t2")
+        | TestModel.select().where(TestModel.data == "t3")
+    )
+
+    assert isinstance(qs, ModelCompoundSelectQuery)
+
+    res = await qs.limit(2)
+    assert res

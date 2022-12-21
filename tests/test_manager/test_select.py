@@ -1,19 +1,19 @@
-import pytest
 import peewee as pw
+import pytest
 
 
 async def test_get(manager, User, transaction):
     res = await manager.run(User.select())
     assert not res
 
-    user1 = await manager.create(User, name='Mickey')
+    user1 = await manager.create(User, name="Mickey")
     assert user1
-    user2 = await manager.create(User, name='John')
+    user2 = await manager.create(User, name="John")
     assert user2
 
     res1 = await manager.get(User, User.id == user2.id)
     assert res1
-    assert res1.name == 'John'
+    assert res1.name == "John"
     assert res1 == user2
     res2 = await manager.get(User, id=user2.id)
     assert res2
@@ -33,23 +33,23 @@ async def test_get(manager, User, transaction):
 
 
 async def test_get_or_create(manager, User, transaction):
-    user1, created = await manager.get_or_create(User, name='Mickey')
+    user1, created = await manager.get_or_create(User, name="Mickey")
     assert created
     assert user1
-    assert user1.name == 'Mickey'
+    assert user1.name == "Mickey"
 
-    user2, created = await manager.get_or_create(User, name='Mickey')
+    user2, created = await manager.get_or_create(User, name="Mickey")
     assert not created
     assert user2 == user1
 
 
 async def test_select(manager, User, transaction):
-    await manager.run(User.insert(name='Mickey'))
+    await manager.run(User.insert(name="Mickey"))
     [user] = await manager.run(User.select())
     assert user
     assert isinstance(user, User)
     assert user.id
-    assert user.name == 'Mickey'
+    assert user.name == "Mickey"
     assert user.is_active
 
     res = await manager.run(User.select())
@@ -58,12 +58,17 @@ async def test_select(manager, User, transaction):
 
 
 async def test_select_fk(manager, Role, User, UserToRole, transaction):
-    user = await manager.create(User, name='Mickey')
-    role = await manager.create(Role, name='admin')
+    user = await manager.create(User, name="Mickey")
+    role = await manager.create(Role, name="admin")
 
     await manager.create(UserToRole, user=user, role=role)
 
-    query = UserToRole.select(UserToRole, User, Role).join(Role).switch(UserToRole).join(User)
+    query = (
+        UserToRole.select(UserToRole, User, Role)
+        .join(Role)
+        .switch(UserToRole)
+        .join(User)
+    )
 
     [obj] = await manager.run(query)
     assert obj
@@ -77,28 +82,32 @@ async def test_select_fk(manager, Role, User, UserToRole, transaction):
 
 
 async def test_select_tuples(manager, User, transaction):
-    await manager.run(User.insert(name='Mickey'))
+    await manager.run(User.insert(name="Mickey"))
     [data] = await manager.run(User.select().tuples())
-    assert data == (data[0], data[1], 'Mickey', True)
+    assert data == (data[0], data[1], "Mickey", True)
 
 
 async def test_select_dicts(manager, User, transaction):
-    await manager.run(User.insert(name='Mickey'))
+    await manager.run(User.insert(name="Mickey"))
     [data] = await manager.run(User.select().dicts())
     assert data == {
-        'id': data['id'], 'created': data['created'], 'name': 'Mickey', 'is_active': True}
+        "id": data["id"],
+        "created": data["created"],
+        "name": "Mickey",
+        "is_active": True,
+    }
 
 
 async def test_scalar(manager, User, transaction):
-    await manager.run(User.insert(name='Mickey'))
-    await manager.run(User.insert(name='John'))
+    await manager.run(User.insert(name="Mickey"))
+    await manager.run(User.insert(name="John"))
     count = await manager.fetchval(User.select(pw.fn.Count(User.id)))
     assert count == 2
 
 
 async def test_count(manager, User, transaction):
-    await manager.run(User.insert(name='Mickey'))
-    await manager.run(User.insert(name='John'))
+    await manager.run(User.insert(name="Mickey"))
+    await manager.run(User.insert(name="John"))
 
     count = await manager.count(User.select())
     assert count == 2
@@ -109,18 +118,18 @@ async def test_count(manager, User, transaction):
 
 async def test_raw(manager, User, transaction):
     sql = "select id, name from user"
-    if manager.aio_database.backend.db_type == 'postgresql':
+    if manager.aio_database.backend.db_type == "postgresql":
         sql = 'select "id", "name" from "user"'
 
-    await manager.create(User, name='Mickey')
+    await manager.create(User, name="Mickey")
     res = await manager.run(User.raw(sql))
     assert res
     assert isinstance(res[0], User)
 
 
 async def test_prefetch(manager, User, Comment, transaction):
-    user = await manager.create(User, name='Mickey')
-    qs = Comment.insert_many([{'body': f"body{n}", 'user': user} for n in range(3)])
+    user = await manager.create(User, name="Mickey")
+    qs = Comment.insert_many([{"body": f"body{n}", "user": user} for n in range(3)])
     await manager.run(qs)
 
     res = await manager.prefetch(User.select())
@@ -132,3 +141,15 @@ async def test_prefetch(manager, User, Comment, transaction):
     assert user.comment_set
     assert isinstance(user.comment_set, list)
     assert len(user.comment_set) == 3
+
+
+async def test_union(manager, User, transaction):
+    await manager.run(User.insert(name="Mickey"))
+    await manager.run(User.insert(name="John"))
+
+    qs = User.select().where(User.name == "Mickey") | User.select().where(
+        User.name == "John"
+    )
+
+    res = await manager.run(qs.limit(2))
+    assert res

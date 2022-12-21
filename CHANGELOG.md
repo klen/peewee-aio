@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2022-12-21
+
+- Support union
+
 ## [0.14.7] - 2022-11-14
 
 - Fix `prefetch`, support peewee `3.15.4`

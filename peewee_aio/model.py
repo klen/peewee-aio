@@ -7,6 +7,7 @@ from typing import (Any, AsyncGenerator, Callable, Coroutine, Dict, Generator, G
 
 from peewee import (SQL, DeferredForeignKey, Field, ForeignKeyAccessor, ForeignKeyField, Model,
                     ModelBase)
+from peewee import ModelCompoundSelectQuery as ModelCompoundSelectQuery_
 from peewee import ModelDelete as ModelDelete_
 from peewee import ModelInsert as ModelInsert_
 from peewee import ModelRaw as ModelRaw_
@@ -245,7 +246,32 @@ class AIOQuery(Generic[TAIOModel]):
         return self.manager.run(self).__await__()  # type: ignore
 
 
-class ModelSelect(AIOQuery[TAIOModel], ModelSelect_):
+class BaseModelSelect(AIOQuery[TAIOModel]):
+    def union_all(self, rhs):
+        return ModelCompoundSelectQuery(self.model, self, "UNION ALL", rhs)
+
+    __add__ = union_all
+
+    def union(self, rhs):
+        return ModelCompoundSelectQuery(self.model, self, "UNION", rhs)
+
+    __or__ = union
+
+    def intersect(self, rhs):
+        return ModelCompoundSelectQuery(self.model, self, "INTERSECT", rhs)
+
+    __and__ = intersect
+
+    def except_(self, rhs):
+        return ModelCompoundSelectQuery(self.model, self, "EXCEPT", rhs)
+
+    __sub__ = except_
+
+    async def prefetch(self, *subqueries) -> List[TAIOModel]:
+        return await self.manager.prefetch(self, *subqueries)
+
+
+class ModelSelect(BaseModelSelect[TAIOModel], ModelSelect_):
     _limit: int
 
     def __aiter__(self) -> AsyncGenerator[TAIOModel, None]:
@@ -287,11 +313,11 @@ class ModelSelect(AIOQuery[TAIOModel], ModelSelect_):
     async def count(self) -> int:
         return await self.manager.count(self)
 
-    async def get(self) -> TAIOModel:
-        return await self.first()
+    async def get(self, **kwargs) -> TAIOModel:
+        if kwargs:
+            return await self.filter(**kwargs).first()
 
-    async def prefetch(self, *subqueries) -> List[TAIOModel]:
-        return await self.manager.prefetch(self, *subqueries)
+        return await self.first()
 
     # Type helpers
     with_cte: Callable[..., ModelSelect[TAIOModel]]
@@ -299,7 +325,7 @@ class ModelSelect(AIOQuery[TAIOModel], ModelSelect_):
     orwhere: Callable[..., ModelSelect[TAIOModel]]
     order_by: Callable[..., ModelSelect[TAIOModel]]
     order_by_extend: Callable[..., ModelSelect[TAIOModel]]
-    limit: Callable[[int], ModelSelect[TAIOModel]]
+    limit: Callable[[Union[int, None]], ModelSelect[TAIOModel]]
     offset: Callable[[int], ModelSelect[TAIOModel]]
     paginate: Callable[..., ModelSelect[TAIOModel]]
 
@@ -313,6 +339,10 @@ class ModelSelect(AIOQuery[TAIOModel], ModelSelect_):
     window: Callable[..., ModelSelect[TAIOModel]]
     for_update: Callable[..., ModelSelect[TAIOModel]]
     lateral: Callable[..., ModelSelect[TAIOModel]]
+
+
+class ModelCompoundSelectQuery(BaseModelSelect[TAIOModel], ModelCompoundSelectQuery_):
+    pass
 
 
 class ModelUpdate(AIOQuery, ModelUpdate_):
