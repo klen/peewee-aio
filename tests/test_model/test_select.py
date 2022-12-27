@@ -117,3 +117,13 @@ async def test_union(TestModel, schema):
 
     res = await qs.limit(2)
     assert res
+
+
+async def test_scalar(TestModel, schema):
+    await TestModel.delete()
+    await TestModel.insert_many([TestModel(data=f"t{n}") for n in range(3)])
+    assert await TestModel.select(TestModel.data).scalars() == ["t0", "t1", "t2"]
+
+    assert await TestModel.select(TestModel.data).scalar() == "t0"
+    assert await TestModel.select(TestModel.data).scalar(as_tuple=True) == ("t0",)
+    assert await TestModel.select(TestModel.data).scalar(as_dict=True) == {"data": "t0"}

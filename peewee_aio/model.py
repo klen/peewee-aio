@@ -289,16 +289,6 @@ class ModelSelect(BaseModelSelect[TAIOModel], ModelSelect_):
             return qs.get()
         return qs
 
-    async def scalar(self, as_tuple=False):
-        row = await self.tuples().peek()
-        return row[0] if row and not as_tuple else row
-
-    async def exists(self) -> bool:
-        clone: ModelSelect = self.columns(SQL("1"))
-        clone._limit = 1
-        clone._offset = None
-        return bool(await clone.scalar())
-
     async def peek(self, n=1) -> TAIOModel:
         if n == 1:
             return await self.manager.fetchone(self)
@@ -310,8 +300,23 @@ class ModelSelect(BaseModelSelect[TAIOModel], ModelSelect_):
             self._cursor_wrapper = None
         return self.peek(n=n)
 
+    async def scalar(self, as_tuple=False, as_dict=False):
+        if as_dict:
+            return await self.dicts().peek()
+        row = await self.tuples().peek()
+        return row[0] if row and not as_tuple else row
+
+    async def scalars(self) -> List[Any]:
+        return [row[0] for row in await self.tuples()]
+
     async def count(self) -> int:
         return await self.manager.count(self)
+
+    async def exists(self) -> bool:
+        clone: ModelSelect = self.columns(SQL("1"))
+        clone._limit = 1
+        clone._offset = None
+        return bool(await clone.scalar())
 
     async def get(self, **kwargs) -> TAIOModel:
         if kwargs:
