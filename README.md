@@ -36,11 +36,17 @@ $ pip install peewee-aio
 You can install optional database drivers with:
 
 ```shell
+# for SQLite
 $ pip install peewee-aio[aiosqlite]
+# for MySQL
 $ pip install peewee-aio[aiomysql]
+# for PostgreSQL
 $ pip install peewee-aio[aiopg]
+# for Asynchronous PostgreSQL
 $ pip install peewee-aio[asyncpg]
+# for Trio MySQL
 $ pip install peewee-aio[trio_mysql]
+# for Trio PostgreSQL
 $ pip install peewee-aio[triopg]
 ```
 
