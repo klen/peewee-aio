@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import (Any, AsyncGenerator, Callable, Coroutine, Dict, Generator, Generic, List,
-                    Optional, Sequence, Tuple, TypeVar, Union)
+from typing import (Any, AsyncGenerator, Callable, Coroutine, Dict, Generator, Generic, Iterable,
+                    List, Optional, Tuple, TypeVar, Union)
 
 from peewee import (SQL, DeferredForeignKey, Field, ForeignKeyAccessor, ForeignKeyField, Model,
                     ModelBase)
@@ -190,7 +190,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return ModelInsert(cls, cls._normalize_data(__data, insert))
 
     @classmethod
-    def insert_many(cls, rows: Sequence, fields=None) -> ModelInsert:
+    def insert_many(cls, rows: Iterable, fields=None) -> ModelInsert:
         rows = [row.__data__ if isinstance(row, Model) else row for row in rows]
         if not rows:
             raise ModelInsert.DefaultValuesException("Error: no rows to insert.")
