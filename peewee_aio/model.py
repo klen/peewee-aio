@@ -284,10 +284,10 @@ class ModelSelect(BaseModelSelect[TAIOModel], ModelSelect_):
         if isinstance(value, slice):
             limit, offset = value.stop - value.start, value.start
 
-        qs = self.limit(limit).offset(offset)  # type: ignore
+        query = self.limit(limit).offset(offset)  # type: ignore
         if limit == 1:
-            return qs.get()
-        return qs
+            return query.get()
+        return query
 
     async def peek(self, n=1) -> TAIOModel:
         if n == 1:
@@ -295,10 +295,10 @@ class ModelSelect(BaseModelSelect[TAIOModel], ModelSelect_):
         return await self.manager.fetchmany(n, self)
 
     def first(self, n=1) -> Coroutine[Any, Any, TAIOModel]:
+        query = self
         if self._limit != n:
-            self._limit = n
-            self._cursor_wrapper = None
-        return self.peek(n=n)
+            query = self.limit(n)
+        return query.peek(n)
 
     async def scalar(self, as_tuple=False, as_dict=False):
         if as_dict:

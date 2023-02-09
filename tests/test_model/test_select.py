@@ -127,3 +127,12 @@ async def test_scalar(TestModel, schema):
     assert await TestModel.select(TestModel.data).scalar() == "t0"
     assert await TestModel.select(TestModel.data).scalar(as_tuple=True) == ("t0",)
     assert await TestModel.select(TestModel.data).scalar(as_dict=True) == {"data": "t0"}
+
+
+async def test_first(TestModel, schema):
+    await TestModel.insert_many([TestModel(data=f"t{n}") for n in range(3)])
+    qs = TestModel.select().order_by(TestModel.id)
+    ts1, ts2, ts3 = await qs
+    ts = await qs.first()
+    assert ts == ts1
+    assert (await qs) == [ts1, ts2, ts3]
