@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from typing import (Any, AsyncIterator, Callable, Dict, Generator, Iterator, List, Mapping,
-                    Optional, Sequence, Tuple, Type, TypeVar, Union)
+                    Optional, Sequence, Tuple, Union)
 from weakref import WeakSet
 
 from aio_databases.backends import ABCConnection
@@ -12,13 +12,11 @@ from peewee import (EXCEPTIONS, PREFETCH_TYPE, SQL, BaseQuery, Context, Insert, 
 from peewee import Model as PWModel
 from peewee import (ModelRaw, OperationalError, Query, SchemaManager, Select, __exception_wrapper__,
                     fn, logger, prefetch_add_subquery, sort_models)
+from typing_extensions import Self  # py310,py39,py38,py37
 
 from .databases import Database as PWDatabase
 from .databases import get_db
 from .model import AIOModel
-
-TMODEL = TypeVar("TMODEL", bound=PWModel)
-TMANAGER = TypeVar("TMANAGER", bound="Manager")
 
 
 class Manager:
@@ -27,6 +25,7 @@ class Manager:
     aio_database: Database
     pw_database: PWDatabase
     models: "WeakSet[type[PWModel]]"
+    Model: type[AIOModel]
 
     def __init__(
         self, database: Union[Database, str], convert_params=True, **backend_options
@@ -49,7 +48,7 @@ class Manager:
 
         self.Model = Model
 
-    def register(self, Model: type[TMODEL]) -> type[TMODEL]:
+    def register(self, Model: type[TVModel]) -> type[TVModel]:
         """Register a model with the manager."""
         Model._manager = self  # type: ignore
         Model._meta.database = self.pw_database
@@ -67,7 +66,7 @@ class Manager:
     def current_conn(self) -> Optional[ABCConnection]:
         return self.aio_database.current_conn
 
-    async def connect(self: TMANAGER) -> TMANAGER:
+    async def connect(self) -> Self:
         """Connect to the database (initialize the database's pool)"""
         await self.aio_database.connect()
         return self
@@ -250,8 +249,8 @@ class Manager:
             await self.execute(ctx)
 
     async def get_or_none(
-        self, Model: type[TMODEL], *args, **kwargs
-    ) -> Optional[TMODEL]:
+        self, Model: type[TVModel], *args, **kwargs
+    ) -> Optional[TVModel]:
         query = Model.select()
         if kwargs:
             query = query.filter(**kwargs)
@@ -261,13 +260,13 @@ class Manager:
 
         return await self.fetchone(query)
 
-    async def get(self, Model: type[TMODEL], *args, **kwargs) -> TMODEL:
+    async def get(self, Model: type[TVModel], *args, **kwargs) -> TVModel:
         res = await self.get_or_none(Model, *args, **kwargs)
         if res is None:
             raise Model.DoesNotExist
         return res
 
-    async def get_by_id(self, Model: type[TMODEL], pk) -> TMODEL:
+    async def get_by_id(self, Model: type[TVModel], pk) -> TVModel:
         return await self.get(Model, Model._meta.primary_key == pk)
 
     async def set_by_id(self, Model: type[PWModel], key, value) -> Any:
@@ -282,8 +281,8 @@ class Manager:
         return await self.execute(Model.delete().where(Model._meta.primary_key == pk))
 
     async def get_or_create(
-        self, Model: Type[TMODEL], defaults: Optional[Dict] = None, **kwargs
-    ) -> Tuple[TMODEL, bool]:
+        self, Model: type[TVModel], defaults: Optional[Dict] = None, **kwargs
+    ) -> Tuple[TVModel, bool]:
         async with self.aio_database.transaction():
             try:
                 return (await self.get(Model, **kwargs), False)
@@ -293,7 +292,7 @@ class Manager:
                     True,
                 )
 
-    async def create(self, Model: type[TMODEL], **values) -> TMODEL:
+    async def create(self, Model: type[TVModel], **values) -> TVModel:
         inst = Model(**values)
         inst = await self.save(inst, force_insert=True)
         return inst
@@ -303,11 +302,11 @@ class Manager:
 
     async def save(  # noqa
         self,
-        inst: TMODEL,
+        inst: TVModel,
         force_insert: bool = False,
         only: Optional[Sequence] = None,
         on_conflict_ignore: bool = False,
-    ) -> TMODEL:
+    ) -> TVModel:
         field_dict = inst.__data__.copy()
         pk_field = pk_value = None
         meta = inst._meta  # type: ignore
@@ -455,3 +454,6 @@ class Constructor:
             self.processor = wrapper.process_row
 
         return self.processor
+
+
+from .types import TVModel  # noqa

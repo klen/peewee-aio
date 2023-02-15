@@ -2,9 +2,8 @@ import peewee
 import pytest
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 async def TestModel(manager):
-
     class TestModel(manager.Model):
         data = peewee.CharField()
 
