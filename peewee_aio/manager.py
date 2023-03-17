@@ -1,22 +1,58 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import (Any, AsyncIterator, Callable, Dict, Generator, Iterator, List, Mapping,
-                    Optional, Sequence, Tuple, Union)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Generator,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 from weakref import WeakSet
 
-from aio_databases.backends import ABCConnection
 from aio_databases.database import ConnectionContext, Database, TransactionContext
-from peewee import (EXCEPTIONS, PREFETCH_TYPE, SQL, BaseQuery, Context, Insert, IntegrityError,
-                    InternalError)
+from peewee import (
+    EXCEPTIONS,
+    PREFETCH_TYPE,
+    SQL,
+    BaseQuery,
+    Context,
+    Expression,
+    Insert,
+    IntegrityError,
+    InternalError,
+    ModelRaw,
+    ModelSelect,
+    OperationalError,
+    Query,
+    SchemaManager,
+    Select,
+    __exception_wrapper__,
+    fn,
+    logger,
+    prefetch_add_subquery,
+    sort_models,
+)
 from peewee import Model as PWModel
-from peewee import (ModelRaw, OperationalError, Query, SchemaManager, Select, __exception_wrapper__,
-                    fn, logger, prefetch_add_subquery, sort_models)
-from typing_extensions import Self  # py310,py39,py38,py37
 
 from .databases import Database as PWDatabase
 from .databases import get_db
 from .model import AIOModel
+
+if TYPE_CHECKING:
+    from aio_databases.backends import ABCConnection
+    from typing_extensions import Self  # py310,py39,py38,py37
+
+    from .types import TVModel
 
 
 class Manager:
@@ -24,11 +60,15 @@ class Manager:
 
     aio_database: Database
     pw_database: PWDatabase
-    models: "WeakSet[type[PWModel]]"
-    Model: type[AIOModel]
+    models: "WeakSet[Type[PWModel]]"
+    Model: Type[AIOModel]
 
     def __init__(
-        self, database: Union[Database, str], convert_params=True, **backend_options
+        self,
+        database: Union[Database, str],
+        *,
+        convert_params=True,
+        **backend_options,
     ):
         """Initialize dialect and database."""
         if not isinstance(database, Database):
@@ -48,12 +88,12 @@ class Manager:
 
         self.Model = Model
 
-    def register(self, Model: type[TVModel]) -> type[TVModel]:
+    def register(self, model_cls: Type[TVModel]) -> Type[TVModel]:
         """Register a model with the manager."""
-        Model._manager = self  # type: ignore
-        Model._meta.database = self.pw_database
-        self.models.add(Model)
-        return Model
+        model_cls._manager = self
+        model_cls._meta.database = self.pw_database
+        self.models.add(model_cls)
+        return model_cls
 
     def __iter__(self) -> Iterator:
         """Iterate through registered models."""
@@ -81,7 +121,7 @@ class Manager:
 
     async def execute(self, query: Any, *params, **opts) -> Any:
         """Execute a given query with the given params."""
-        with process(query, params, True) as (sql, params, _):
+        with process(query, params, raw=True) as (sql, params, _):
             res = await self.aio_database.execute(sql, *params, **opts)
             if res is None:
                 return res
@@ -93,34 +133,43 @@ class Manager:
 
     async def fetchval(self, sql: Any, *params, **opts) -> Any:
         """Execute the given SQL and fetch a value."""
-        with process(sql, params, True) as (sql, params, _):
+        with process(sql, params, raw=True) as (sql, params, _):
             return await self.aio_database.fetchval(sql, *params, **opts)
 
     async def fetchall(self, sql: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch all."""
-        with process(sql, params, raw) as (sql, params, constructor):
+        with process(sql, params, raw=raw) as (sql, params, constructor):
             res = await self.aio_database.fetchall(sql, *params, **opts)
             return constructor(res)
 
     async def fetchmany(
-        self, size: int, sql: Any, *params, raw: bool = False, **opts
+        self,
+        size: int,
+        sql: Any,
+        *params,
+        raw: bool = False,
+        **opts,
     ) -> Any:
         """Execute the given SQL and fetch many of the size."""
-        with process(sql, params, raw) as (sql, params, constructor):
+        with process(sql, params, raw=raw) as (sql, params, constructor):
             res = await self.aio_database.fetchmany(size, sql, *params, **opts)
             return constructor(res)
 
     async def fetchone(self, sql: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch one."""
-        with process(sql, params, raw) as (sql, params, constructor):
+        with process(sql, params, raw=raw) as (sql, params, constructor):
             res = await self.aio_database.fetchone(sql, *params, **opts)
             return constructor(res)
 
     async def iterate(
-        self, sql: Any, *params, raw: bool = False, **opts
+        self,
+        sql: Any,
+        *params,
+        raw: bool = False,
+        **opts,
     ) -> AsyncIterator:
         """Execute the given SQL and iterate through results."""
-        with process(sql, params, raw) as (sql, params, constructor):
+        with process(sql, params, raw=raw) as (sql, params, constructor):
             async for res in self.aio_database.iterate(sql, *params, **opts):
                 yield constructor(res)
 
@@ -159,9 +208,9 @@ class Manager:
 
         return self.execute(query)
 
-    async def count(self, query: Select, clear_limit: bool = False) -> Any:
+    async def count(self, query: Select, *, clear_limit: bool = False) -> Any:
         """Execute the given Peewee ORM Query and get a count of rows."""
-        query = query.order_by()  # type: ignore
+        query = query.order_by()
         if clear_limit:
             query._limit = query._offset = None
 
@@ -214,15 +263,15 @@ class Manager:
     # Model methods
     # -------------
 
-    async def create_tables(self, *Models: type[PWModel], safe=True, **opts):
+    async def create_tables(self, *models_cls: Type[PWModel], safe=True, **opts):
         """Create tables for the given models or all registered with the manager."""
-        Models = Models or tuple(self.models)
-        for Model in sort_models(Models):
-            schema: SchemaManager = Model._schema
+        models_cls = models_cls or tuple(self.models)
+        for model_cls in sort_models(models_cls):
+            schema: SchemaManager = model_cls._schema
 
             # Create sequences
             if schema.database.sequences:
-                for field in Model._meta.sorted_fields:
+                for field in model_cls._meta.sorted_fields:
                     if field.sequence:
                         ctx = schema._create_sequence(field)
                         if ctx:
@@ -240,18 +289,21 @@ class Manager:
                     if not safe:
                         raise
 
-    async def drop_tables(self, *Models: type[PWModel], **opts):
+    async def drop_tables(self, *models_cls: Type[PWModel], **opts):
         """Drop tables for the given models or all registered with the manager."""
-        Models = Models or tuple(self.models)
-        for Model in reversed(sort_models(Models)):
-            schema: SchemaManager = Model._schema
+        models_cls = models_cls or tuple(self.models)
+        for model_cls in reversed(sort_models(models_cls)):
+            schema: SchemaManager = model_cls._schema
             ctx = schema._drop_table(**opts)
             await self.execute(ctx)
 
     async def get_or_none(
-        self, Model: type[TVModel], *args, **kwargs
+        self,
+        model_cls: Type[TVModel],
+        *args: Expression,
+        **kwargs,
     ) -> Optional[TVModel]:
-        query = Model.select()
+        query: ModelSelect = model_cls.select()
         if kwargs:
             query = query.filter(**kwargs)
 
@@ -260,56 +312,66 @@ class Manager:
 
         return await self.fetchone(query)
 
-    async def get(self, Model: type[TVModel], *args, **kwargs) -> TVModel:
-        res = await self.get_or_none(Model, *args, **kwargs)
+    async def get(
+        self,
+        model_cls: Type[TVModel],
+        *args: Expression,
+        **kwargs,
+    ) -> TVModel:
+        res = await self.get_or_none(model_cls, *args, **kwargs)
         if res is None:
-            raise Model.DoesNotExist
+            raise model_cls.DoesNotExist
         return res
 
-    async def get_by_id(self, Model: type[TVModel], pk) -> TVModel:
-        return await self.get(Model, Model._meta.primary_key == pk)
+    async def get_by_id(self, model_cls: Type[TVModel], pk) -> TVModel:
+        return await self.get(model_cls, model_cls._meta.primary_key == pk)
 
-    async def set_by_id(self, Model: type[PWModel], key, value) -> Any:
+    async def set_by_id(self, model_cls: Type[PWModel], key, value) -> Any:
         qs = (
-            Model.insert(value)
+            model_cls.insert(value)
             if key is None
-            else Model.update(value).where(Model._meta.primary_key == key)
+            else model_cls.update(value).where(model_cls._meta.primary_key == key)
         )
         return await self.execute(qs)
 
-    async def delete_by_id(self, Model: type[PWModel], pk):
-        return await self.execute(Model.delete().where(Model._meta.primary_key == pk))
+    async def delete_by_id(self, model_cls: Type[PWModel], pk):
+        return await self.execute(
+            model_cls.delete().where(model_cls._meta.primary_key == pk),
+        )
 
     async def get_or_create(
-        self, Model: type[TVModel], defaults: Optional[Dict] = None, **kwargs
+        self,
+        model_cls: Type[TVModel],
+        defaults: Optional[Dict] = None,
+        **kwargs,
     ) -> Tuple[TVModel, bool]:
         async with self.aio_database.transaction():
             try:
-                return (await self.get(Model, **kwargs), False)
-            except Model.DoesNotExist:
+                return (await self.get(model_cls, **kwargs), False)
+            except model_cls.DoesNotExist:
                 return (
-                    await self.create(Model, **dict(defaults or {}, **kwargs)),
+                    await self.create(model_cls, **dict(defaults or {}, **kwargs)),
                     True,
                 )
 
-    async def create(self, Model: type[TVModel], **values) -> TVModel:
-        inst = Model(**values)
-        inst = await self.save(inst, force_insert=True)
-        return inst
+    async def create(self, model_cls: Type[TVModel], **values) -> TVModel:
+        inst = model_cls(**values)
+        return await self.save(inst, force_insert=True)
 
     # Instance methods
     # ----------------
 
-    async def save(  # noqa
+    async def save(  # noqa: PLR0912, C901
         self,
         inst: TVModel,
+        *,
         force_insert: bool = False,
         only: Optional[Sequence] = None,
         on_conflict_ignore: bool = False,
     ) -> TVModel:
         field_dict = inst.__data__.copy()
         pk_field = pk_value = None
-        meta = inst._meta  # type: ignore
+        meta = inst._meta
         if meta.primary_key is not False:
             pk_field = meta.primary_key
             pk_value = inst._pk
@@ -329,38 +391,41 @@ class Manager:
 
         if pk_field is None:
             await self.execute(
-                inst.insert(**field_dict).on_confict_ignore(on_conflict_ignore)
+                inst.insert(**field_dict).on_confict_ignore(on_conflict_ignore),
             )
 
-        else:
-            # Update
-            if pk_value is not None and not force_insert:
-                if meta.composite_key:
-                    for pk_part_name in pk_field.field_names:
-                        field_dict.pop(pk_part_name, None)
-                else:
-                    field_dict.pop(pk_field.name, None)
-                if not field_dict:
-                    raise ValueError("no data to save!")
-
-                await self.execute(inst.update(**field_dict).where(inst._pk_expr()))
-
-            # Insert
+        # Update
+        elif pk_value is not None and not force_insert:
+            if meta.composite_key:
+                for pk_part_name in pk_field.field_names:
+                    field_dict.pop(pk_part_name, None)
             else:
-                query = inst.insert(**field_dict).on_conflict_ignore(on_conflict_ignore)
-                if query._returning:
-                    pk = await self.fetchval(query)
-                else:
-                    pk = await self.execute(query)
+                field_dict.pop(pk_field.name, None)
+            if not field_dict:
+                raise ValueError("no data to save!")
 
-                if pk is not None and (meta.auto_increment or pk_value is None):
-                    inst._pk = pk
+            await self.execute(inst.update(**field_dict).where(inst._pk_expr()))
+
+        # Insert
+        else:
+            query = inst.insert(**field_dict).on_conflict_ignore(on_conflict_ignore)
+            if query._returning:
+                pk = await self.fetchval(query)
+            else:
+                pk = await self.execute(query)
+
+            if pk is not None and (meta.auto_increment or pk_value is None):
+                inst._pk = pk
 
         inst._dirty.clear()
         return inst
 
     async def delete_instance(
-        self, inst: PWModel, recursive: bool = False, delete_nullable: bool = False
+        self,
+        inst: PWModel,
+        *,
+        recursive: bool = False,
+        delete_nullable: bool = False,
     ):
         if recursive:
             for query, fk in reversed(list(inst.dependencies(delete_nullable))):
@@ -373,15 +438,18 @@ class Manager:
         return await self.execute(inst.delete().where(inst._pk_expr()))
 
 
-DEFAULT_CONSTRUCTOR = lambda r: r  # noqa
+def identity(r):
+    return r
+
+
 EXCEPTIONS["UniqueViolationError"] = IntegrityError
 EXCEPTIONS["NotNullViolationError"] = InternalError
 EXCEPTIONS["DuplicateTableError"] = OperationalError
 
 
 @contextmanager
-def process(query: Any, params: Sequence, raw: bool) -> Generator:
-    constructor = DEFAULT_CONSTRUCTOR
+def process(query: Any, params: Sequence, *, raw: bool) -> Generator:
+    constructor = identity
 
     if isinstance(query, BaseQuery):
         if not raw:
@@ -419,7 +487,7 @@ class FakeCursor:
     __slots__ = ("description",)
 
     def __init__(self, res: Mapping):
-        self.description = [[k] for k in res.keys()]
+        self.description = [[k] for k in res.keys()]  # noqa: SIM118
 
 
 class Constructor:
@@ -432,7 +500,8 @@ class Constructor:
         self.processor: Optional[Callable] = None
 
     def __call__(
-        self, res: Union[Mapping, Sequence[Mapping]]
+        self,
+        res: Union[Mapping, Sequence[Mapping]],
     ) -> Union[Any, Sequence[Any]]:
         """Process rows."""
         if not res:  # None or empty sequence
@@ -454,6 +523,3 @@ class Constructor:
             self.processor = wrapper.process_row
 
         return self.processor
-
-
-from .types import TVModel  # noqa

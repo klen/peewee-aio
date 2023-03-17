@@ -1,41 +1,43 @@
+from __future__ import annotations
+
 import peewee
 
 
 async def test_base():
-    from peewee_aio import Model
+    from peewee_aio import AIOModel
 
-    assert Model  # type: ignore
+    assert issubclass(AIOModel, peewee.Model)
 
 
-async def test_model(TestModel, manager):
-    assert TestModel
-    assert TestModel._manager is manager
-    assert TestModel._meta.database is manager.pw_database
+async def test_base_model(test_model, manager):
+    assert test_model
+    assert test_model._manager is manager
+    assert test_model._meta.database is manager.pw_database
 
-    class ChildModel(TestModel):
+    class ChildModel(test_model):
         is_active = peewee.BooleanField(default=True)
 
     return ChildModel
 
 
-async def test_backref(TestModel, manager, schema):
-    class BaseModel(TestModel):
+async def test_backref(test_model, manager, schema):
+    class BaseModel(test_model):
         class Meta:
             table_name = "testmodel"
 
     class Ref(manager.Model):
         data = peewee.CharField()
 
-        test = peewee.ForeignKeyField(BaseModel)
+        test = peewee.ForeignKeyField(BaseModel, on_delete="CASCADE")
 
     await Ref.drop_table()
     await Ref.create_table()
 
     source = await BaseModel.create(data="data")
 
-    from peewee_aio.model import ModelSelect
+    from peewee_aio.model import AIOModelSelect
 
-    assert isinstance(source.ref_set, ModelSelect)
+    assert isinstance(source.ref_set, AIOModelSelect)
 
     ref = await Ref.create(data="ref", test=source)
     assert ref == await source.ref_set.first()
@@ -58,9 +60,9 @@ async def test_backref(TestModel, manager, schema):
     await Ref.drop_table()
 
 
-async def test_fk(TestModel, manager, schema):
+async def test_fk(test_model, manager, schema):
     class ParentModel(manager.Model):
-        child = peewee.ForeignKeyField(TestModel, null=True)
+        child = peewee.ForeignKeyField(test_model, null=True, on_delete="CASCADE")
 
     from peewee_aio.model import AIOForeignKeyField
 
@@ -71,7 +73,7 @@ async def test_fk(TestModel, manager, schema):
     parent = await ParentModel.create()
     assert parent.child is None
 
-    child = await TestModel.create(data="body")
+    child = await test_model.create(data="body")
     parent = await ParentModel.create(child=child)
 
     assert parent.child == child
@@ -81,7 +83,7 @@ async def test_fk(TestModel, manager, schema):
 
 async def test_deferred_fk(manager):
     class ParentModel(manager.Model):
-        child = peewee.DeferredForeignKey("ChildModel", null=True)
+        child = peewee.DeferredForeignKey("ChildModel", null=True, on_delete="CASCADE")
 
     class ChildModel(manager.Model):
         pass
@@ -103,7 +105,7 @@ async def test_deferred_fk(manager):
     await ChildModel.drop_table()
 
 
-async def test_await_model(TestModel):
-    test = TestModel(id=1)
+async def test_await_model(test_model):
+    test = test_model(id=1)
     assert await test == test
     assert await test == test

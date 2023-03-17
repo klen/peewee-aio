@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import peewee
 
 
 def test_readme():
     from peewee_aio import Manager
 
-    manager = Manager('sqlite:///:memory:')
+    manager = Manager("sqlite:///:memory:")
 
     @manager.register
     class TestModel(manager.Model):
@@ -36,7 +38,9 @@ def test_readme():
                 await test.save()
 
                 # Update records
-                await TestModel.update({'text': "I'm updated'"}).where(TestModel.id == test.id)
+                await TestModel.update({"text": "I'm updated'"}).where(
+                    TestModel.id == test.id,
+                )
 
                 # Delete records
                 await TestModel.delete().where(TestModel.id == test.id)
@@ -45,4 +49,5 @@ def test_readme():
                 await TestModel.drop_table()
 
     import asyncio
+
     asyncio.run(handler())

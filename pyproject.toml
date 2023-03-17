@@ -1,0 +1,94 @@
+[tool.poetry]
+name = "peewee-aio"
+version = "0.16.3"
+description = "Async support for Peewee ORM"
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/klen/peewee-aio"
+repository = "https://github.com/klen/peewee-aio"
+authors = ["Kirill Klenov <horneds@gmail.com>"]
+keywords = ["peewee", "asyncio", "trio", "orm"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Framework :: AsyncIO",
+    "Framework :: Trio",
+]
+packages = [
+    { include = "peewee_aio" },
+]
+
+[tool.poetry.dependencies]
+peewee = "^3.15.4"
+aio-databases = "^0.13.2"
+typing-extensions = {version = "*", python = "<3.11"}
+
+# Optional dependencies
+asyncpg = {version = "*", optional = true}
+aiopg = {version = "*", optional = true}
+aiomysql = {version = "*", optional = true}
+aiosqlite = {version = "*", optional = true}
+triopg = {version = "*", optional = true}
+trio_mysql = {version = "*", optional = true}
+
+[tool.poetry.extras]
+asyncpg = ["asyncpg"]
+aiopg = ["aiopg"]
+aiomysql = ["aiomysql"]
+aiosqlite = ["aiosqlite"]
+triopg = ["triopg"]
+trio_mysql = ["trio_mysql"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-mypy = "*"
+pytest-aio = {version = "*", extras = ["trio"]}
+trio_asyncio = "*"
+aio-databases = {version = "*", extras = [
+  "aiopg", "aiomysql", "aiosqlite", "asyncpg", "trio_mysql", "triopg"]
+}
+ruff = "*"
+black = "*"
+pre-commit = "*"
+
+[tool.pytest.ini_options]
+addopts = "-xsv"
+log_cli = true
+
+[tool.mypy]
+packages = ["peewee_aio"]
+ignore_missing_imports = true
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py38,py39,py310,py311
+
+[testenv]
+deps = -e .[tests]
+commands =
+	pytest --mypy tests
+"""
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+exclude = [".venv", "docs", "examples"]
+select = ["ALL"]
+ignore = ["D", "UP", "ANN", "DJ", "EM", "RSE", "SLF", "RET", "S101", "PLR2004", "PLR0912", "N804", "A003", "TRY003"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39", "py310", "py311"]
+preview = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

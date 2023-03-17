@@ -1,8 +1,12 @@
-from typing import Dict, Type
+from __future__ import annotations
 
-import aio_databases as aiodb
+from typing import TYPE_CHECKING, Dict, Type
+
 import peewee as pw
 from playhouse import db_url
+
+if TYPE_CHECKING:
+    import aio_databases as aiodb
 
 
 class Database(pw.Database):
@@ -12,10 +16,10 @@ class Database(pw.Database):
     def execute(self, *args, **kwargs):
         if not self.enabled:
             raise RuntimeError(
-                "Sync operations are not available. Use `manager.allow_sync` to enable."
+                "Sync operations are not available. Use `manager.allow_sync` to enable.",
             )
 
-        return super().execute(*args, **kwargs)  # type: ignore
+        return super().execute(*args, **kwargs)
 
 
 class SqliteDatabase(Database, pw.SqliteDatabase):

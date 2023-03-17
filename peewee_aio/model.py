@@ -1,26 +1,56 @@
 """TODO: To implement."""
 
+
 from __future__ import annotations
 
-from typing import (Any, AsyncGenerator, Callable, Coroutine, Dict, Generator, Generic, Iterable,
-                    List, Optional, Tuple, Union)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Callable,
+    Coroutine,
+    Dict,
+    Generator,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
-from peewee import (SQL, DeferredForeignKey, Field, ForeignKeyAccessor, ForeignKeyField, Model,
-                    ModelBase)
-from peewee import ModelCompoundSelectQuery as ModelCompoundSelectQuery_
-from peewee import ModelDelete as ModelDelete_
-from peewee import ModelInsert as ModelInsert_
-from peewee import ModelRaw as ModelRaw_
-from peewee import ModelSelect as ModelSelect_
-from peewee import ModelUpdate as ModelUpdate_
-from typing_extensions import Self  # py310,py39,py38,py37
+from peewee import (
+    SQL,
+    DeferredForeignKey,
+    Expression,
+    Field,
+    ForeignKeyAccessor,
+    ForeignKeyField,
+    Model,
+    ModelAlias,
+    ModelBase,
+    ModelCompoundSelectQuery,
+    ModelDelete,
+    ModelInsert,
+    ModelRaw,
+    ModelSelect,
+    ModelUpdate,
+    Table,
+)
 
 from .types import TVAIOModel
+
+if TYPE_CHECKING:
+    from typing_extensions import Self  # py310,py39,py38,py37
+
+    from .manager import Manager
 
 
 class AIOForeignKeyAccessor(ForeignKeyAccessor):
     def get_rel_instance(
-        self, instance: Model
+        self,
+        instance: Model,
     ) -> Union[Model, None, Coroutine[Any, Any, Model]]:
 
         # Get from cache
@@ -53,7 +83,7 @@ class AIOForeignKeyField(ForeignKeyField):
 
 
 class AIODeferredForeignKey(DeferredForeignKey):
-    def set_model(self, rel_model):
+    def set_model(self, rel_model: Type[Model]):
         field = AIOForeignKeyField(rel_model, _deferred=True, **self.field_kwargs)
         self.model._meta.add_field(self.name, field)
 
@@ -69,7 +99,8 @@ class AIOModelBase(ModelBase):
                 continue
 
             if isinstance(attr, ForeignKeyField) and not isinstance(
-                attr, AIOForeignKeyField
+                attr,
+                AIOForeignKeyField,
             ):
                 attrs[attr_name] = AIOForeignKeyField(
                     attr.rel_model,
@@ -99,7 +130,8 @@ class AIOModelBase(ModelBase):
                 )
 
             elif isinstance(attr, DeferredForeignKey) and not isinstance(
-                attr, AIODeferredForeignKey
+                attr,
+                AIODeferredForeignKey,
             ):
                 attrs[attr_name] = AIODeferredForeignKey(
                     attr.rel_model_name,
@@ -123,25 +155,27 @@ class AIOModel(Model, metaclass=AIOModelBase):
     # -------------
 
     @classmethod
-    async def create_table(cls, safe=True, **kwargs):
+    async def create_table(cls, *, safe=True, **kwargs):
         return await cls._manager.create_tables(cls, safe=safe, **kwargs)
 
     @classmethod
-    async def drop_table(cls, safe=True, **kwargs):
+    async def drop_table(cls, *, safe=True, **kwargs):
         return await cls._manager.drop_tables(cls, safe=safe, **kwargs)
 
     @classmethod
     async def get_or_none(
-        cls: type[TVAIOModel], *args, **kwargs
+        cls: Type[TVAIOModel],
+        *args: Expression,
+        **kwargs,
     ) -> Optional[TVAIOModel]:
         return await cls._manager.get_or_none(cls, *args, **kwargs)
 
     @classmethod
-    async def get(cls: type[TVAIOModel], *args, **kwargs) -> TVAIOModel:
+    async def get(cls: Type[TVAIOModel], *args: Expression, **kwargs) -> TVAIOModel:
         return await cls._manager.get(cls, *args, **kwargs)
 
     @classmethod
-    async def get_by_id(cls: type[TVAIOModel], pk) -> TVAIOModel:
+    async def get_by_id(cls: Type[TVAIOModel], pk) -> TVAIOModel:
         return await cls._manager.get_by_id(cls, pk)
 
     @classmethod
@@ -154,7 +188,9 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     async def get_or_create(
-        cls: type[TVAIOModel], defaults: Optional[Dict] = None, **kwargs
+        cls: Type[TVAIOModel],
+        defaults: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> Tuple[TVAIOModel, bool]:
         async with cls._manager.aio_database.transaction():
             try:
@@ -163,7 +199,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
                 return (await cls.create(**dict(defaults or {}, **kwargs)), True)
 
     @classmethod
-    async def create(cls: type[TVAIOModel], **kwargs) -> TVAIOModel:
+    async def create(cls: Type[TVAIOModel], **kwargs) -> TVAIOModel:
         inst = cls(**kwargs)
         return await inst.save(force_insert=True)
 
@@ -181,43 +217,58 @@ class AIOModel(Model, metaclass=AIOModelBase):
     # ----------------
 
     @classmethod
-    def select(cls: type[TVAIOModel], *fields) -> ModelSelect[TVAIOModel]:
-        return ModelSelect(
-            cls, fields or cls._meta.sorted_fields, is_default=not fields
+    def select(
+        cls: Type[TVAIOModel],
+        *select: Union[Field, Model, Table, ModelAlias],
+    ) -> AIOModelSelect[TVAIOModel]:
+        return AIOModelSelect(
+            cls,
+            select or cls._meta.sorted_fields,
+            is_default=not select,
         )
 
     @classmethod
-    def update(cls: type[TVAIOModel], __data=None, **update) -> ModelUpdate[TVAIOModel]:
-        return ModelUpdate(cls, cls._normalize_data(__data, update))
+    def update(
+        cls: Type[TVAIOModel],
+        __data=None,
+        **update,
+    ) -> AIOModelUpdate[TVAIOModel]:
+        return AIOModelUpdate(cls, cls._normalize_data(__data, update))
 
     @classmethod
-    def insert(cls: type[TVAIOModel], __data=None, **insert) -> ModelInsert[TVAIOModel]:
-        return ModelInsert(cls, cls._normalize_data(__data, insert))
+    def insert(
+        cls: Type[TVAIOModel],
+        __data=None,
+        **insert,
+    ) -> AIOModelInsert[TVAIOModel]:
+        return AIOModelInsert(cls, cls._normalize_data(__data, insert))
 
     @classmethod
     def insert_many(
-        cls: type[TVAIOModel], rows: Iterable, fields=None
-    ) -> ModelInsert[TVAIOModel]:
+        cls: Type[TVAIOModel],
+        rows: Iterable,
+        fields=None,
+    ) -> AIOModelInsert[TVAIOModel]:
         rows = [row.__data__ if isinstance(row, Model) else row for row in rows]
         if not rows:
-            raise ModelInsert.DefaultValuesException("Error: no rows to insert.")
+            raise AIOModelInsert.DefaultValuesException("Error: no rows to insert.")
 
-        return ModelInsert(cls, insert=rows, columns=fields)
+        return AIOModelInsert(cls, insert=rows, columns=fields)
 
     @classmethod
-    def insert_from(cls: type[TVAIOModel], query, fields) -> ModelInsert[TVAIOModel]:
+    def insert_from(cls: Type[TVAIOModel], query, fields) -> AIOModelInsert[TVAIOModel]:
         columns = [
             getattr(cls, field) if isinstance(field, str) else field for field in fields
         ]
-        return ModelInsert(cls, insert=query, columns=columns)
+        return AIOModelInsert(cls, insert=query, columns=columns)
 
     @classmethod
-    def raw(cls: type[TVAIOModel], sql, *params) -> ModelRaw[TVAIOModel]:
-        return ModelRaw(cls, sql, params)
+    def raw(cls: Type[TVAIOModel], sql, *params) -> AIOModelRaw[TVAIOModel]:
+        return AIOModelRaw(cls, sql, params)
 
     @classmethod
-    def delete(cls: type[TVAIOModel]) -> ModelDelete[TVAIOModel]:
-        return ModelDelete(cls)
+    def delete(cls: Type[TVAIOModel]) -> AIOModelDelete[TVAIOModel]:
+        return AIOModelDelete(cls)
 
     # Instance methods
     # ----------------
@@ -240,34 +291,34 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
 class AIOQuery(Generic[TVAIOModel]):
 
-    model: type[TVAIOModel]
+    model: Type[TVAIOModel]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.manager = self.model._manager
 
     def __await__(self) -> Generator[Any, None, List[TVAIOModel]]:
-        return self.manager.run(self).__await__()  # type: ignore
+        return self.manager.run(self).__await__()
 
 
 class BaseModelSelect(AIOQuery[TVAIOModel]):
     def union_all(self, rhs):
-        return ModelCompoundSelectQuery(self.model, self, "UNION ALL", rhs)
+        return AIOModelCompoundSelectQuery(self.model, self, "UNION ALL", rhs)
 
     __add__ = union_all
 
     def union(self, rhs):
-        return ModelCompoundSelectQuery(self.model, self, "UNION", rhs)
+        return AIOModelCompoundSelectQuery(self.model, self, "UNION", rhs)
 
     __or__ = union
 
     def intersect(self, rhs):
-        return ModelCompoundSelectQuery(self.model, self, "INTERSECT", rhs)
+        return AIOModelCompoundSelectQuery(self.model, self, "INTERSECT", rhs)
 
     __and__ = intersect
 
     def except_(self, rhs):
-        return ModelCompoundSelectQuery(self.model, self, "EXCEPT", rhs)
+        return AIOModelCompoundSelectQuery(self.model, self, "EXCEPT", rhs)
 
     __sub__ = except_
 
@@ -275,20 +326,21 @@ class BaseModelSelect(AIOQuery[TVAIOModel]):
         return await self.manager.prefetch(self, *subqueries)
 
 
-class ModelSelect(BaseModelSelect[TVAIOModel], ModelSelect_):
+class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
     _limit: int
 
     def __aiter__(self) -> AsyncGenerator[TVAIOModel, None]:
         return self.manager.run(self).__aiter__()
 
     def __getitem__(
-        self, value
-    ) -> Union[ModelSelect[TVAIOModel], Coroutine[Any, Any, TVAIOModel]]:
+        self,
+        value,
+    ) -> Union[AIOModelSelect[TVAIOModel], Coroutine[Any, Any, TVAIOModel]]:
         limit, offset = 1, value
         if isinstance(value, slice):
             limit, offset = value.stop - value.start, value.start
 
-        query = self.limit(limit).offset(offset)  # type: ignore
+        query = self.limit(limit).offset(offset)
         if limit == 1:
             return query.get()
         return query
@@ -304,7 +356,7 @@ class ModelSelect(BaseModelSelect[TVAIOModel], ModelSelect_):
             query = self.limit(n)
         return query.peek(n)
 
-    async def scalar(self, as_tuple=False, as_dict=False):
+    async def scalar(self, *, as_tuple=False, as_dict=False):
         if as_dict:
             return await self.dicts().peek()
         row = await self.tuples().peek()
@@ -317,7 +369,7 @@ class ModelSelect(BaseModelSelect[TVAIOModel], ModelSelect_):
         return await self.manager.count(self)
 
     async def exists(self) -> bool:
-        clone: ModelSelect = self.columns(SQL("1"))
+        clone: AIOModelSelect = self.columns(SQL("1"))
         clone._limit = 1
         clone._offset = None
         return bool(await clone.scalar())
@@ -329,45 +381,45 @@ class ModelSelect(BaseModelSelect[TVAIOModel], ModelSelect_):
         return await self.first()
 
     # Type helpers
-    with_cte: Callable[..., ModelSelect[TVAIOModel]]
-    where: Callable[..., ModelSelect[TVAIOModel]]
-    orwhere: Callable[..., ModelSelect[TVAIOModel]]
-    order_by: Callable[..., ModelSelect[TVAIOModel]]
-    order_by_extend: Callable[..., ModelSelect[TVAIOModel]]
-    limit: Callable[[Union[int, None]], ModelSelect[TVAIOModel]]
-    offset: Callable[[int], ModelSelect[TVAIOModel]]
-    paginate: Callable[..., ModelSelect[TVAIOModel]]
+    with_cte: Callable[..., AIOModelSelect[TVAIOModel]]
+    where: Callable[..., AIOModelSelect[TVAIOModel]]
+    orwhere: Callable[..., AIOModelSelect[TVAIOModel]]
+    order_by: Callable[..., AIOModelSelect[TVAIOModel]]
+    order_by_extend: Callable[..., AIOModelSelect[TVAIOModel]]
+    limit: Callable[[Union[int, None]], AIOModelSelect[TVAIOModel]]
+    offset: Callable[[int], AIOModelSelect[TVAIOModel]]
+    paginate: Callable[..., AIOModelSelect[TVAIOModel]]
 
-    columns: Callable[..., ModelSelect[TVAIOModel]]
-    select_extend: Callable[..., ModelSelect[TVAIOModel]]
-    from_: Callable[..., ModelSelect[TVAIOModel]]
-    join: Callable[..., ModelSelect[TVAIOModel]]
-    group_by: Callable[..., ModelSelect[TVAIOModel]]
-    having: Callable[..., ModelSelect[TVAIOModel]]
-    distinct: Callable[..., ModelSelect[TVAIOModel]]
-    window: Callable[..., ModelSelect[TVAIOModel]]
-    for_update: Callable[..., ModelSelect[TVAIOModel]]
-    lateral: Callable[..., ModelSelect[TVAIOModel]]
+    columns: Callable[..., AIOModelSelect[TVAIOModel]]
+    select_extend: Callable[..., AIOModelSelect[TVAIOModel]]
+    from_: Callable[..., AIOModelSelect[TVAIOModel]]
+    join: Callable[..., AIOModelSelect[TVAIOModel]]
+    group_by: Callable[..., AIOModelSelect[TVAIOModel]]
+    having: Callable[..., AIOModelSelect[TVAIOModel]]
+    distinct: Callable[..., AIOModelSelect[TVAIOModel]]
+    window: Callable[..., AIOModelSelect[TVAIOModel]]
+    for_update: Callable[..., AIOModelSelect[TVAIOModel]]
+    lateral: Callable[..., AIOModelSelect[TVAIOModel]]
 
 
-class ModelCompoundSelectQuery(BaseModelSelect[TVAIOModel], ModelCompoundSelectQuery_):
+class AIOModelCompoundSelectQuery(
+    BaseModelSelect[TVAIOModel],
+    ModelCompoundSelectQuery,
+):
     pass
 
 
-class ModelUpdate(AIOQuery[TVAIOModel], ModelUpdate_):
+class AIOModelUpdate(AIOQuery[TVAIOModel], ModelUpdate):
     pass
 
 
-class ModelInsert(AIOQuery[TVAIOModel], ModelInsert_):
+class AIOModelInsert(AIOQuery[TVAIOModel], ModelInsert):
     pass
 
 
-class ModelDelete(AIOQuery[TVAIOModel], ModelDelete_):
+class AIOModelDelete(AIOQuery[TVAIOModel], ModelDelete):
     pass
 
 
-class ModelRaw(AIOQuery[TVAIOModel], ModelRaw_):
+class AIOModelRaw(AIOQuery[TVAIOModel], ModelRaw):
     pass
-
-
-from .manager import Manager  # noqa
