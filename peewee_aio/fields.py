@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable
 from typing import (  # py38, py39
     TYPE_CHECKING,
     Any,
@@ -17,6 +16,7 @@ from typing import (  # py38, py39
 import peewee as pw
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
     from datetime import date, datetime, time
     from uuid import UUID
 
