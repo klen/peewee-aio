@@ -26,6 +26,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
+python = "^3.8"
 peewee = "^3.15.4"
 aio-databases = "^0.13.2"
 typing-extensions = {version = "*", python = "<3.11"}
@@ -51,9 +52,7 @@ pytest = "*"
 pytest-mypy = "*"
 pytest-aio = {version = "*", extras = ["trio"]}
 trio_asyncio = "*"
-aio-databases = {version = "*", extras = [
-  "aiopg", "aiomysql", "aiosqlite", "asyncpg", "trio_mysql", "triopg"]
-}
+aio-databases = {version = "*", extras = [ "aiopg", "aiomysql", "aiosqlite", "asyncpg", "trio_mysql", "triopg"] }
 ruff = "*"
 black = "*"
 pre-commit = "*"

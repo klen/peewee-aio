@@ -43,6 +43,6 @@ repos:
 
     - id: pytest
       name: pytest
-      entry: poetry run pytest
+      entry: poetry run pytest tests
       language: system
       pass_filenames: false

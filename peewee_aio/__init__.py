@@ -1,6 +1,6 @@
 """Support Peewee ORM with asyncio."""
 
-from .model import AIOModel
 from .manager import Manager
+from .model import AIOModel
 
 __all__ = ["AIOModel", "Manager"]

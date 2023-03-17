@@ -361,7 +361,7 @@ class Manager:
     # Instance methods
     # ----------------
 
-    async def save(  # noqa: PLR0912, C901
+    async def save(  # noqa: C901
         self,
         inst: TVModel,
         *,
@@ -464,7 +464,6 @@ def process(query: Any, params: Sequence, *, raw: bool) -> Generator:
 
 
 class RunWrapper:
-
     __slots__ = "manager", "query", "gen"
 
     def __init__(self, manager: Manager, query: BaseQuery):
@@ -483,7 +482,6 @@ class RunWrapper:
 
 
 class FakeCursor:
-
     __slots__ = ("description",)
 
     def __init__(self, res: Mapping):
