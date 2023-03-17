@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Type
 
-import peewee
 import pytest
 
 if TYPE_CHECKING:
@@ -12,8 +11,10 @@ if TYPE_CHECKING:
 
 @pytest.fixture(scope="session")
 async def test_model(manager):
+    from peewee_aio.fields import CharField
+
     class TestModel(manager.Model):
-        data = peewee.CharField()
+        data = CharField()
 
     return TestModel
 

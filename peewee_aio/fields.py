@@ -22,14 +22,11 @@ class GenericField(Generic[TV]):
         ...
 
     @overload
-    def __get__(self, instance: pw.Model, owner) -> TV:
+    def __get__(self: GenericField[TV], instance: pw.Model, owner) -> TV | None:
         ...
 
     def __get__(self, instance: pw.Model | None, owner):
-        if instance is None:
-            return self
-
-        return instance.__data__[self.name]
+        ...
 
 
 class IntegerField(pw.IntegerField, GenericField[int]):

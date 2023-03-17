@@ -82,32 +82,38 @@ async def transaction(schema, manager):
 
 @pytest.fixture(scope="session")
 def role_model(manager):
+    from peewee_aio import fields
+
     @manager.register
     class Role(pw.Model):
-        id = pw.UUIDField(primary_key=True, default=uuid4)  # noqa: A003
-        created = pw.DateTimeField(default=dt.datetime.utcnow)
-        name = pw.CharField()
+        id = fields.UUIDField(primary_key=True, default=uuid4)
+        created = fields.DateTimeField(default=dt.datetime.utcnow)
+        name = fields.CharField()
 
     return Role
 
 
 @pytest.fixture(scope="session")
 def user_model(manager):
+    from peewee_aio import fields
+
     @manager.register
     class User(pw.Model):
-        created = pw.DateTimeField(default=dt.datetime.utcnow)
-        name = pw.CharField()
-        is_active = pw.BooleanField(default=True)
+        created = fields.DateTimeField(default=dt.datetime.utcnow)
+        name = fields.CharField()
+        is_active = fields.BooleanField(default=True)
 
     return User
 
 
 @pytest.fixture(scope="session")
 def ur_model(manager, role_model, user_model):
+    from peewee_aio import fields
+
     @manager.register
     class UserToRole(pw.Model):
-        user = pw.ForeignKeyField(user_model, backref="roles")
-        role = pw.ForeignKeyField(role_model, backref="users")
+        user = fields.ForeignKeyField(user_model, backref="roles")
+        role = fields.ForeignKeyField(role_model, backref="users")
 
         class Meta:
             primary_key = pw.CompositeKey("user", "role")
@@ -117,10 +123,12 @@ def ur_model(manager, role_model, user_model):
 
 @pytest.fixture(scope="session")
 def comment_model(manager, user_model):
+    from peewee_aio import fields
+
     @manager.register
     class Comment(pw.Model):
-        created = pw.DateTimeField(default=dt.datetime.utcnow)
-        body = pw.CharField()
-        user = pw.ForeignKeyField(user_model)
+        created = fields.DateTimeField(default=dt.datetime.utcnow)
+        body = fields.CharField()
+        user = fields.ForeignKeyField(user_model)
 
     return Comment
