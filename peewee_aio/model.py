@@ -385,6 +385,7 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
     select_extend: Callable[..., AIOModelSelect[TVAIOModel]]
     from_: Callable[..., AIOModelSelect[TVAIOModel]]
     join: Callable[..., AIOModelSelect[TVAIOModel]]
+    join_from: Callable[..., AIOModelSelect[TVAIOModel]]
     group_by: Callable[..., AIOModelSelect[TVAIOModel]]
     having: Callable[..., AIOModelSelect[TVAIOModel]]
     distinct: Callable[..., AIOModelSelect[TVAIOModel]]
