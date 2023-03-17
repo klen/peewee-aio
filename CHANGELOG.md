@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-[unreleased]: https://github.com/klen/peewee-aio/compare/0.14.7...HEAD
+[0.17.0]: https://github.com/klen/peewee-aio/compare/0.14.7...0.17.0
 [0.14.7]: https://github.com/klen/peewee-aio/compare/0.14.3...0.14.7
 [0.14.3]: https://github.com/klen/peewee-aio/compare/0.13.1...0.14.3
 [0.13.1]: https://github.com/klen/peewee-aio/compare/0.13.0...0.13.1
