@@ -341,7 +341,7 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
             return await self.manager.fetchone(self)
         return await self.manager.fetchmany(n, self)
 
-    def first(self, n=1) -> Coroutine[Any, Any, TVAIOModel]:
+    def first(self, n=1) -> Coroutine[Any, Any, Optional[TVAIOModel]]:
         query = self
         if self._limit != n:
             query = self.limit(n)
@@ -365,11 +365,19 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
         clone._offset = None
         return bool(await clone.scalar())
 
-    async def get(self, **kwargs) -> TVAIOModel:
-        if kwargs:
-            return await self.filter(**kwargs).first()
+    async def get(self, **filters) -> TVAIOModel:
+        qs = self
+        if filters:
+            qs = self.filter(**filters)
 
-        return await self.first()
+        res = await qs.first()
+        if res is None:
+            sql, params = qs.sql()
+            raise self.model.DoesNotExist(
+                "%s matching query does not exist:\n SQL: %s\n Params: %s"
+                % (self.model, sql, params)
+            )
+        return res
 
     # Type helpers
     with_cte: Callable[..., AIOModelSelect[TVAIOModel]]
