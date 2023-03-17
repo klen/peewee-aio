@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time
-from typing import TYPE_CHECKING, Any, Generic, overload
+from typing import TYPE_CHECKING, Any, Generic, Optional, overload  # py38, py39
 from uuid import UUID
 
 import peewee as pw
 
 if TYPE_CHECKING:
-    from typing_extensions import Self  # py37, py38, py39, py310
+    from typing_extensions import Self  # py38, py39, py310
 
 from .types import TV
 
@@ -22,10 +22,10 @@ class GenericField(Generic[TV]):
         ...
 
     @overload
-    def __get__(self: GenericField[TV], instance: pw.Model, owner) -> TV | None:
+    def __get__(self: GenericField[TV], instance: pw.Model, owner) -> Optional[TV]:
         ...
 
-    def __get__(self, instance: pw.Model | None, owner):
+    def __get__(self, instance: Optional[pw.Model], owner):
         ...
 
 
