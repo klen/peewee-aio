@@ -52,7 +52,6 @@ class AIOForeignKeyAccessor(ForeignKeyAccessor):
         self,
         instance: Model,
     ) -> Union[Model, None, Coroutine[Any, Any, Model]]:
-
         # Get from cache
         name = self.name
         if name in instance.__rel__:
@@ -78,7 +77,6 @@ class AIOForeignKeyAccessor(ForeignKeyAccessor):
 
 
 class AIOForeignKeyField(ForeignKeyField):
-
     accessor_class = AIOForeignKeyAccessor
 
 
@@ -89,7 +87,6 @@ class AIODeferredForeignKey(DeferredForeignKey):
 
 
 class AIOModelBase(ModelBase):
-
     inheritable = ModelBase.inheritable & {"manager"}
 
     def __new__(cls, name, bases, attrs):
@@ -148,7 +145,6 @@ class AIOModelBase(ModelBase):
 
 
 class AIOModel(Model, metaclass=AIOModelBase):
-
     _manager: Manager
 
     # Class methods
@@ -249,17 +245,19 @@ class AIOModel(Model, metaclass=AIOModelBase):
         rows: Iterable,
         fields=None,
     ) -> AIOModelInsert[TVAIOModel]:
-        rows = [row.__data__ if isinstance(row, Model) else row for row in rows]
         if not rows:
             raise AIOModelInsert.DefaultValuesException("Error: no rows to insert.")
 
+        rows = [row.__data__ if isinstance(row, Model) else row for row in rows]
         return AIOModelInsert(cls, insert=rows, columns=fields)
 
     @classmethod
-    def insert_from(cls: Type[TVAIOModel], query, fields) -> AIOModelInsert[TVAIOModel]:
-        columns = [
-            getattr(cls, field) if isinstance(field, str) else field for field in fields
-        ]
+    def insert_from(
+        cls: Type[TVAIOModel],
+        query: ModelSelect,
+        fields,
+    ) -> AIOModelInsert[TVAIOModel]:
+        columns = [getattr(cls, field) if isinstance(field, str) else field for field in fields]
         return AIOModelInsert(cls, insert=query, columns=columns)
 
     @classmethod
@@ -290,7 +288,6 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
 
 class AIOQuery(Generic[TVAIOModel]):
-
     model: Type[TVAIOModel]
 
     def __init__(self, *args, **kwargs):
