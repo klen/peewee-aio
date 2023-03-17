@@ -40,11 +40,11 @@ class GenericField(Generic[TV]):
 
 class IntegerField(pw.IntegerField, GenericField[TV]):
     @overload
-    def __init__(self: IntegerField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: IntegerField[int], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: IntegerField[int], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: IntegerField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -53,11 +53,11 @@ class IntegerField(pw.IntegerField, GenericField[TV]):
 
 class BigIntegerField(pw.BigIntegerField, GenericField[TV]):
     @overload
-    def __init__(self: BigIntegerField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: BigIntegerField[int], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: BigIntegerField[int], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: BigIntegerField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -65,6 +65,10 @@ class BigIntegerField(pw.BigIntegerField, GenericField[TV]):
 
 
 class SmallIntegerField(pw.SmallIntegerField, GenericField[TV]):
+    @overload
+    def __init__(self: SmallIntegerField[int], *args, null: Literal[False] = ..., **kwargs):
+        ...
+
     @overload
     def __init__(
         self: SmallIntegerField[Optional[int]],
@@ -74,21 +78,17 @@ class SmallIntegerField(pw.SmallIntegerField, GenericField[TV]):
     ):
         ...
 
-    @overload
-    def __init__(self: SmallIntegerField[int], *args, null: Literal[False] = ..., **kwargs):
-        ...
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
 class AutoField(pw.AutoField, GenericField[TV]):
     @overload
-    def __init__(self: AutoField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: AutoField[int], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: AutoField[int], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: AutoField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -97,11 +97,11 @@ class AutoField(pw.AutoField, GenericField[TV]):
 
 class BigAutoField(pw.BigAutoField, GenericField[TV]):
     @overload
-    def __init__(self: BigAutoField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: BigAutoField[int], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: BigAutoField[int], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: BigAutoField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -110,11 +110,11 @@ class BigAutoField(pw.BigAutoField, GenericField[TV]):
 
 class IdentityField(pw.IdentityField, GenericField[TV]):
     @overload
-    def __init__(self: IdentityField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: IdentityField[int], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: IdentityField[int], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: IdentityField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -123,11 +123,11 @@ class IdentityField(pw.IdentityField, GenericField[TV]):
 
 class FloatField(pw.FloatField, GenericField[TV]):
     @overload
-    def __init__(self: FloatField[Optional[float]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: FloatField[float], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: FloatField[float], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: FloatField[Optional[float]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -136,11 +136,11 @@ class FloatField(pw.FloatField, GenericField[TV]):
 
 class DoubleField(pw.DoubleField, GenericField[TV]):
     @overload
-    def __init__(self: DoubleField[Optional[float]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: DoubleField[float], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: DoubleField[float], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: DoubleField[Optional[float]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -149,11 +149,11 @@ class DoubleField(pw.DoubleField, GenericField[TV]):
 
 class DecimalField(pw.DecimalField, GenericField[TV]):
     @overload
-    def __init__(self: DecimalField[Optional[float]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: DecimalField[float], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: DecimalField[float], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: DecimalField[Optional[float]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -162,11 +162,11 @@ class DecimalField(pw.DecimalField, GenericField[TV]):
 
 class CharField(pw.CharField, GenericField[TV]):
     @overload
-    def __init__(self: CharField[Optional[str]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: CharField[str], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: CharField[str], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: CharField[Optional[str]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -175,11 +175,11 @@ class CharField(pw.CharField, GenericField[TV]):
 
 class FixedCharField(pw.FixedCharField, GenericField[TV]):
     @overload
-    def __init__(self: FixedCharField[Optional[str]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: FixedCharField[str], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: FixedCharField[str], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: FixedCharField[Optional[str]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -188,11 +188,11 @@ class FixedCharField(pw.FixedCharField, GenericField[TV]):
 
 class TextField(pw.TextField, GenericField[TV]):
     @overload
-    def __init__(self: TextField[Optional[str]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: TextField[str], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: TextField[str], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: TextField[Optional[str]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -201,11 +201,11 @@ class TextField(pw.TextField, GenericField[TV]):
 
 class BlobField(pw.BlobField, GenericField[TV]):
     @overload
-    def __init__(self: BlobField[Optional[bytes]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: BlobField[bytes], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: BlobField[bytes], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: BlobField[Optional[bytes]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
@@ -214,11 +214,11 @@ class BlobField(pw.BlobField, GenericField[TV]):
 
 class BitField(pw.BitField, GenericField[TV]):
     @overload
-    def __init__(self: BitField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
+    def __init__(self: BitField[int], *args, null: Literal[False] = ..., **kwargs):
         ...
 
     @overload
-    def __init__(self: BitField[int], *args, null: Literal[False] = ..., **kwargs):
+    def __init__(self: BitField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
         ...
 
     def __init__(self, *args, **kwargs):
