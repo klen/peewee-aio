@@ -4,17 +4,18 @@ from __future__ import annotations
 
 from typing import (  # py38, py39
     TYPE_CHECKING,
+    Coroutine,
     Generic,
     Literal,
     Optional,
     Type,
+    Union,
     overload,
 )
 
 import peewee as pw
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
     from datetime import date, datetime, time
     from uuid import UUID
 
@@ -411,16 +412,19 @@ class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
         @overload
         def __new__(
             cls, model: Type[TV], *, null: Literal[False] = ..., **kwargs
-        ) -> ForeignKeyField[Awaitable[TV]]:
+        ) -> ForeignKeyField[Coroutine[None, None, TV]]:
             ...
 
         @overload
         def __new__(
             cls, model: Type[TV], *, null: Literal[True] = ..., **kwargs
-        ) -> ForeignKeyField[Awaitable[Optional[TV]]]:
+        ) -> ForeignKeyField[Coroutine[None, None, Optional[TV]]]:
             ...
 
         def __new__(cls, *args, **kwargs):
+            ...
+
+        def __set__(self, instance: AIOModel, value: Union[AIOModel, str, int, None]) -> None:
             ...
 
 
@@ -430,16 +434,19 @@ class DeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
         @overload
         def __new__(
             cls, rel_model_name: str, *, null: Literal[False] = ..., **kwargs
-        ) -> DeferredForeignKey[Awaitable[AIOModel]]:
+        ) -> DeferredForeignKey[Coroutine[None, None, AIOModel]]:
             ...
 
         @overload
         def __new__(
             cls, rel_model_name: str, *, null: Literal[True] = ..., **kwargs
-        ) -> DeferredForeignKey[Awaitable[Optional[AIOModel]]]:
+        ) -> DeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]]:
             ...
 
         def __new__(cls, *args, **kwargs):
+            ...
+
+        def __set__(self, instance: AIOModel, value: Union[AIOModel, str, int, None]) -> None:
             ...
 
 
