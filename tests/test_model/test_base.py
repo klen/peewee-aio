@@ -11,25 +11,29 @@ async def test_base():
 
 
 async def test_base_model(test_model, manager):
+    from peewee_aio import fields
+
     assert test_model
     assert test_model._manager is manager
     assert test_model._meta.database is manager.pw_database
 
     class ChildModel(test_model):
-        is_active = peewee.BooleanField(default=True)
+        is_active = fields.BooleanField(default=True)
 
     return ChildModel
 
 
 async def test_backref(test_model, manager, schema):
+    from peewee_aio import fields
+
     class BaseModel(test_model):
         class Meta:
             table_name = "testmodel"
 
     class Ref(manager.Model):
-        data = peewee.CharField()
+        data = fields.CharField()
 
-        test = peewee.ForeignKeyField(BaseModel, on_delete="CASCADE")
+        test = fields.ForeignKeyField(BaseModel, on_delete="CASCADE")
 
     await Ref.drop_table()
     await Ref.create_table()
@@ -44,7 +48,7 @@ async def test_backref(test_model, manager, schema):
     assert ref == await source.ref_set.first()
 
     # Load foreing keys
-    ref = await Ref.get(data="ref")
+    ref: Ref = await Ref.get(data="ref")
     test = await ref.test
     assert test == source
 
@@ -76,8 +80,10 @@ async def test_backref(test_model, manager, schema):
 
 
 async def test_fk(test_model, manager, schema):
+    from peewee_aio import fields
+
     class ParentModel(manager.Model):
-        child = peewee.ForeignKeyField(test_model, null=True, on_delete="CASCADE")
+        child = fields.ForeignKeyField(test_model, null=True, on_delete="CASCADE")
 
     from peewee_aio.model import AIOForeignKeyField
 
@@ -98,8 +104,10 @@ async def test_fk(test_model, manager, schema):
 
 
 async def test_deferred_fk(manager):
+    from peewee_aio import fields
+
     class ParentModel(manager.Model):
-        child = peewee.DeferredForeignKey("ChildModel", null=True, on_delete="CASCADE")
+        child = fields.DeferredForeignKey("ChildModel", null=True, on_delete="CASCADE")
 
     class ChildModel(manager.Model):
         pass

@@ -39,362 +39,408 @@ class GenericField(Generic[TV]):
 
 
 class IntegerField(pw.IntegerField, GenericField[TV]):
-    @overload
-    def __init__(self: IntegerField[int], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: IntegerField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> IntegerField[int]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> IntegerField[Optional[int]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class BigIntegerField(pw.BigIntegerField, GenericField[TV]):
-    @overload
-    def __init__(self: BigIntegerField[int], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: BigIntegerField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BigIntegerField[int]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> BigIntegerField[Optional[int]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class SmallIntegerField(pw.SmallIntegerField, GenericField[TV]):
-    @overload
-    def __init__(self: SmallIntegerField[int], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(
-        self: SmallIntegerField[Optional[int]],
-        *args,
-        null: Literal[True] = ...,
-        **kwargs,
-    ):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> SmallIntegerField[int]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> SmallIntegerField[Optional[int]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class AutoField(pw.AutoField, GenericField[TV]):
-    @overload
-    def __init__(self: AutoField[int], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: AutoField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> AutoField[int]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> AutoField[Optional[int]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class BigAutoField(pw.BigAutoField, GenericField[TV]):
-    @overload
-    def __init__(self: BigAutoField[int], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: BigAutoField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BigAutoField[int]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> BigAutoField[Optional[int]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class IdentityField(pw.IdentityField, GenericField[TV]):
-    @overload
-    def __init__(self: IdentityField[int], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: IdentityField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> IdentityField[int]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> IdentityField[Optional[int]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class FloatField(pw.FloatField, GenericField[TV]):
-    @overload
-    def __init__(self: FloatField[float], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: FloatField[Optional[float]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> FloatField[float]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> FloatField[Optional[float]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class DoubleField(pw.DoubleField, GenericField[TV]):
-    @overload
-    def __init__(self: DoubleField[float], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: DoubleField[Optional[float]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> DoubleField[float]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> DoubleField[Optional[float]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class DecimalField(pw.DecimalField, GenericField[TV]):
-    @overload
-    def __init__(self: DecimalField[float], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: DecimalField[Optional[float]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> DecimalField[float]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> DecimalField[Optional[float]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class CharField(pw.CharField, GenericField[TV]):
-    @overload
-    def __init__(self: CharField[str], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: CharField[Optional[str]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> CharField[str]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> CharField[Optional[str]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class FixedCharField(pw.FixedCharField, GenericField[TV]):
-    @overload
-    def __init__(self: FixedCharField[str], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: FixedCharField[Optional[str]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> FixedCharField[str]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> FixedCharField[Optional[str]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class TextField(pw.TextField, GenericField[TV]):
-    @overload
-    def __init__(self: TextField[str], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: TextField[Optional[str]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> TextField[str]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> TextField[Optional[str]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class BlobField(pw.BlobField, GenericField[TV]):
-    @overload
-    def __init__(self: BlobField[bytes], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: BlobField[Optional[bytes]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BlobField[bytes]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> BlobField[Optional[bytes]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class BitField(pw.BitField, GenericField[TV]):
-    @overload
-    def __init__(self: BitField[int], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: BitField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BitField[int]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> BitField[Optional[int]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class BigBitField(pw.BigBitField, GenericField[TV]):
-    @overload
-    def __init__(self: BigBitField[bytes], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: BigBitField[Optional[bytes]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BigBitField[bytes]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> BigBitField[Optional[bytes]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class UUIDField(pw.UUIDField, GenericField[TV]):
-    @overload
-    def __init__(self: UUIDField[UUID], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: UUIDField[Optional[UUID]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> UUIDField[UUID]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> UUIDField[Optional[UUID]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class BinaryUUIDField(pw.BinaryUUIDField, GenericField[TV]):
-    @overload
-    def __init__(self: BinaryUUIDField[UUID], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: BinaryUUIDField[Optional[UUID]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BinaryUUIDField[UUID]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> BinaryUUIDField[Optional[UUID]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class DateTimeField(pw.DateTimeField, GenericField[TV]):
-    @overload
-    def __init__(self: DateTimeField[datetime], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(
-        self: DateTimeField[Optional[datetime]],
-        *args,
-        null: Literal[True] = ...,
-        **kwargs,
-    ):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> DateTimeField[datetime]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> DateTimeField[Optional[datetime]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class DateField(pw.DateField, GenericField[TV]):
-    @overload
-    def __init__(self: DateField[date], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: DateField[Optional[date]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> DateField[date]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> DateField[Optional[date]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class TimeField(pw.TimeField, GenericField[TV]):
-    @overload
-    def __init__(self: TimeField[time], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: TimeField[Optional[time]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> TimeField[time]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> TimeField[Optional[time]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class TimestampField(pw.TimestampField, GenericField[TV]):
-    @overload
-    def __init__(self: TimestampField[int], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: TimestampField[Optional[int]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> TimestampField[int]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> TimestampField[Optional[int]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class IPField(pw.IPField, GenericField[TV]):
-    @overload
-    def __init__(self: IPField[str], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: IPField[Optional[str]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> IPField[str]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> IPField[Optional[str]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class BooleanField(pw.BooleanField, GenericField[TV]):
-    @overload
-    def __init__(self: BooleanField[bool], *args, null: Literal[False] = ..., **kwargs):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(self: BooleanField[Optional[bool]], *args, null: Literal[True] = ..., **kwargs):
-        ...
+        @overload
+        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BooleanField[bool]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, *args, null: Literal[True] = ..., **kwargs
+        ) -> BooleanField[Optional[bool]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
-    @overload
-    def __init__(
-        self: ForeignKeyField[Awaitable[TV]],
-        model: Type[TV],
-        *,
-        null: Literal[False] = ...,
-        **kwargs,
-    ):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(
-        self: ForeignKeyField[Awaitable[Optional[TV]]],
-        model: Type[TV],
-        *,
-        null: Literal[True] = ...,
-        **kwargs,
-    ):
-        ...
+        @overload
+        def __new__(
+            cls, model: Type[TV], *, null: Literal[False] = ..., **kwargs
+        ) -> ForeignKeyField[Awaitable[TV]]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, model: Type[TV], *, null: Literal[True] = ..., **kwargs
+        ) -> ForeignKeyField[Awaitable[Optional[TV]]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 class DeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
-    @overload
-    def __init__(
-        self: ForeignKeyField[Awaitable[AIOModel]],
-        rel_model_name: str,
-        *,
-        null: Literal[False] = ...,
-        **kwargs,
-    ):
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __init__(
-        self: ForeignKeyField[Awaitable[Optional[AIOModel]]],
-        rel_model_name: str,
-        *,
-        null: Literal[True] = ...,
-        **kwargs,
-    ):
-        ...
+        @overload
+        def __new__(
+            cls, rel_model_name: str, *, null: Literal[False] = ..., **kwargs
+        ) -> DeferredForeignKey[Awaitable[AIOModel]]:
+            ...
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        @overload
+        def __new__(
+            cls, rel_model_name: str, *, null: Literal[True] = ..., **kwargs
+        ) -> DeferredForeignKey[Awaitable[Optional[AIOModel]]]:
+            ...
+
+        def __new__(cls, *args, **kwargs):
+            ...
 
 
 __all__ = [
