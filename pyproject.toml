@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "peewee-aio"
-version = "0.17.1"
+version = "0.17.2"
 description = "Async support for Peewee ORM"
 readme = "README.md"
 license = "MIT"
