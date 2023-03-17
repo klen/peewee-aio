@@ -48,10 +48,7 @@ if TYPE_CHECKING:
 
 
 class AIOForeignKeyAccessor(ForeignKeyAccessor):
-    def get_rel_instance(
-        self,
-        instance: Model,
-    ) -> Union[Model, None, Coroutine[Any, Any, Model]]:
+    async def get_rel_instance(self, instance: AIOModel) -> Optional[AIOModel]:
         # Get from cache
         name = self.name
         if name in instance.__rel__:
@@ -63,17 +60,14 @@ class AIOForeignKeyAccessor(ForeignKeyAccessor):
         field = self.field
         if field.lazy_load:
             if value is not None:
-                return self.load_rel(instance, value)
+                obj = await self.rel_model.get(self.field.rel_field == value)
+                instance.__rel__[self.name] = obj
+                return obj
 
             if not field.null:
                 raise self.rel_model.DoesNotExist
 
         return value
-
-    async def load_rel(self, instance: Model, value: Any) -> Model:
-        obj = await self.rel_model.get(self.field.rel_field == value)
-        instance.__rel__[self.name] = obj
-        return obj
 
 
 class AIOForeignKeyField(ForeignKeyField):

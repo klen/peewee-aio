@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2023-03-17
+- Foreign keys values are always awaitable
+- peewee_aio.fields - Fields with types
+
 ## [0.17.0] - 2023-03-17
 
 - Drop support for python 3.7
@@ -57,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+[1.0.0]: https://github.com/klen/peewee-aio/compare/0.17.0...1.0.0
 [0.17.0]: https://github.com/klen/peewee-aio/compare/0.14.7...0.17.0
 [0.14.7]: https://github.com/klen/peewee-aio/compare/0.14.3...0.14.7
 [0.14.3]: https://github.com/klen/peewee-aio/compare/0.13.1...0.14.3

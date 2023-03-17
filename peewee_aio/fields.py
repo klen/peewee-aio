@@ -4,12 +4,10 @@ from __future__ import annotations
 
 from typing import (  # py38, py39
     TYPE_CHECKING,
-    Any,
     Generic,
     Literal,
     Optional,
     Type,
-    Union,
     overload,
 )
 
@@ -21,6 +19,8 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from typing_extensions import Self  # py38, py39, py310
+
+    from .model import AIOModel
 
 from .types import TV
 
@@ -350,7 +350,7 @@ class BooleanField(pw.BooleanField, GenericField[TV]):
 class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
     @overload
     def __init__(
-        self: ForeignKeyField[Union[TV, Awaitable[TV]]],
+        self: ForeignKeyField[Awaitable[TV]],
         model: Type[TV],
         *,
         null: Literal[False] = ...,
@@ -360,7 +360,7 @@ class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
 
     @overload
     def __init__(
-        self: ForeignKeyField[Union[None, TV, Awaitable[Optional[TV]]]],
+        self: ForeignKeyField[Awaitable[Optional[TV]]],
         model: Type[TV],
         *,
         null: Literal[True] = ...,
@@ -372,8 +372,29 @@ class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
         super().__init__(*args, **kwargs)
 
 
-class DeferredForeignKey(pw.DeferredForeignKey, GenericField[Any]):
-    pass
+class DeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
+    @overload
+    def __init__(
+        self: ForeignKeyField[Awaitable[AIOModel]],
+        rel_model_name: str,
+        *,
+        null: Literal[False] = ...,
+        **kwargs,
+    ):
+        ...
+
+    @overload
+    def __init__(
+        self: ForeignKeyField[Awaitable[Optional[AIOModel]]],
+        rel_model_name: str,
+        *,
+        null: Literal[True] = ...,
+        **kwargs,
+    ):
+        ...
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 __all__ = [
