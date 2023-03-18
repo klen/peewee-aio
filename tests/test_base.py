@@ -38,13 +38,13 @@ def test_databases():
 
     manager = Manager("sqlite:///:memory:")
     assert manager
-    assert manager.aio_database
+    assert manager.backend.db_type == "sqlite"
     assert manager.pw_database
     assert manager.pw_database.database == ":memory:"
 
     manager = Manager("aiosqlite:///db.sqlite")
     assert manager
-    assert manager.aio_database
+    assert manager.backend.db_type == "sqlite"
     assert manager.pw_database
     assert manager.pw_database.database == "db.sqlite"
 
@@ -57,6 +57,6 @@ def test_databases():
 
     manager = Manager("dummy://localhost")
     assert manager
-    assert manager.aio_database
+    assert manager.backend.db_type == "dummy"
     assert manager.pw_database
     assert manager.pw_database.database == ""

@@ -74,7 +74,7 @@ async def test_insert_many(test_model, schema):
 async def test_insert_many_returning(test_model, schema, manager):
     qs = test_model.insert_many([{"data": f"t{n}"} for n in range(1, 4)])
     qs = qs.returning(test_model)
-    if manager.aio_database.backend.db_type not in {"postgresql"}:
+    if manager.backend.db_type not in {"postgresql"}:
         return pytest.skip("only postgres is supported")
 
     res = await qs

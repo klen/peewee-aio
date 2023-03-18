@@ -120,7 +120,7 @@ async def test_count(manager, user_model, transaction):
 
 async def test_raw(manager, user_model, transaction):
     sql = "select id, name from user"
-    if manager.aio_database.backend.db_type == "postgresql":
+    if manager.backend.db_type == "postgresql":
         sql = 'select "id", "name" from "user"'
 
     await manager.create(user_model, name="Mickey")

@@ -26,5 +26,5 @@ async def schema(test_model: Type[AIOModel], manager: Manager):
     await test_model.create_table()
     yield True
     await test_model.drop_table(
-        cascade=manager.aio_database.backend.db_type != "sqlite",
+        cascade=manager.backend.db_type != "sqlite",
     )

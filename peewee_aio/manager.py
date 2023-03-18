@@ -20,7 +20,7 @@ from typing import (
 )
 from weakref import WeakSet
 
-from aio_databases.database import ConnectionContext, Database, TransactionContext
+from aio_databases.database import Database
 from peewee import (
     EXCEPTIONS,
     PREFETCH_TYPE,
@@ -50,38 +50,26 @@ from .databases import get_db
 from .model import AIOModel
 
 if TYPE_CHECKING:
-    from aio_databases.backends import ABCConnection
-    from typing_extensions import Self  # py310,py39,py38,py37
-
     from .types import TVModel
 
 
-class Manager:
+class Manager(Database):
     """Manage database and models."""
 
-    aio_database: Database
     pw_database: PWDatabase
     models: "WeakSet[Type[PWModel]]"
 
     def __init__(
         self,
-        database: Union[Database, str],
-        *,
-        convert_params=True,
+        url: str,
         **backend_options,
     ):
         """Initialize dialect and database."""
-        if not isinstance(database, Database):
-            database = Database(
-                database,
-                logger=logger,
-                convert_params=convert_params,
-                **backend_options,
-            )
+        backend_options.setdefault("convert_params", True)
+        super().__init__(url, logger=logger, **backend_options)
 
         self.models = WeakSet()
-        self.aio_database = database
-        self.pw_database = get_db(database)
+        self.pw_database = get_db(self)
 
     @cached_property
     def Model(self) -> Type[AIOModel]:  # noqa: N802
@@ -106,27 +94,10 @@ class Manager:
     # Working with AIO-Databases
     # --------------------------
 
-    @property
-    def current_conn(self) -> Optional[ABCConnection]:
-        return self.aio_database.current_conn
-
-    async def connect(self) -> Self:
-        """Connect to the database (initialize the database's pool)"""
-        await self.aio_database.connect()
-        return self
-
-    __aenter__ = connect
-
-    async def disconnect(self, *_):
-        """Disconnect from the database (close a pool, connections)"""
-        await self.aio_database.disconnect()
-
-    __aexit__ = disconnect
-
     async def execute(self, query: Any, *params, **opts) -> Any:
         """Execute a given query with the given params."""
         with process(query, params, raw=True) as (sql, params, _):
-            res = await self.aio_database.execute(sql, *params, **opts)
+            res = await super().execute(sql, *params, **opts)
             if res is None:
                 return res
 
@@ -135,55 +106,34 @@ class Manager:
 
             return res[0]
 
-    async def fetchval(self, sql: Any, *params, **opts) -> Any:
+    async def fetchval(self, query: Any, *params, **opts) -> Any:
         """Execute the given SQL and fetch a value."""
-        with process(sql, params, raw=True) as (sql, params, _):
-            return await self.aio_database.fetchval(sql, *params, **opts)
+        with process(query, params, raw=True) as (query, params, _):
+            return await super().fetchval(query, *params, **opts)
 
-    async def fetchall(self, sql: Any, *params, raw: bool = False, **opts) -> Any:
+    async def fetchall(self, query: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch all."""
-        with process(sql, params, raw=raw) as (sql, params, constructor):
-            res = await self.aio_database.fetchall(sql, *params, **opts)
+        with process(query, params, raw=raw) as (query, params, constructor):
+            res = await super().fetchall(query, *params, **opts)
             return constructor(res)
 
-    async def fetchmany(
-        self,
-        size: int,
-        sql: Any,
-        *params,
-        raw: bool = False,
-        **opts,
-    ) -> Any:
+    async def fetchmany(self, size: int, query: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch many of the size."""
-        with process(sql, params, raw=raw) as (sql, params, constructor):
-            res = await self.aio_database.fetchmany(size, sql, *params, **opts)
+        with process(query, params, raw=raw) as (query, params, constructor):
+            res = await super().fetchmany(size, query, *params, **opts)
             return constructor(res)
 
-    async def fetchone(self, sql: Any, *params, raw: bool = False, **opts) -> Any:
+    async def fetchone(self, query: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch one."""
-        with process(sql, params, raw=raw) as (sql, params, constructor):
-            res = await self.aio_database.fetchone(sql, *params, **opts)
+        with process(query, params, raw=raw) as (query, params, constructor):
+            res = await super().fetchone(query, *params, **opts)
             return constructor(res)
 
-    async def iterate(
-        self,
-        sql: Any,
-        *params,
-        raw: bool = False,
-        **opts,
-    ) -> AsyncIterator:
+    async def iterate(self, query: Any, *params, raw: bool = False, **opts) -> AsyncIterator:
         """Execute the given SQL and iterate through results."""
-        with process(sql, params, raw=raw) as (sql, params, constructor):
-            async for res in self.aio_database.iterate(sql, *params, **opts):
+        with process(query, params, raw=raw) as (query, params, constructor):
+            async for res in super().iterate(query, *params, **opts):
                 yield constructor(res)
-
-    def connection(self, *params, **opts) -> ConnectionContext:
-        """Initialize a connection to the database.."""
-        return self.aio_database.connection(*params, **opts)
-
-    def transaction(self, *params, **opts) -> TransactionContext:
-        """Initialize a transaction to the database.."""
-        return self.aio_database.transaction(*params, **opts)
 
     # Working with Peewee
     # -------------------
@@ -349,7 +299,7 @@ class Manager:
         defaults: Optional[Dict] = None,
         **kwargs,
     ) -> Tuple[TVModel, bool]:
-        async with self.aio_database.transaction():
+        async with self.transaction():
             try:
                 return (await self.get(model_cls, **kwargs), False)
             except model_cls.DoesNotExist:

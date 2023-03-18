@@ -182,7 +182,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         defaults: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Tuple[TVAIOModel, bool]:
-        async with cls._manager.aio_database.transaction():
+        async with cls._manager.transaction():
             try:
                 return (await cls.get(**kwargs), False)
             except cls.DoesNotExist:
