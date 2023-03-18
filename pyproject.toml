@@ -27,8 +27,8 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-peewee = "^3.15.4"
-aio-databases = "^0.13.2"
+peewee = "^3"
+aio-databases = "^0"
 typing-extensions = {version = "*", python = "<3.11"}
 
 # Optional dependencies
@@ -62,18 +62,24 @@ addopts = "-xsv"
 log_cli = true
 
 [tool.mypy]
-packages = ["peewee_aio"]
+check_untyped_defs = true
 ignore_missing_imports = true
+packages = ["peewee_aio", "tests"]
 
 [tool.tox]
 legacy_tox_ini = """
 [tox]
 envlist = py38,py39,py310,py311
+isolated_buiid = true
 
 [testenv]
-deps = -e .[tests]
+allowlist_externals = poetry
+skip_install = true
+commands_pre =
+    poetry install
+deps = -e .[dev]
 commands =
-	pytest --mypy tests
+    poetry run pytest tests --import-mode importlib
 """
 
 [tool.ruff]

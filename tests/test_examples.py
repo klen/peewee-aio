@@ -4,22 +4,19 @@ import peewee
 
 
 def test_readme():
-    from peewee_aio import Manager
+    from peewee_aio import AIOModel, Manager
 
     manager = Manager("sqlite:///:memory:")
 
     @manager.register
-    class TestModel(manager.Model):
+    class TestModel(AIOModel):
         text = peewee.CharField()
 
     async def handler():
-
         # Initialize the database (pool)
         async with manager:
-
             # Get a connection
             async with manager.connection():
-
                 # Create the table in database
                 await TestModel.create_table()
 

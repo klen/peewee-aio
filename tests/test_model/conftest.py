@@ -10,10 +10,12 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(scope="session")
-async def test_model(manager):
+async def test_model(manager: Manager):
+    from peewee_aio import AIOModel
     from peewee_aio.fields import CharField
 
-    class TestModel(manager.Model):
+    @manager.register
+    class TestModel(AIOModel):
         data = CharField()
 
     return TestModel

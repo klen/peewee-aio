@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -61,7 +62,6 @@ class Manager:
     aio_database: Database
     pw_database: PWDatabase
     models: "WeakSet[Type[PWModel]]"
-    Model: Type[AIOModel]
 
     def __init__(
         self,
@@ -83,10 +83,14 @@ class Manager:
         self.aio_database = database
         self.pw_database = get_db(database)
 
+    @cached_property
+    def Model(self) -> Type[AIOModel]:  # noqa: N802
+        """Get the default model class."""
+
         class Model(AIOModel):
             _manager = self
 
-        self.Model = Model
+        return Model
 
     def register(self, model_cls: Type[TVModel]) -> Type[TVModel]:
         """Register a model with the manager."""

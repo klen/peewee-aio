@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Type
 
 import peewee
 import pytest
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from peewee_aio.model import AIOModel
 
 
-async def test_select(test_model: AIOModel, schema):
+async def test_select(test_model: Type[AIOModel], schema):
     await test_model.delete()
     inst = await test_model.create(data="data")
 
@@ -42,12 +42,11 @@ async def test_select_items(test_model, schema):
     assert res == [t1, t2]
 
 
-async def test_get_or_create(test_model, schema):
-
+async def test_get_or_create(test_model: Type[AIOModel], schema):
     with pytest.raises(peewee.DatabaseError):
         inst, created = await test_model.get_or_create(defaults={})
 
-    class TestModel(test_model):
+    class TestModel(test_model):  # type: ignore[valid-type,misc]
         async def save(self, **kwargs):
             self.data += "-custom"
             return await super().save(**kwargs)
@@ -82,10 +81,14 @@ async def test_get(test_model, schema):
 
 
 async def test_prefetch(manager):
-    class BaseModel(manager.Model):
+    from peewee_aio import AIOModel
+
+    @manager.register
+    class BaseModel(AIOModel):
         data = peewee.CharField()
 
-    class RelModel(manager.Model):
+    @manager.register
+    class RelModel(AIOModel):
         data = peewee.CharField()
         base = peewee.ForeignKeyField(BaseModel)
 

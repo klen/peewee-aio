@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Type
+
 import peewee
 import pytest
 
+if TYPE_CHECKING:
+    from peewee_aio import AIOModel
 
-async def test_create(test_model, schema):
+
+async def test_create(test_model: Type[AIOModel], schema):
     await test_model.delete()
 
-    class TestModel(test_model):
+    class TestModel(test_model):  # type: ignore[valid-type,misc]
         async def save(self, **kwargs):
             self.data += "-custom"
             return await super().save(**kwargs)
