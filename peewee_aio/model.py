@@ -37,6 +37,7 @@ from peewee import (
     ModelRaw,
     ModelSelect,
     ModelUpdate,
+    Query,
     Table,
 )
 
@@ -129,7 +130,7 @@ class AIOModelBase(ModelBase):
                     attr.rel_model_name,
                     **attr.field_kwargs,
                 )
-                DeferredForeignKey._unresolved.discard(attr)
+                DeferredForeignKey._unresolved.discard(attr)  # type: ignore[]
 
         cls = super(AIOModelBase, cls).__new__(cls, name, bases, attrs)
         meta = cls._meta
@@ -140,10 +141,15 @@ class AIOModelBase(ModelBase):
 
 
 class AIOModel(Model, metaclass=AIOModelBase):
-    _manager: Manager
-    _meta: Any
+    if TYPE_CHECKING:
+        _manager: Manager
+        _meta: Any
 
-    DoesNotExist: Type[Exception]
+        DoesNotExist: Type[Exception]
+
+        # Support for dynamic attributes like `model.name_id`, `model.name_set`, etc
+        def __getattr__(self, name: str) -> Any:
+            ...
 
     # Class methods
     # -------------
@@ -227,7 +233,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         __data=None,
         **update,
     ) -> AIOModelUpdate[TVAIOModel]:
-        return AIOModelUpdate(cls, cls._normalize_data(__data, update))
+        return AIOModelUpdate(cls, cls._normalize_data(__data, update))  # type: ignore[]
 
     @classmethod
     def insert(
@@ -235,7 +241,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         __data=None,
         **insert,
     ) -> AIOModelInsert[TVAIOModel]:
-        return AIOModelInsert(cls, cls._normalize_data(__data, insert))
+        return AIOModelInsert(cls, cls._normalize_data(__data, insert))  # type: ignore[]
 
     @classmethod
     def insert_many(
@@ -285,7 +291,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return self
 
 
-class AIOQuery(Generic[TVAIOModel]):
+class AIOQuery(Query, Generic[TVAIOModel]):
     model: Type[TVAIOModel]
 
     def __init__(self, *args, **kwargs):
