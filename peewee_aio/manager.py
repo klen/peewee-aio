@@ -7,6 +7,7 @@ from typing import (
     Any,
     AsyncIterator,
     Callable,
+    Coroutine,
     Dict,
     Generator,
     Iterator,
@@ -17,6 +18,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    overload,
 )
 from weakref import WeakSet
 
@@ -155,7 +157,15 @@ class Manager(Database):
     # Query methods
     # -------------
 
-    def run(self, query: Query) -> Any:
+    @overload
+    def run(self, query: Union[Select, ModelRaw]) -> RunWrapper:
+        ...
+
+    @overload
+    def run(self, query: Query) -> Coroutine[Any, None, Any]:  # type: ignore[misc]
+        ...
+
+    def run(self, query) -> Union[Coroutine[Any, None, Any], RunWrapper]:
         """Run the given Peewee ORM Query."""
         if isinstance(query, (Select, ModelRaw)) or getattr(query, "_returning", None):
             return RunWrapper(self, query)

@@ -298,7 +298,7 @@ class AIOQuery(Query, Generic[TVAIOModel]):
         super().__init__(*args, **kwargs)
         self.manager = self.model._manager
 
-    def __await__(self) -> Generator[Any, None, List[TVAIOModel]]:
+    def __await__(self) -> Generator[Any, None, Any]:
         return self.manager.run(self).__await__()
 
 
@@ -329,7 +329,7 @@ class BaseModelSelect(AIOQuery[TVAIOModel]):
 
 class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
     def __aiter__(self) -> AsyncGenerator[TVAIOModel, None]:
-        return self.manager.run(self).__aiter__()
+        return self.manager.run(self).__aiter__()  # type: ignore[return-value]
 
     @overload
     def __getitem__(self, value: int) -> Coroutine[Any, Any, TVAIOModel]:
@@ -420,6 +420,9 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
         window: Callable[..., AIOModelSelect[TVAIOModel]]
         for_update: Callable[..., AIOModelSelect[TVAIOModel]]
         lateral: Callable[..., AIOModelSelect[TVAIOModel]]
+
+        def __await__(self) -> Generator[Any, None, List[TVAIOModel]]:
+            return self.manager.run(self).__await__()
 
 
 class AIOModelCompoundSelectQuery(
