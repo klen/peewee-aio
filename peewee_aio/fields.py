@@ -32,11 +32,11 @@ class GenericField(Generic[TV]):
         ...
 
     @overload
-    def __get__(self: GenericField[TV], instance: pw.Model, owner) -> TV:
+    def __get__(self: GenericField[TV], instance: object, owner) -> TV:
         ...
 
     def __get__(  # type: ignore[empty-body]
-        self, instance: Optional[pw.Model], owner
+        self, instance: Optional[object], owner
     ) -> Union[Self, TV]:
         ...
 

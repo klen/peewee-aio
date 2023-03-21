@@ -76,15 +76,15 @@ async def test_save(manager, transaction):
     assert rows
     assert user.id
     assert user.name == "Mickey"
-    assert not user._dirty
+    assert not user.dirty_fields
 
-    user.name = "John"
-    assert user._dirty
+    user.name = "John"  # type: ignore[]
+    assert user.dirty_fields
     rows = await manager.save(user)
     assert rows
     assert user.id
     assert user.name == "John"
-    assert not user._dirty
+    assert not user.dirty_fields
 
     user = await manager.get(User, id=user.id)
     assert user.name == "John"

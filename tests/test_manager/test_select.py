@@ -23,7 +23,7 @@ async def test_get(manager, transaction):
     assert res2
     assert res2 == user2
 
-    with pytest.raises(User.DoesNotExist):
+    with pytest.raises(User.DoesNotExist):  # type: ignore[]
         await manager.get(User, id=999)
 
     res = await manager.get_or_none(User, User.id == user1.id)
