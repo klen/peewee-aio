@@ -18,6 +18,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    overload,
 )
 
 from peewee import (
@@ -140,6 +141,9 @@ class AIOModelBase(ModelBase):
 
 class AIOModel(Model, metaclass=AIOModelBase):
     _manager: Manager
+    _meta: Any
+
+    DoesNotExist: Type[Exception]
 
     # Class methods
     # -------------
@@ -194,12 +198,12 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await inst.save(force_insert=True)
 
     @classmethod
-    async def bulk_create(cls, **_):
+    async def bulk_create(cls, model_list, bactch_size=None):
         # TODO: To implement
         raise NotImplementedError("AIOModel doesnt support `bulk_create`")
 
     @classmethod
-    async def bulk_update(cls, **_):
+    async def bulk_update(cls, model_list, fields, batch_size=None):
         # TODO: To implement
         raise NotImplementedError("AIOModel doesnt support `bulk_update`")
 
@@ -209,7 +213,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
     @classmethod
     def select(
         cls: Type[TVAIOModel],
-        *select: Union[Field, Model, Table, ModelAlias],
+        *select: Union[Field, Type[Model], Table, ModelAlias],
     ) -> AIOModelSelect[TVAIOModel]:
         return AIOModelSelect(
             cls,
@@ -318,10 +322,16 @@ class BaseModelSelect(AIOQuery[TVAIOModel]):
 
 
 class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
-    _limit: int
-
     def __aiter__(self) -> AsyncGenerator[TVAIOModel, None]:
         return self.manager.run(self).__aiter__()
+
+    @overload
+    def __getitem__(self, value: int) -> Coroutine[Any, Any, TVAIOModel]:
+        ...
+
+    @overload
+    def __getitem__(self, value: slice) -> AIOModelSelect[TVAIOModel]:
+        ...
 
     def __getitem__(
         self,
@@ -379,46 +389,84 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
             )
         return res
 
-    # Type helpers
-    with_cte: Callable[..., AIOModelSelect[TVAIOModel]]
-    where: Callable[..., AIOModelSelect[TVAIOModel]]
-    orwhere: Callable[..., AIOModelSelect[TVAIOModel]]
-    order_by: Callable[..., AIOModelSelect[TVAIOModel]]
-    order_by_extend: Callable[..., AIOModelSelect[TVAIOModel]]
-    limit: Callable[[Union[int, None]], AIOModelSelect[TVAIOModel]]
-    offset: Callable[[int], AIOModelSelect[TVAIOModel]]
-    paginate: Callable[..., AIOModelSelect[TVAIOModel]]
+    if TYPE_CHECKING:
+        _limit: Optional[int]
+        _offset: Optional[int]
 
-    columns: Callable[..., AIOModelSelect[TVAIOModel]]
-    select_extend: Callable[..., AIOModelSelect[TVAIOModel]]
-    from_: Callable[..., AIOModelSelect[TVAIOModel]]
-    join: Callable[..., AIOModelSelect[TVAIOModel]]
-    join_from: Callable[..., AIOModelSelect[TVAIOModel]]
-    group_by: Callable[..., AIOModelSelect[TVAIOModel]]
-    having: Callable[..., AIOModelSelect[TVAIOModel]]
-    distinct: Callable[..., AIOModelSelect[TVAIOModel]]
-    window: Callable[..., AIOModelSelect[TVAIOModel]]
-    for_update: Callable[..., AIOModelSelect[TVAIOModel]]
-    lateral: Callable[..., AIOModelSelect[TVAIOModel]]
+        with_cte: Callable[..., AIOModelSelect[TVAIOModel]]
+        where: Callable[..., AIOModelSelect[TVAIOModel]]
+        filter: Callable[..., AIOModelSelect[TVAIOModel]]
+        orwhere: Callable[..., AIOModelSelect[TVAIOModel]]
+        order_by: Callable[..., AIOModelSelect[TVAIOModel]]
+        order_by_extend: Callable[..., AIOModelSelect[TVAIOModel]]
+        limit: Callable[[Union[int, None]], AIOModelSelect[TVAIOModel]]
+        offset: Callable[[int], AIOModelSelect[TVAIOModel]]
+        paginate: Callable[..., AIOModelSelect[TVAIOModel]]
+
+        columns: Callable[..., AIOModelSelect[TVAIOModel]]
+        select_extend: Callable[..., AIOModelSelect[TVAIOModel]]
+        from_: Callable[..., AIOModelSelect[TVAIOModel]]
+        join: Callable[..., AIOModelSelect[TVAIOModel]]
+        join_from: Callable[..., AIOModelSelect[TVAIOModel]]
+        group_by: Callable[..., AIOModelSelect[TVAIOModel]]
+        having: Callable[..., AIOModelSelect[TVAIOModel]]
+        distinct: Callable[..., AIOModelSelect[TVAIOModel]]
+        window: Callable[..., AIOModelSelect[TVAIOModel]]
+        for_update: Callable[..., AIOModelSelect[TVAIOModel]]
+        lateral: Callable[..., AIOModelSelect[TVAIOModel]]
 
 
 class AIOModelCompoundSelectQuery(
     BaseModelSelect[TVAIOModel],
     ModelCompoundSelectQuery,
 ):
-    pass
+    if TYPE_CHECKING:
+        _limit: Optional[int]
+        _offset: Optional[int]
+
+        with_cte: Callable[..., AIOModelSelect[TVAIOModel]]
+        where: Callable[..., AIOModelSelect[TVAIOModel]]
+        filter: Callable[..., AIOModelSelect[TVAIOModel]]
+        orwhere: Callable[..., AIOModelSelect[TVAIOModel]]
+        order_by: Callable[..., AIOModelSelect[TVAIOModel]]
+        order_by_extend: Callable[..., AIOModelSelect[TVAIOModel]]
+        limit: Callable[[Union[int, None]], AIOModelSelect[TVAIOModel]]
+        offset: Callable[[int], AIOModelSelect[TVAIOModel]]
+        paginate: Callable[..., AIOModelSelect[TVAIOModel]]
+
+        columns: Callable[..., AIOModelSelect[TVAIOModel]]
+        select_extend: Callable[..., AIOModelSelect[TVAIOModel]]
+        from_: Callable[..., AIOModelSelect[TVAIOModel]]
+        join: Callable[..., AIOModelSelect[TVAIOModel]]
+        join_from: Callable[..., AIOModelSelect[TVAIOModel]]
+        group_by: Callable[..., AIOModelSelect[TVAIOModel]]
+        having: Callable[..., AIOModelSelect[TVAIOModel]]
+        distinct: Callable[..., AIOModelSelect[TVAIOModel]]
+        window: Callable[..., AIOModelSelect[TVAIOModel]]
+        for_update: Callable[..., AIOModelSelect[TVAIOModel]]
+        lateral: Callable[..., AIOModelSelect[TVAIOModel]]
 
 
 class AIOModelUpdate(AIOQuery[TVAIOModel], ModelUpdate):
-    pass
+    if TYPE_CHECKING:
+        where: Callable[..., AIOModelUpdate[TVAIOModel]]
+        orwhere: Callable[..., AIOModelUpdate[TVAIOModel]]
+        from_: Callable[..., AIOModelUpdate[TVAIOModel]]
+        returning: Callable[..., AIOModelUpdate[TVAIOModel]]
 
 
 class AIOModelInsert(AIOQuery[TVAIOModel], ModelInsert):
-    pass
+    if TYPE_CHECKING:
+        where: Callable[..., AIOModelInsert[TVAIOModel]]
+        returning: Callable[..., AIOModelInsert[TVAIOModel]]
+        on_conflict: Callable[..., AIOModelInsert[TVAIOModel]]
+        on_conflict_ignore: Callable[..., AIOModelInsert[TVAIOModel]]
+        on_conflict_replace: Callable[..., AIOModelInsert[TVAIOModel]]
 
 
 class AIOModelDelete(AIOQuery[TVAIOModel], ModelDelete):
-    pass
+    if TYPE_CHECKING:
+        where: Callable[..., AIOModelDelete[TVAIOModel]]
 
 
 class AIOModelRaw(AIOQuery[TVAIOModel], ModelRaw):

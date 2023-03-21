@@ -24,6 +24,33 @@ BACKENDS = {
 }
 
 
+class Role(pw.Model):
+    id = pw.UUIDField(primary_key=True, default=uuid4)
+    created = pw.DateTimeField(default=dt.datetime.utcnow)
+    name = pw.CharField()
+
+
+class User(pw.Model):
+    id = pw.AutoField()
+    created = pw.DateTimeField(default=dt.datetime.utcnow)
+    name = pw.CharField()
+    is_active = pw.BooleanField(default=True)
+
+
+class UserToRole(pw.Model):
+    user = pw.ForeignKeyField(User, backref="roles")
+    role = pw.ForeignKeyField(Role, backref="users")
+
+    class Meta:
+        primary_key = pw.CompositeKey("user", "role")
+
+
+class Comment(pw.Model):
+    created = pw.DateTimeField(default=dt.datetime.utcnow)
+    body = pw.CharField()
+    user = pw.ForeignKeyField(User)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _setup_logging():
     import logging
@@ -67,9 +94,9 @@ async def manager(db_url):
 
 
 @pytest.fixture(scope="session")
-async def schema(manager, user_model, role_model, ur_model, comment_model):
+async def schema(manager):
     await manager.create_tables()
-    yield (user_model, role_model, ur_model, comment_model)
+    yield True
     await manager.drop_tables()
 
 
@@ -80,47 +107,9 @@ async def transaction(schema, manager):
         await trans.rollback()
 
 
-@pytest.fixture(scope="session")
-def role_model(manager):
-    @manager.register
-    class Role(pw.Model):
-        id = pw.UUIDField(primary_key=True, default=uuid4)
-        created = pw.DateTimeField(default=dt.datetime.utcnow)
-        name = pw.CharField()
-
-    return Role
-
-
-@pytest.fixture(scope="session")
-def user_model(manager):
-    @manager.register
-    class User(pw.Model):
-        created = pw.DateTimeField(default=dt.datetime.utcnow)
-        name = pw.CharField()
-        is_active = pw.BooleanField(default=True)
-
-    return User
-
-
-@pytest.fixture(scope="session")
-def ur_model(manager, role_model, user_model):
-    @manager.register
-    class UserToRole(pw.Model):
-        user = pw.ForeignKeyField(user_model, backref="roles")
-        role = pw.ForeignKeyField(role_model, backref="users")
-
-        class Meta:
-            primary_key = pw.CompositeKey("user", "role")
-
-    return UserToRole
-
-
-@pytest.fixture(scope="session")
-def comment_model(manager, user_model):
-    @manager.register
-    class Comment(pw.Model):
-        created = pw.DateTimeField(default=dt.datetime.utcnow)
-        body = pw.CharField()
-        user = pw.ForeignKeyField(user_model)
-
-    return Comment
+@pytest.fixture(scope="session", autouse=True)
+def _register_models(manager):
+    manager.register(Role)
+    manager.register(User)
+    manager.register(UserToRole)
+    manager.register(Comment)

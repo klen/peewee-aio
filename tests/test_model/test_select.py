@@ -1,34 +1,33 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Type
+from typing import Any
 
 import peewee
 import pytest
 
-if TYPE_CHECKING:
-    from peewee_aio.model import AIOModel
+from .conftest import DataModel
 
 
-async def test_select(test_model: Type[AIOModel], schema):
-    await test_model.delete()
-    inst = await test_model.create(data="data")
+async def test_select(schema):
+    await DataModel.delete()
+    inst = await DataModel.create(data="data")
 
-    assert [inst] == await test_model.select().where(test_model.id == inst.id)
+    assert [inst] == await DataModel.select().where(DataModel.id == inst.id)
 
-    async for data in test_model.select():
+    async for data in DataModel.select():
         assert data == inst
 
-    assert await test_model.select().exists()
-    assert await test_model.select().count() == 1
-    assert await test_model.select().get() == inst
-    assert await test_model.select().peek() == inst
-    assert await test_model.select().first() == inst
-    assert await test_model.select(peewee.fn.MAX(test_model.id)).scalar()
+    assert await DataModel.select().exists()
+    assert await DataModel.select().count() == 1
+    assert await DataModel.select().get() == inst
+    assert await DataModel.select().peek() == inst
+    assert await DataModel.select().first() == inst
+    assert await DataModel.select(peewee.fn.MAX(DataModel.id)).scalar()
 
 
-async def test_select_items(test_model, schema):
-    await test_model.insert_many([{"data": f"t{n}"} for n in range(3)])
-    qs = test_model.select()
+async def test_select_items(schema):
+    await DataModel.insert_many([{"data": f"t{n}"} for n in range(3)])
+    qs = DataModel.select()
     t1 = await qs[0]
     assert t1
     assert t1.data == "t0"
@@ -42,40 +41,44 @@ async def test_select_items(test_model, schema):
     assert res == [t1, t2]
 
 
-async def test_get_or_create(test_model: Type[AIOModel], schema):
-    with pytest.raises(peewee.DatabaseError):
-        inst, created = await test_model.get_or_create(defaults={})
+async def test_get_or_create(schema):
+    from .conftest import DataModel  # type: ignore[]
 
-    class TestModel(test_model):  # type: ignore[valid-type,misc]
+    Base = DataModel  # noqa: N806
+
+    with pytest.raises(peewee.DatabaseError):
+        inst, created = await DataModel.get_or_create(defaults={})
+
+    class DataModel(Base):  # type: ignore[no-redef,valid-type,misc]
         async def save(self, **kwargs):
             self.data += "-custom"
             return await super().save(**kwargs)
 
-    inst, created = await TestModel.get_or_create(data="data")
+    inst, created = await DataModel.get_or_create(data="data")
     assert inst
     assert inst.data == "data-custom"
     assert created
 
-    inst2, created = await TestModel.get_or_create(data="data-custom")
+    inst2, created = await DataModel.get_or_create(data="data-custom")
     assert inst2 == inst
     assert not created
 
 
-async def test_get(test_model, schema):
-    source = await test_model.create(data="data")
+async def test_get(schema):
+    source = await DataModel.create(data="data")
 
-    inst = await test_model.get_or_none(test_model.id == source.id)
+    inst = await DataModel.get_or_none(DataModel.id == source.id)
     assert inst
     assert inst == source
 
-    inst = await test_model.get_or_none(test_model.id == 999)
+    inst = await DataModel.get_or_none(DataModel.id == 999)
     assert inst is None
 
-    inst = await test_model.get(test_model.id == source.id)
+    inst = await DataModel.get(DataModel.id == source.id)
     assert inst
     assert inst == source
 
-    inst = await test_model.get_by_id(source.id)
+    inst = await DataModel.get_by_id(source.id)
     assert inst
     assert inst == source
 
@@ -86,6 +89,8 @@ async def test_prefetch(manager):
     @manager.register
     class BaseModel(AIOModel):
         data = peewee.CharField()
+
+        relmodel_set: Any
 
     @manager.register
     class RelModel(AIOModel):
@@ -109,16 +114,16 @@ async def test_prefetch(manager):
     await BaseModel.drop_table(safe=True)
 
 
-async def test_union(test_model, schema):
+async def test_union(schema):
     from peewee_aio.model import AIOModelCompoundSelectQuery
 
-    await test_model.delete()
-    await test_model.insert_many([test_model(data=f"t{n}") for n in range(3)])
+    await DataModel.delete()
+    await DataModel.insert_many([DataModel(data=f"t{n}") for n in range(3)])
 
     qs = (
-        test_model.select().where(test_model.data == "t1")
-        | test_model.select().where(test_model.data == "t2")
-        | test_model.select().where(test_model.data == "t3")
+        DataModel.select().where(DataModel.data == "t1")
+        | DataModel.select().where(DataModel.data == "t2")
+        | DataModel.select().where(DataModel.data == "t3")
     )
 
     assert isinstance(qs, AIOModelCompoundSelectQuery)
@@ -127,21 +132,21 @@ async def test_union(test_model, schema):
     assert res
 
 
-async def test_scalar(test_model, schema):
-    await test_model.delete()
-    await test_model.insert_many([test_model(data=f"t{n}") for n in range(3)])
-    assert await test_model.select(test_model.data).scalars() == ["t0", "t1", "t2"]
+async def test_scalar(schema):
+    await DataModel.delete()
+    await DataModel.insert_many([DataModel(data=f"t{n}") for n in range(3)])
+    assert await DataModel.select(DataModel.data).scalars() == ["t0", "t1", "t2"]
 
-    assert await test_model.select(test_model.data).scalar() == "t0"
-    assert await test_model.select(test_model.data).scalar(as_tuple=True) == ("t0",)
-    assert await test_model.select(test_model.data).scalar(as_dict=True) == {
+    assert await DataModel.select(DataModel.data).scalar() == "t0"
+    assert await DataModel.select(DataModel.data).scalar(as_tuple=True) == ("t0",)
+    assert await DataModel.select(DataModel.data).scalar(as_dict=True) == {
         "data": "t0",
     }
 
 
-async def test_first(test_model, schema):
-    await test_model.insert_many([test_model(data=f"t{n}") for n in range(3)])
-    qs = test_model.select().order_by(test_model.id)
+async def test_first(schema):
+    await DataModel.insert_many([DataModel(data=f"t{n}") for n in range(3)])
+    qs = DataModel.select().order_by(DataModel.id)
     ts1, ts2, ts3 = await qs
     ts = await qs.first()
     assert ts == ts1

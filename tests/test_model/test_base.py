@@ -1,39 +1,32 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Type
+from typing import Any, Optional
 
-import peewee
 from playhouse.test_utils import count_queries
 
-if TYPE_CHECKING:
-    from peewee_aio import AIOModel
+from .conftest import DataModel
 
 
-async def test_base():
-    from peewee_aio import AIOModel
-
-    assert issubclass(AIOModel, peewee.Model)
-
-
-async def test_base_model(test_model: Type[AIOModel], manager):
+async def test_base_model(manager):
     from peewee_aio import fields
 
-    assert test_model
-    assert test_model._manager is manager
-    assert test_model._meta.database is manager.pw_database
+    assert DataModel._manager is manager
+    assert DataModel._meta.database is manager.pw_database
 
-    class ChildModel(test_model):  # type: ignore[valid-type,misc]
+    class ChildModel(DataModel):
         is_active = fields.BooleanField(default=True)
 
     return ChildModel
 
 
-async def test_backref(test_model, manager, schema):
+async def test_backref(manager, schema):
     from peewee_aio import AIOModel, fields
 
-    class BaseModel(test_model):  # type: ignore[valid-type,misc]
+    class BaseModel(DataModel):
+        ref_set: Any
+
         class Meta:
-            table_name = "testmodel"
+            table_name = "datamodel"
 
     @manager.register
     class Ref(AIOModel):
@@ -85,12 +78,13 @@ async def test_backref(test_model, manager, schema):
     await Ref.drop_table()
 
 
-async def test_fk(test_model, manager, schema):
+async def test_fk(manager, schema):
     from peewee_aio import AIOModel, fields
 
     @manager.register
     class ParentModel(AIOModel):
-        child = fields.ForeignKeyField(test_model, null=True, on_delete="CASCADE")
+        child_id: Optional[int]
+        child = fields.ForeignKeyField(DataModel, null=True, on_delete="CASCADE")
 
     from peewee_aio.model import AIOForeignKeyField
 
@@ -99,10 +93,10 @@ async def test_fk(test_model, manager, schema):
     await ParentModel.create_table()
 
     parent = await ParentModel.create()
-    assert parent.child_id is None
     assert await parent.child is None
+    assert parent.child_id is None
 
-    child = await test_model.create(data="body")
+    child = await DataModel.create(data="body")
     parent = await ParentModel.create(child=child)
 
     assert await parent.child == child
@@ -119,7 +113,7 @@ async def test_deferred_fk(manager):
 
     @manager.register
     class ChildModel(AIOModel):
-        pass
+        id = fields.AutoField()
 
     from peewee_aio.model import AIOForeignKeyField
 
@@ -138,7 +132,7 @@ async def test_deferred_fk(manager):
     await ChildModel.drop_table()
 
 
-async def test_await_model(test_model):
-    test = test_model(id=1)
+async def test_await_model():
+    test = DataModel(id=1)
     assert await test == test
     assert await test == test

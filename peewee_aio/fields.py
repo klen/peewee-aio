@@ -35,7 +35,9 @@ class GenericField(Generic[TV]):
     def __get__(self: GenericField[TV], instance: pw.Model, owner) -> TV:
         ...
 
-    def __get__(self, instance: Optional[pw.Model], owner):
+    def __get__(  # type: ignore[empty-body]
+        self, instance: Optional[pw.Model], owner
+    ) -> Union[Self, TV]:
         ...
 
 
@@ -50,7 +52,7 @@ class IntegerField(pw.IntegerField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> IntegerField[Optional[int]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[IntegerField[int], IntegerField[Optional[int]]]:
             ...
 
 
@@ -67,7 +69,9 @@ class BigIntegerField(pw.BigIntegerField, GenericField[TV]):
         ) -> BigIntegerField[Optional[int]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[BigIntegerField[int], BigIntegerField[Optional[int]]]:
             ...
 
 
@@ -84,7 +88,9 @@ class SmallIntegerField(pw.SmallIntegerField, GenericField[TV]):
         ) -> SmallIntegerField[Optional[int]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[SmallIntegerField[int], SmallIntegerField[Optional[int]]]:
             ...
 
 
@@ -99,7 +105,7 @@ class AutoField(pw.AutoField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> AutoField[Optional[int]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[AutoField[int], AutoField[Optional[int]]]:
             ...
 
 
@@ -114,7 +120,7 @@ class BigAutoField(pw.BigAutoField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> BigAutoField[Optional[int]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[BigAutoField[int], BigAutoField[Optional[int]]]:
             ...
 
 
@@ -131,7 +137,9 @@ class IdentityField(pw.IdentityField, GenericField[TV]):
         ) -> IdentityField[Optional[int]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[IdentityField[int], IdentityField[Optional[int]]]:
             ...
 
 
@@ -146,7 +154,7 @@ class FloatField(pw.FloatField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> FloatField[Optional[float]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[FloatField[float], FloatField[Optional[float]]]:
             ...
 
 
@@ -163,7 +171,9 @@ class DoubleField(pw.DoubleField, GenericField[TV]):
         ) -> DoubleField[Optional[float]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[DoubleField[float], DoubleField[Optional[float]]]:
             ...
 
 
@@ -180,7 +190,9 @@ class DecimalField(pw.DecimalField, GenericField[TV]):
         ) -> DecimalField[Optional[float]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[DecimalField[float], DecimalField[Optional[float]]]:
             ...
 
 
@@ -195,7 +207,7 @@ class CharField(pw.CharField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> CharField[Optional[str]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[CharField[str], CharField[Optional[str]]]:
             ...
 
 
@@ -212,7 +224,9 @@ class FixedCharField(pw.FixedCharField, GenericField[TV]):
         ) -> FixedCharField[Optional[str]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[FixedCharField[str], FixedCharField[Optional[str]]]:
             ...
 
 
@@ -227,7 +241,7 @@ class TextField(pw.TextField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> TextField[Optional[str]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[TextField[str], TextField[Optional[str]]]:
             ...
 
 
@@ -242,7 +256,7 @@ class BlobField(pw.BlobField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> BlobField[Optional[bytes]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[BlobField[bytes], BlobField[Optional[bytes]]]:
             ...
 
 
@@ -257,7 +271,7 @@ class BitField(pw.BitField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> BitField[Optional[int]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[BitField[int], BitField[Optional[int]]]:
             ...
 
 
@@ -274,7 +288,9 @@ class BigBitField(pw.BigBitField, GenericField[TV]):
         ) -> BigBitField[Optional[bytes]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[BigBitField[bytes], BigBitField[Optional[bytes]]]:
             ...
 
 
@@ -289,7 +305,7 @@ class UUIDField(pw.UUIDField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> UUIDField[Optional[UUID]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[UUIDField[UUID], UUIDField[Optional[UUID]]]:
             ...
 
 
@@ -306,7 +322,9 @@ class BinaryUUIDField(pw.BinaryUUIDField, GenericField[TV]):
         ) -> BinaryUUIDField[Optional[UUID]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[BinaryUUIDField[UUID], BinaryUUIDField[Optional[UUID]]]:
             ...
 
 
@@ -323,7 +341,9 @@ class DateTimeField(pw.DateTimeField, GenericField[TV]):
         ) -> DateTimeField[Optional[datetime]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[DateTimeField[datetime], DateTimeField[Optional[datetime]]]:
             ...
 
 
@@ -338,7 +358,7 @@ class DateField(pw.DateField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> DateField[Optional[date]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[DateField[date], DateField[Optional[date]]]:
             ...
 
 
@@ -353,7 +373,7 @@ class TimeField(pw.TimeField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> TimeField[Optional[time]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[TimeField[time], TimeField[Optional[time]]]:
             ...
 
 
@@ -370,7 +390,9 @@ class TimestampField(pw.TimestampField, GenericField[TV]):
         ) -> TimestampField[Optional[int]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[TimestampField[int], TimestampField[Optional[int]]]:
             ...
 
 
@@ -385,7 +407,7 @@ class IPField(pw.IPField, GenericField[TV]):
         def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> IPField[Optional[str]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Union[IPField[str], IPField[Optional[str]]]:
             ...
 
 
@@ -402,7 +424,9 @@ class BooleanField(pw.BooleanField, GenericField[TV]):
         ) -> BooleanField[Optional[bool]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[BooleanField[bool], BooleanField[Optional[bool]]]:
             ...
 
 
@@ -421,7 +445,12 @@ class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
         ) -> ForeignKeyField[Coroutine[None, None, Optional[TV]]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[
+            ForeignKeyField[Coroutine[None, None, TV]],
+            ForeignKeyField[Coroutine[None, None, Optional[TV]]],
+        ]:
             ...
 
         def __set__(self, instance: AIOModel, value: Union[AIOModel, str, int, None]) -> None:
@@ -443,7 +472,12 @@ class DeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
         ) -> DeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]]:
             ...
 
-        def __new__(cls, *args, **kwargs):
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[
+            DeferredForeignKey[Coroutine[None, None, AIOModel]],
+            DeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]],
+        ]:
             ...
 
         def __set__(self, instance: AIOModel, value: Union[AIOModel, str, int, None]) -> None:

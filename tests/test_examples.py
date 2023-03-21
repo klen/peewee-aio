@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import peewee
-
 
 def test_readme():
-    from peewee_aio import AIOModel, Manager
+    from peewee_aio import AIOModel, Manager, fields
 
     manager = Manager("sqlite:///:memory:")
 
     @manager.register
     class TestModel(AIOModel):
-        text = peewee.CharField()
+        id = fields.AutoField()
+        text = fields.CharField()
 
     async def handler():
         # Initialize the database (pool)
@@ -29,6 +28,7 @@ def test_readme():
                 async for test in TestModel.select():
                     assert test
                     assert test.id
+                    assert test.text
 
                 # Change records
                 test.text = "I'm changed"
