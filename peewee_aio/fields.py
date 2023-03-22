@@ -40,6 +40,9 @@ class GenericField(Generic[TV]):
     ) -> Union[Self, TV]:
         ...
 
+    def __set__(self, instance: object, value: TV) -> None:
+        ...
+
 
 class IntegerField(pw.IntegerField, GenericField[TV]):
     if TYPE_CHECKING:
@@ -453,7 +456,9 @@ class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
         ]:
             ...
 
-        def __set__(self, instance: AIOModel, value: Union[AIOModel, str, int, None]) -> None:
+        def __set__(  # type: ignore[override]
+            self, instance: AIOModel, value: Union[AIOModel, str, int, None]
+        ) -> None:
             ...
 
 
@@ -480,7 +485,9 @@ class DeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
         ]:
             ...
 
-        def __set__(self, instance: AIOModel, value: Union[AIOModel, str, int, None]) -> None:
+        def __set__(  # type: ignore[override]
+            self, instance: AIOModel, value: Union[AIOModel, str, int, None]
+        ) -> None:
             ...
 
 
