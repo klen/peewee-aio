@@ -151,6 +151,9 @@ class AIOModel(Model, metaclass=AIOModelBase):
         def __getattr__(self, name: str) -> Any:
             ...
 
+        def __setattr__(self, name: str, value: Any) -> None:
+            ...
+
     # Class methods
     # -------------
 
