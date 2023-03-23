@@ -297,6 +297,9 @@ class AIOModel(Model, metaclass=AIOModelBase):
 class AIOQuery(Query, Generic[TVAIOModel]):
     model: Type[TVAIOModel]
 
+    if TYPE_CHECKING:
+        _order_by: Optional[tuple]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.manager = self.model._manager
