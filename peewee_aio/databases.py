@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 
 
 class Database(pw.Database):
-
     enabled: bool = False
 
     def execute(self, *args, **kwargs):
@@ -35,9 +34,9 @@ class PostgresqlDatabase(Database, pw.PostgresqlDatabase):
 
 
 _backend_to_db: Dict[str, Type[Database]] = {
-    "sqlite": SqliteDatabase,
-    "postgres": PostgresqlDatabase,
     "mysql": MySQLDatabase,
+    "postgres": PostgresqlDatabase,
+    "sqlite": SqliteDatabase,
 }
 _backend_to_db["postgresql"] = _backend_to_db["postgres"]
 

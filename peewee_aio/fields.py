@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from .model import AIOModel
 
-from .types import TV
+from .types import TV, TVAIOModel
 
 
 class GenericField(Generic[TV]):
@@ -48,11 +48,11 @@ class IntegerField(pw.IntegerField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> IntegerField[int]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> IntegerField[int]:
             ...
 
         @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> IntegerField[Optional[int]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> IntegerField[Optional[int]]:
             ...
 
         def __new__(cls, *args, **kwargs) -> Union[IntegerField[int], IntegerField[Optional[int]]]:
@@ -63,13 +63,11 @@ class BigIntegerField(pw.BigIntegerField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BigIntegerField[int]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> BigIntegerField[int]:
             ...
 
         @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> BigIntegerField[Optional[int]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> BigIntegerField[Optional[int]]:
             ...
 
         def __new__(
@@ -82,13 +80,11 @@ class SmallIntegerField(pw.SmallIntegerField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> SmallIntegerField[int]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> SmallIntegerField[int]:
             ...
 
         @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> SmallIntegerField[Optional[int]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> SmallIntegerField[Optional[int]]:
             ...
 
         def __new__(
@@ -100,49 +96,21 @@ class SmallIntegerField(pw.SmallIntegerField, GenericField[TV]):
 class AutoField(pw.AutoField, GenericField[TV]):
     if TYPE_CHECKING:
 
-        @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> AutoField[int]:
-            ...
-
-        @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> AutoField[Optional[int]]:
-            ...
-
-        def __new__(cls, *args, **kwargs) -> Union[AutoField[int], AutoField[Optional[int]]]:
+        def __new__(cls, *args, **kwargs) -> AutoField[int]:
             ...
 
 
 class BigAutoField(pw.BigAutoField, GenericField[TV]):
     if TYPE_CHECKING:
 
-        @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BigAutoField[int]:
-            ...
-
-        @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> BigAutoField[Optional[int]]:
-            ...
-
-        def __new__(cls, *args, **kwargs) -> Union[BigAutoField[int], BigAutoField[Optional[int]]]:
+        def __new__(cls, *args, **kwargs) -> BigAutoField[int]:
             ...
 
 
 class IdentityField(pw.IdentityField, GenericField[TV]):
     if TYPE_CHECKING:
 
-        @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> IdentityField[int]:
-            ...
-
-        @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> IdentityField[Optional[int]]:
-            ...
-
-        def __new__(
-            cls, *args, **kwargs
-        ) -> Union[IdentityField[int], IdentityField[Optional[int]]]:
+        def __new__(cls, *args, **kwargs) -> IdentityField[int]:
             ...
 
 
@@ -150,11 +118,11 @@ class FloatField(pw.FloatField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> FloatField[float]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> FloatField[float]:
             ...
 
         @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> FloatField[Optional[float]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> FloatField[Optional[float]]:
             ...
 
         def __new__(cls, *args, **kwargs) -> Union[FloatField[float], FloatField[Optional[float]]]:
@@ -165,13 +133,11 @@ class DoubleField(pw.DoubleField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> DoubleField[float]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> DoubleField[float]:
             ...
 
         @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> DoubleField[Optional[float]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> DoubleField[Optional[float]]:
             ...
 
         def __new__(
@@ -184,13 +150,11 @@ class DecimalField(pw.DecimalField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> DecimalField[float]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> DecimalField[float]:
             ...
 
         @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> DecimalField[Optional[float]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> DecimalField[Optional[float]]:
             ...
 
         def __new__(
@@ -203,11 +167,11 @@ class CharField(pw.CharField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> CharField[str]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> CharField[str]:
             ...
 
         @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> CharField[Optional[str]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> CharField[Optional[str]]:
             ...
 
         def __new__(cls, *args, **kwargs) -> Union[CharField[str], CharField[Optional[str]]]:
@@ -218,13 +182,11 @@ class FixedCharField(pw.FixedCharField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> FixedCharField[str]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> FixedCharField[str]:
             ...
 
         @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> FixedCharField[Optional[str]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> FixedCharField[Optional[str]]:
             ...
 
         def __new__(
@@ -237,11 +199,11 @@ class TextField(pw.TextField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> TextField[str]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> TextField[str]:
             ...
 
         @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> TextField[Optional[str]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> TextField[Optional[str]]:
             ...
 
         def __new__(cls, *args, **kwargs) -> Union[TextField[str], TextField[Optional[str]]]:
@@ -252,11 +214,11 @@ class BlobField(pw.BlobField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BlobField[bytes]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> BlobField[bytes]:
             ...
 
         @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> BlobField[Optional[bytes]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> BlobField[Optional[bytes]]:
             ...
 
         def __new__(cls, *args, **kwargs) -> Union[BlobField[bytes], BlobField[Optional[bytes]]]:
@@ -267,11 +229,11 @@ class BitField(pw.BitField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BitField[int]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> BitField[int]:
             ...
 
         @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> BitField[Optional[int]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> BitField[Optional[int]]:
             ...
 
         def __new__(cls, *args, **kwargs) -> Union[BitField[int], BitField[Optional[int]]]:
@@ -282,13 +244,11 @@ class BigBitField(pw.BigBitField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BigBitField[bytes]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> BigBitField[bytes]:
             ...
 
         @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> BigBitField[Optional[bytes]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> BigBitField[Optional[bytes]]:
             ...
 
         def __new__(
@@ -301,11 +261,11 @@ class UUIDField(pw.UUIDField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> UUIDField[UUID]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> UUIDField[UUID]:
             ...
 
         @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> UUIDField[Optional[UUID]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> UUIDField[Optional[UUID]]:
             ...
 
         def __new__(cls, *args, **kwargs) -> Union[UUIDField[UUID], UUIDField[Optional[UUID]]]:
@@ -316,13 +276,11 @@ class BinaryUUIDField(pw.BinaryUUIDField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BinaryUUIDField[UUID]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> BinaryUUIDField[UUID]:
             ...
 
         @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> BinaryUUIDField[Optional[UUID]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> BinaryUUIDField[Optional[UUID]]:
             ...
 
         def __new__(
@@ -335,13 +293,11 @@ class DateTimeField(pw.DateTimeField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> DateTimeField[datetime]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> DateTimeField[datetime]:
             ...
 
         @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> DateTimeField[Optional[datetime]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> DateTimeField[Optional[datetime]]:
             ...
 
         def __new__(
@@ -354,11 +310,11 @@ class DateField(pw.DateField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> DateField[date]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> DateField[date]:
             ...
 
         @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> DateField[Optional[date]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> DateField[Optional[date]]:
             ...
 
         def __new__(cls, *args, **kwargs) -> Union[DateField[date], DateField[Optional[date]]]:
@@ -369,11 +325,11 @@ class TimeField(pw.TimeField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> TimeField[time]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> TimeField[time]:
             ...
 
         @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> TimeField[Optional[time]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> TimeField[Optional[time]]:
             ...
 
         def __new__(cls, *args, **kwargs) -> Union[TimeField[time], TimeField[Optional[time]]]:
@@ -384,13 +340,11 @@ class TimestampField(pw.TimestampField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> TimestampField[int]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> TimestampField[int]:
             ...
 
         @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> TimestampField[Optional[int]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> TimestampField[Optional[int]]:
             ...
 
         def __new__(
@@ -403,11 +357,11 @@ class IPField(pw.IPField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> IPField[str]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> IPField[str]:
             ...
 
         @overload
-        def __new__(cls, *args, null: Literal[True] = ..., **kwargs) -> IPField[Optional[str]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> IPField[Optional[str]]:
             ...
 
         def __new__(cls, *args, **kwargs) -> Union[IPField[str], IPField[Optional[str]]]:
@@ -418,13 +372,11 @@ class BooleanField(pw.BooleanField, GenericField[TV]):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = ..., **kwargs) -> BooleanField[bool]:
+        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> BooleanField[bool]:
             ...
 
         @overload
-        def __new__(
-            cls, *args, null: Literal[True] = ..., **kwargs
-        ) -> BooleanField[Optional[bool]]:
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> BooleanField[Optional[bool]]:
             ...
 
         def __new__(
@@ -438,26 +390,44 @@ class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
 
         @overload
         def __new__(
-            cls, model: Type[TV], *, null: Literal[False] = ..., **kwargs
-        ) -> ForeignKeyField[Coroutine[None, None, TV]]:
+            cls, model: Type[TVAIOModel], *, null: Literal[False] = False, **kwargs
+        ) -> ForeignKeyField[Coroutine[None, None, TVAIOModel]]:
             ...
 
         @overload
         def __new__(
-            cls, model: Type[TV], *, null: Literal[True] = ..., **kwargs
-        ) -> ForeignKeyField[Coroutine[None, None, Optional[TV]]]:
+            cls, model: Type[TVAIOModel], *, null: Literal[True], **kwargs
+        ) -> ForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]]:
             ...
 
         def __new__(
             cls, *args, **kwargs
         ) -> Union[
-            ForeignKeyField[Coroutine[None, None, TV]],
-            ForeignKeyField[Coroutine[None, None, Optional[TV]]],
+            ForeignKeyField[Coroutine[None, None, TVAIOModel]],
+            ForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]],
         ]:
             ...
 
-        def __set__(  # type: ignore[override]
-            self, instance: AIOModel, value: Union[AIOModel, str, int, None]
+        @overload  # type: ignore[override]
+        def __set__(
+            self: ForeignKeyField[Coroutine[None, None, TVAIOModel]],
+            instance: AIOModel,
+            value: Union[TVAIOModel, str, int],
+        ) -> None:
+            ...
+
+        @overload
+        def __set__(
+            self: ForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]],
+            instance: AIOModel,
+            value: Union[TVAIOModel, str, int, None],
+        ) -> None:
+            ...
+
+        def __set__(
+            self,
+            instance,
+            value: Union[TVAIOModel, str, int, None],
         ) -> None:
             ...
 
@@ -467,13 +437,13 @@ class DeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
 
         @overload
         def __new__(
-            cls, rel_model_name: str, *, null: Literal[False] = ..., **kwargs
+            cls, rel_model_name: str, *, null: Literal[False] = False, **kwargs
         ) -> DeferredForeignKey[Coroutine[None, None, AIOModel]]:
             ...
 
         @overload
         def __new__(
-            cls, rel_model_name: str, *, null: Literal[True] = ..., **kwargs
+            cls, rel_model_name: str, *, null: Literal[True], **kwargs
         ) -> DeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]]:
             ...
 
@@ -483,6 +453,22 @@ class DeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
             DeferredForeignKey[Coroutine[None, None, AIOModel]],
             DeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]],
         ]:
+            ...
+
+        @overload  # type: ignore[override]
+        def __set__(
+            self: DeferredForeignKey[Coroutine[None, None, AIOModel]],
+            instance: AIOModel,
+            value: Union[AIOModel, str, int],
+        ) -> None:
+            ...
+
+        @overload
+        def __set__(
+            self: DeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]],
+            instance: AIOModel,
+            value: Union[AIOModel, str, int, None],
+        ) -> None:
             ...
 
         def __set__(  # type: ignore[override]
