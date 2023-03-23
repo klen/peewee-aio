@@ -12,6 +12,7 @@ Async support for [Peewee ORM](https://github.com/coleifer/peewee)
 * Supports PostgresQL, MySQL, SQLite
 * Supports [asyncio](https://docs.python.org/3/library/asyncio.html) and
   [trio](https://github.com/python-trio/trio)
+* Contains types as well
 * Drivers supported:
     - [aiosqlite](https://github.com/omnilib/aiosqlite)
     - [aiomysql](https://github.com/aio-libs/aiomysql)
@@ -23,7 +24,7 @@ Async support for [Peewee ORM](https://github.com/coleifer/peewee)
 
 ## Requirements
 
-* python >= 3.7
+* python >= 3.8
 
 ## Installation
 
@@ -48,12 +49,16 @@ $ pip install peewee-aio[triopg]
 
 ```python
     import peewee
-    from peewee_aio import Manager
+    from peewee_aio import Manager, AIOModel, fields
 
     manager = Manager('aiosqlite:///:memory:')
 
-    class TestModel(manager.Model):
-        text = peewee.CharField()
+    @manager.register
+    class TestModel(AIOModel):
+
+        # Pay attention that we are using fields from Peewee-AIO for better typing support
+        id = fields.AutoField()
+        text = fields.CharField()
 
     async def handler():
 
@@ -69,11 +74,11 @@ $ pip install peewee-aio[triopg]
                 # Create a record
                 test = await TestModel.create(text="I'm working!")
                 assert test
-                assert test.id
+                assert test.id  # Typechecking systems understands that test.id is string
 
                 # Iterate through records
                 async for test in TestModel.select():
-                    assert test
+                    assert test  # Typechecking systems understands that the test is instance of Test
                     assert test.id
 
                 # Change records
