@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+import pytest
 from playhouse.test_utils import count_queries
 
 from .conftest import DataModel
@@ -136,3 +137,38 @@ async def test_await_model():
     test = DataModel(id=1)
     assert await test == test
     assert await test == test
+
+
+async def test_model_fetch():
+    from peewee_aio import AIOModel, fields
+
+    class User(AIOModel):
+        id = fields.IntegerField()
+        name = fields.CharField()
+
+    class Comment(AIOModel):
+        id = fields.IntegerField()
+        text = fields.CharField()
+        user = fields.ForeignKeyField(User)
+
+    user = User(id=1, name="test")
+    comment = Comment(id=1, text="test", user=user)
+
+    test = comment.fetch(Comment.user)
+    assert test == user
+
+    comment = Comment(id=1, text="test", user_id=1)
+    with pytest.raises(ValueError, match="Relation user is not loaded into"):
+        comment.fetch(Comment.user)
+
+    class Comment2(AIOModel):
+        id = fields.IntegerField()
+        text = fields.CharField()
+        user = fields.FetchForeignKey(User)
+
+    comment = Comment2(id=1, text="test", user=user)
+    assert comment.user is user
+
+    comment = Comment2(id=1, text="test", user_id=1)
+    with pytest.raises(RuntimeError):
+        comment.user

@@ -40,7 +40,7 @@ from peewee import (
     Table,
 )
 
-from .fields import AIODeferredForeignKey, AIOForeignKeyField
+from .fields import AIODeferredForeignKey, AIOForeignKeyField, FetchForeignKey
 from .types import TVAIOModel
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ class AIOModelBase(ModelBase):
         # Replace fields to AIO fields
         for attr_name, attr in attrs.items():
             if not isinstance(attr, Field) or isinstance(
-                attr, (AIOForeignKeyField, AIODeferredForeignKey)
+                attr, (AIOForeignKeyField, AIODeferredForeignKey, FetchForeignKey)
             ):
                 continue
 
@@ -246,6 +246,35 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     async def delete_instance(self, **kwargs):
         return await self._manager.delete_instance(self, **kwargs)
+
+    @overload
+    def fetch(self, fk: AIOForeignKeyField[Coroutine[None, None, TVAIOModel]]) -> TVAIOModel:
+        ...
+
+    @overload
+    def fetch(
+        self, fk: AIOForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]]
+    ) -> Optional[TVAIOModel]:
+        ...
+
+    def fetch(
+        self,
+        fk: Union[
+            AIOForeignKeyField[Coroutine[None, None, TVAIOModel]],
+            AIOForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]],
+        ],
+    ) -> Union[TVAIOModel, Optional[TVAIOModel]]:
+        """Get fk relation from the given instance cache. Raise ValueError if not loaded."""
+
+        attr = fk.name
+        fk = self.__data__.get(attr)
+        if fk is None:
+            return None
+
+        try:
+            return self.__rel__[attr]
+        except KeyError:
+            raise ValueError(f"Relation {attr} is not loaded into {self!r}") from None
 
     # Support await syntax
     # --------------------

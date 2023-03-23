@@ -385,6 +385,70 @@ class BooleanField(pw.BooleanField, GenericField[TV]):
             ...
 
 
+class FetchForeignKeyAccessor(pw.ForeignKeyAccessor):
+    def get_rel_instance(self, instance: AIOModel) -> Optional[AIOModel]:
+        name = self.name
+        value = instance.__data__.get(name)
+        if value is None:
+            if not self.field.null:
+                raise self.rel_model.DoesNotExist
+            return None
+
+        # Get from cache
+        if name not in instance.__rel__:
+            raise RuntimeError(f"{name} has to be prefetched")
+
+        return instance.__rel__[name]
+
+
+class FetchForeignKey(pw.ForeignKeyField, GenericField[TV]):
+    """A foreign key field that only works with prefetching"""
+
+    accessor_class = FetchForeignKeyAccessor
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __new__(
+            cls, model: Type[TVAIOModel], *, null: Literal[False] = False, **kwargs
+        ) -> FetchForeignKey[TVAIOModel]:
+            ...
+
+        @overload
+        def __new__(
+            cls, model: Type[TVAIOModel], *, null: Literal[True], **kwargs
+        ) -> FetchForeignKey[Optional[TVAIOModel]]:
+            ...
+
+        def __new__(
+            cls, *args, **kwargs
+        ) -> Union[FetchForeignKey[TVAIOModel], FetchForeignKey[Optional[TVAIOModel]]]:
+            ...
+
+        @overload  # type: ignore[override]
+        def __set__(
+            self: FetchForeignKey[TVAIOModel],
+            instance: AIOModel,
+            value: Union[TVAIOModel, str, int],
+        ) -> None:
+            ...
+
+        @overload
+        def __set__(
+            self: FetchForeignKey[Optional[TVAIOModel]],
+            instance: AIOModel,
+            value: Union[TVAIOModel, str, int, None],
+        ) -> None:
+            ...
+
+        def __set__(
+            self,
+            instance,
+            value: Union[TVAIOModel, str, int, None],
+        ) -> None:
+            ...
+
+
 class AIOForeignKeyAccessor(pw.ForeignKeyAccessor):
     async def get_rel_instance(self, instance: AIOModel) -> Optional[AIOModel]:
         name = self.name

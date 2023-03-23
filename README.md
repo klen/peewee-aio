@@ -137,16 +137,14 @@ with manager.allow_sync():
 ```
 
 
-### Get preloaded relations
+### Get prefetched relations
 
 TODO
 
 ```python
-from peewee_aio import getrel
-
-# We preloaded roles here
+# We prefetched roles here
 async for user in User.select(User, Role).join(Role):
-  role = getrel(user, User.role)  # get role from user relations cache
+  role = user.fetch(User.role)  # get role from user relations cache
 
 ```
 
