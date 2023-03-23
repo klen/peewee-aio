@@ -25,7 +25,6 @@ from peewee import (
     SQL,
     DeferredForeignKey,
     Field,
-    ForeignKeyAccessor,
     ForeignKeyField,
     Model,
     ModelAlias,
@@ -41,6 +40,7 @@ from peewee import (
     Table,
 )
 
+from .fields import AIODeferredForeignKey, AIOForeignKeyField
 from .types import TVAIOModel
 
 if TYPE_CHECKING:
@@ -49,52 +49,18 @@ if TYPE_CHECKING:
     from .manager import Manager
 
 
-class AIOForeignKeyAccessor(ForeignKeyAccessor):
-    async def get_rel_instance(self, instance: AIOModel) -> Optional[AIOModel]:
-        # Get from cache
-        name = self.name
-        if name in instance.__rel__:
-            return instance.__rel__[name]
-
-        value = instance.__data__.get(name)
-
-        # Lazy load
-        field = self.field
-        if field.lazy_load:
-            if value is not None:
-                obj = await self.rel_model.get(self.field.rel_field == value)
-                instance.__rel__[self.name] = obj
-                return obj
-
-            if not field.null:
-                raise self.rel_model.DoesNotExist
-
-        return value
-
-
-class AIOForeignKeyField(ForeignKeyField):
-    accessor_class = AIOForeignKeyAccessor
-
-
-class AIODeferredForeignKey(DeferredForeignKey):
-    def set_model(self, rel_model: Type[Model]):
-        field = AIOForeignKeyField(rel_model, _deferred=True, **self.field_kwargs)
-        self.model._meta.add_field(self.name, field)
-
-
 class AIOModelBase(ModelBase):
     inheritable = ModelBase.inheritable & {"manager"}
 
     def __new__(cls, name, bases, attrs):
         # Replace fields to AIO fields
         for attr_name, attr in attrs.items():
-            if not isinstance(attr, Field):
+            if not isinstance(attr, Field) or isinstance(
+                attr, (AIOForeignKeyField, AIODeferredForeignKey)
+            ):
                 continue
 
-            if isinstance(attr, ForeignKeyField) and not isinstance(
-                attr,
-                AIOForeignKeyField,
-            ):
+            if isinstance(attr, ForeignKeyField):
                 attrs[attr_name] = AIOForeignKeyField(
                     attr.rel_model,
                     field=attr.rel_field,
@@ -122,10 +88,7 @@ class AIOModelBase(ModelBase):
                     _hidden=attr._hidden,
                 )
 
-            elif isinstance(attr, DeferredForeignKey) and not isinstance(
-                attr,
-                AIODeferredForeignKey,
-            ):
+            elif isinstance(attr, DeferredForeignKey):
                 attrs[attr_name] = AIODeferredForeignKey(
                     attr.rel_model_name,
                     **attr.field_kwargs,

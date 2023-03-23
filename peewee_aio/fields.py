@@ -385,32 +385,56 @@ class BooleanField(pw.BooleanField, GenericField[TV]):
             ...
 
 
-class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
+class AIOForeignKeyAccessor(pw.ForeignKeyAccessor):
+    async def get_rel_instance(self, instance: AIOModel) -> Optional[AIOModel]:
+        name = self.name
+        value = instance.__data__.get(name)
+        if value is None:
+            if not self.field.null:
+                raise self.rel_model.DoesNotExist
+            return None
+
+        # Get from cache
+        if name in instance.__rel__:
+            return instance.__rel__[name]
+
+        field = self.field
+        if field.lazy_load:
+            rel_instance = await self.rel_model.get(field.rel_field == value)
+            instance.__rel__[name] = rel_instance
+            return rel_instance
+
+        return value
+
+
+class AIOForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
+    accessor_class = AIOForeignKeyAccessor
+
     if TYPE_CHECKING:
 
         @overload
         def __new__(
             cls, model: Type[TVAIOModel], *, null: Literal[False] = False, **kwargs
-        ) -> ForeignKeyField[Coroutine[None, None, TVAIOModel]]:
+        ) -> AIOForeignKeyField[Coroutine[None, None, TVAIOModel]]:
             ...
 
         @overload
         def __new__(
             cls, model: Type[TVAIOModel], *, null: Literal[True], **kwargs
-        ) -> ForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]]:
+        ) -> AIOForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]]:
             ...
 
         def __new__(
             cls, *args, **kwargs
         ) -> Union[
-            ForeignKeyField[Coroutine[None, None, TVAIOModel]],
-            ForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]],
+            AIOForeignKeyField[Coroutine[None, None, TVAIOModel]],
+            AIOForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]],
         ]:
             ...
 
         @overload  # type: ignore[override]
         def __set__(
-            self: ForeignKeyField[Coroutine[None, None, TVAIOModel]],
+            self: AIOForeignKeyField[Coroutine[None, None, TVAIOModel]],
             instance: AIOModel,
             value: Union[TVAIOModel, str, int],
         ) -> None:
@@ -418,7 +442,7 @@ class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
 
         @overload
         def __set__(
-            self: ForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]],
+            self: AIOForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]],
             instance: AIOModel,
             value: Union[TVAIOModel, str, int, None],
         ) -> None:
@@ -432,32 +456,36 @@ class ForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
             ...
 
 
-class DeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
+class AIODeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
+    def set_model(self, rel_model: Type[AIOModel]):
+        field = AIOForeignKeyField(rel_model, _deferred=True, **self.field_kwargs)
+        self.model._meta.add_field(self.name, field)
+
     if TYPE_CHECKING:
 
         @overload
         def __new__(
             cls, rel_model_name: str, *, null: Literal[False] = False, **kwargs
-        ) -> DeferredForeignKey[Coroutine[None, None, AIOModel]]:
+        ) -> AIODeferredForeignKey[Coroutine[None, None, AIOModel]]:
             ...
 
         @overload
         def __new__(
             cls, rel_model_name: str, *, null: Literal[True], **kwargs
-        ) -> DeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]]:
+        ) -> AIODeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]]:
             ...
 
         def __new__(
             cls, *args, **kwargs
         ) -> Union[
-            DeferredForeignKey[Coroutine[None, None, AIOModel]],
-            DeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]],
+            AIODeferredForeignKey[Coroutine[None, None, AIOModel]],
+            AIODeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]],
         ]:
             ...
 
         @overload  # type: ignore[override]
         def __set__(
-            self: DeferredForeignKey[Coroutine[None, None, AIOModel]],
+            self: AIODeferredForeignKey[Coroutine[None, None, AIOModel]],
             instance: AIOModel,
             value: Union[AIOModel, str, int],
         ) -> None:
@@ -465,7 +493,7 @@ class DeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
 
         @overload
         def __set__(
-            self: DeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]],
+            self: AIODeferredForeignKey[Coroutine[None, None, Optional[AIOModel]]],
             instance: AIOModel,
             value: Union[AIOModel, str, int, None],
         ) -> None:
@@ -475,6 +503,11 @@ class DeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
             self, instance: AIOModel, value: Union[AIOModel, str, int, None]
         ) -> None:
             ...
+
+
+# Aliases
+ForeignKeyField = AIOForeignKeyField
+DeferredForeignKey = AIODeferredForeignKey
 
 
 __all__ = [
