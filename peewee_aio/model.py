@@ -24,7 +24,6 @@ from typing import (
 from peewee import (
     SQL,
     DeferredForeignKey,
-    Expression,
     Field,
     ForeignKeyAccessor,
     ForeignKeyField,
@@ -37,6 +36,7 @@ from peewee import (
     ModelRaw,
     ModelSelect,
     ModelUpdate,
+    Node,
     Query,
     Table,
 )
@@ -168,13 +168,13 @@ class AIOModel(Model, metaclass=AIOModelBase):
     @classmethod
     async def get_or_none(
         cls: Type[TVAIOModel],
-        *args: Expression,
+        *args: Node,
         **kwargs,
     ) -> Optional[TVAIOModel]:
         return await cls._manager.get_or_none(cls, *args, **kwargs)
 
     @classmethod
-    async def get(cls: Type[TVAIOModel], *args: Expression, **kwargs) -> TVAIOModel:
+    async def get(cls: Type[TVAIOModel], *args: Node, **kwargs) -> TVAIOModel:
         return await cls._manager.get(cls, *args, **kwargs)
 
     @classmethod

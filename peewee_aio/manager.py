@@ -24,26 +24,26 @@ from weakref import WeakSet
 
 from aio_databases.database import Database
 from peewee import (
-    EXCEPTIONS,
+    EXCEPTIONS,  # type: ignore[]
     PREFETCH_TYPE,
     SQL,
     BaseQuery,
     Context,
-    Expression,
     Insert,
     IntegrityError,
     InternalError,
     ModelRaw,
     ModelSelect,
+    Node,
     OperationalError,
     Query,
     SchemaManager,
     Select,
-    __exception_wrapper__,
+    __exception_wrapper__,  # type: ignore[]
     fn,
-    logger,
-    prefetch_add_subquery,
-    sort_models,
+    logger,  # type: ignore[]
+    prefetch_add_subquery,  # type: ignore[]
+    sort_models,  # type: ignore[]
 )
 from peewee import Model as PWModel
 
@@ -84,8 +84,8 @@ class Manager(Database):
 
     def register(self, model_cls: Type[TVModel]) -> Type[TVModel]:
         """Register a model with the manager."""
-        model_cls._manager = self
-        model_cls._meta.database = self.pw_database
+        model_cls._manager = self  # type: ignore[]
+        model_cls._meta.database = self.pw_database  # type: ignore[]
         self.models.add(model_cls)
         return model_cls
 
@@ -103,7 +103,7 @@ class Manager(Database):
             if res is None:
                 return res
 
-            if isinstance(query, Insert) and query._query_type == Insert.SIMPLE:
+            if isinstance(query, Insert) and query._query_type == Insert.SIMPLE:  # type: ignore[]
                 return res[1]
 
             return res[0]
@@ -174,24 +174,24 @@ class Manager(Database):
 
     async def count(self, query: Select, *, clear_limit: bool = False) -> Any:
         """Execute the given Peewee ORM Query and get a count of rows."""
-        query = query.order_by()
+        query = query.order_by()  # type: ignore[]
         if clear_limit:
-            query._limit = query._offset = None
+            query._limit = query._offset = None  # type: ignore[]
 
         try:
             if (
-                query._having is None
-                and query._group_by is None
-                and query._windows is None
-                and query._distinct is None
-                and query._simple_distinct is not True
+                query._having is None  # type: ignore[]
+                and query._group_by is None  # type: ignore[]
+                and query._windows is None  # type: ignore[]
+                and query._distinct is None  # type: ignore[]
+                and query._simple_distinct is not True  # type: ignore[]
             ):
                 query = query.select(SQL("1"))
         except AttributeError:
             pass
 
         query = Select([query], [fn.COUNT(SQL("1"))])
-        query._database = self.pw_database
+        query._database = self.pw_database  # type: ignore[]
         return await self.fetchval(query)
 
     async def prefetch(self, sq: Query, *subqueries, **kwargs) -> Any:
@@ -237,16 +237,16 @@ class Manager(Database):
             if schema.database.sequences:
                 for field in model_cls._meta.sorted_fields:
                     if field.sequence:
-                        ctx = schema._create_sequence(field)
+                        ctx = schema._create_sequence(field)  # type: ignore[]
                         if ctx:
                             await self.execute(ctx)
 
             # Create table
-            ctx = schema._create_table(safe=safe, **opts)
+            ctx = schema._create_table(safe=safe, **opts)  # type: ignore[]
             await self.execute(ctx)
 
             # Create indexes
-            for query in schema._create_indexes(safe=safe):
+            for query in schema._create_indexes(safe=safe):  # type: ignore[]
                 try:
                     await self.execute(query)
                 except OperationalError:
@@ -258,13 +258,13 @@ class Manager(Database):
         models_cls = models_cls or tuple(self.models)
         for model_cls in reversed(sort_models(models_cls)):
             schema: SchemaManager = model_cls._schema
-            ctx = schema._drop_table(**opts)
+            ctx = schema._drop_table(**opts)  # type: ignore[]
             await self.execute(ctx)
 
     async def get_or_none(
         self,
         model_cls: Type[TVModel],
-        *args: Expression,
+        *args: Node,
         **kwargs,
     ) -> Optional[TVModel]:
         query: ModelSelect = model_cls.select()
@@ -272,35 +272,35 @@ class Manager(Database):
             query = query.filter(**kwargs)
 
         if args:
-            query = query.where(*args)
+            query = query.where(*args)  # type: ignore[]
 
         return await self.fetchone(query)
 
     async def get(
         self,
         model_cls: Type[TVModel],
-        *args: Expression,
+        *args: Node,
         **kwargs,
     ) -> TVModel:
         res = await self.get_or_none(model_cls, *args, **kwargs)
         if res is None:
-            raise model_cls.DoesNotExist
+            raise model_cls.DoesNotExist  # type: ignore[]
         return res
 
     async def get_by_id(self, model_cls: Type[TVModel], pk) -> TVModel:
-        return await self.get(model_cls, model_cls._meta.primary_key == pk)
+        return await self.get(model_cls, model_cls._meta.primary_key == pk)  # type: ignore[]
 
     async def set_by_id(self, model_cls: Type[PWModel], key, value) -> Any:
         qs = (
             model_cls.insert(value)
             if key is None
-            else model_cls.update(value).where(model_cls._meta.primary_key == key)
+            else model_cls.update(value).where(model_cls._meta.primary_key == key)  # type: ignore[]
         )
         return await self.execute(qs)
 
     async def delete_by_id(self, model_cls: Type[PWModel], pk):
         return await self.execute(
-            model_cls.delete().where(model_cls._meta.primary_key == pk),
+            model_cls.delete().where(model_cls._meta.primary_key == pk),  # type: ignore[]
         )
 
     async def get_or_create(
@@ -312,7 +312,7 @@ class Manager(Database):
         async with self.transaction():
             try:
                 return (await self.get(model_cls, **kwargs), False)
-            except model_cls.DoesNotExist:
+            except model_cls.DoesNotExist:  # type: ignore[]
                 return (
                     await self.create(model_cls, **dict(defaults or {}, **kwargs)),
                     True,
@@ -335,21 +335,21 @@ class Manager(Database):
     ) -> TVModel:
         field_dict = inst.__data__.copy()
         pk_field = pk_value = None
-        meta = inst._meta
+        meta = inst._meta  # type: ignore[]
         if meta.primary_key is not False:
             pk_field = meta.primary_key
-            pk_value = inst._pk
+            pk_value = inst._pk  # type: ignore[]
 
         if only is not None:
-            field_dict = inst._prune_fields(field_dict, only)
+            field_dict = inst._prune_fields(field_dict, only)  # type: ignore[]
 
         elif meta.only_save_dirty and not force_insert:
-            field_dict = inst._prune_fields(field_dict, inst.dirty_fields)
+            field_dict = inst._prune_fields(field_dict, inst.dirty_fields)  # type: ignore[]
             if not field_dict:
-                inst._dirty.clear()
+                inst._dirty.clear()  # type: ignore[]
                 return inst
 
-        inst._populate_unsaved_relations(field_dict)
+        inst._populate_unsaved_relations(field_dict)  # type: ignore[]
         if meta.auto_increment and pk_field and pk_value is None:
             field_dict.pop(pk_field.name, None)
 
@@ -368,7 +368,7 @@ class Manager(Database):
             if not field_dict:
                 raise ValueError("no data to save!")
 
-            await self.execute(inst.update(**field_dict).where(inst._pk_expr()))
+            await self.execute(inst.update(**field_dict).where(inst._pk_expr()))  # type: ignore[]
 
         # Insert
         else:
@@ -379,9 +379,9 @@ class Manager(Database):
                 pk = await self.execute(query)
 
             if pk is not None and (meta.auto_increment or pk_value is None):
-                inst._pk = pk
+                inst._pk = pk  # type: ignore[]
 
-        inst._dirty.clear()
+        inst._dirty.clear()  # type: ignore[]
         return inst
 
     async def delete_instance(
@@ -399,7 +399,7 @@ class Manager(Database):
                 else:
                     await self.execute(fk.model.delete().where(query))
 
-        return await self.execute(inst.delete().where(inst._pk_expr()))
+        return await self.execute(inst.delete().where(inst._pk_expr()))  # type: ignore[]
 
 
 def identity(r):
@@ -480,7 +480,7 @@ class Constructor:
         """Get and cache a rows processor."""
         if self.processor is None:
             cursor = FakeCursor(rec)
-            wrapper = self.query._get_cursor_wrapper(cursor)
+            wrapper = self.query._get_cursor_wrapper(cursor)  # type: ignore[]
             wrapper.initialize()
             self.processor = wrapper.process_row
 
