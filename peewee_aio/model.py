@@ -23,6 +23,7 @@ from typing import (
 
 from peewee import (
     SQL,
+    ColumnBase,
     DeferredForeignKey,
     Field,
     ForeignKeyField,
@@ -185,7 +186,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
     @classmethod
     def select(
         cls: Type[TVAIOModel],
-        *select: Union[Field, Type[Model], Table, ModelAlias],
+        *select: Union[Type[Model], ColumnBase, Table, ModelAlias],
     ) -> AIOModelSelect[TVAIOModel]:
         return AIOModelSelect(
             cls,
