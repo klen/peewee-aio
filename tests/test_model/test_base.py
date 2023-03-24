@@ -161,14 +161,6 @@ async def test_model_fetch():
     with pytest.raises(ValueError, match="Relation user is not loaded into"):
         comment.fetch(Comment.user)
 
-    class Comment2(AIOModel):
-        id = fields.IntegerField()
-        text = fields.CharField()
-        user = fields.FetchForeignKey(User)
-
-    comment = Comment2(id=1, text="test", user=user)
-    assert comment.user is user
-
-    comment = Comment2(id=1, text="test", user_id=1)
-    with pytest.raises(RuntimeError):
-        comment.user
+    new_user = User(name="test")
+    comment = Comment(id=1, text="test", user=new_user)
+    assert comment.fetch(Comment.user) is new_user

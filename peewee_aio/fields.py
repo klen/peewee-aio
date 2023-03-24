@@ -388,20 +388,20 @@ class BooleanField(pw.BooleanField, GenericField[TV]):
 class FetchForeignKeyAccessor(pw.ForeignKeyAccessor):
     def get_rel_instance(self, instance: AIOModel) -> Optional[AIOModel]:
         name = self.name
+        relations = instance.__rel__
+        if name in relations:
+            return relations[name]
+
         value = instance.__data__.get(name)
         if value is None:
             if not self.field.null:
                 raise self.rel_model.DoesNotExist
             return None
 
-        # Get from cache
-        if name not in instance.__rel__:
-            raise RuntimeError(f"{name} has to be prefetched")
-
-        return instance.__rel__[name]
+        raise RuntimeError(f"{name} has to be prefetched")
 
 
-class FetchForeignKey(pw.ForeignKeyField, GenericField[TV]):
+class FetchForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
     """A foreign key field that only works with prefetching"""
 
     accessor_class = FetchForeignKeyAccessor
@@ -411,23 +411,23 @@ class FetchForeignKey(pw.ForeignKeyField, GenericField[TV]):
         @overload
         def __new__(
             cls, model: Type[TVAIOModel], *, null: Literal[False] = False, **kwargs
-        ) -> FetchForeignKey[TVAIOModel]:
+        ) -> FetchForeignKeyField[TVAIOModel]:
             ...
 
         @overload
         def __new__(
             cls, model: Type[TVAIOModel], *, null: Literal[True], **kwargs
-        ) -> FetchForeignKey[Optional[TVAIOModel]]:
+        ) -> FetchForeignKeyField[Optional[TVAIOModel]]:
             ...
 
         def __new__(
             cls, *args, **kwargs
-        ) -> Union[FetchForeignKey[TVAIOModel], FetchForeignKey[Optional[TVAIOModel]]]:
+        ) -> Union[FetchForeignKeyField[TVAIOModel], FetchForeignKeyField[Optional[TVAIOModel]]]:
             ...
 
         @overload  # type: ignore[override]
         def __set__(
-            self: FetchForeignKey[TVAIOModel],
+            self: FetchForeignKeyField[TVAIOModel],
             instance: AIOModel,
             value: Union[TVAIOModel, str, int],
         ) -> None:
@@ -435,7 +435,7 @@ class FetchForeignKey(pw.ForeignKeyField, GenericField[TV]):
 
         @overload
         def __set__(
-            self: FetchForeignKey[Optional[TVAIOModel]],
+            self: FetchForeignKeyField[Optional[TVAIOModel]],
             instance: AIOModel,
             value: Union[TVAIOModel, str, int, None],
         ) -> None:
@@ -452,20 +452,20 @@ class FetchForeignKey(pw.ForeignKeyField, GenericField[TV]):
 class AIOForeignKeyAccessor(pw.ForeignKeyAccessor):
     async def get_rel_instance(self, instance: AIOModel) -> Optional[AIOModel]:
         name = self.name
+        relations = instance.__rel__
+        if name in relations:
+            return relations[name]
+
         value = instance.__data__.get(name)
         if value is None:
             if not self.field.null:
                 raise self.rel_model.DoesNotExist
             return None
 
-        # Get from cache
-        if name in instance.__rel__:
-            return instance.__rel__[name]
-
         field = self.field
         if field.lazy_load:
             rel_instance = await self.rel_model.get(field.rel_field == value)
-            instance.__rel__[name] = rel_instance
+            relations[name] = rel_instance
             return rel_instance
 
         return value
@@ -572,6 +572,7 @@ class AIODeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
 # Aliases
 ForeignKeyField = AIOForeignKeyField
 DeferredForeignKey = AIODeferredForeignKey
+FetchForeignKey = FetchForeignKeyField  # depricate me
 
 
 __all__ = [
@@ -599,6 +600,9 @@ __all__ = [
     "TimestampField",
     "IPField",
     "BooleanField",
+    "AIOForeignKeyField",
+    "AIODeferredForeignKey",
+    "FetchForeignKeyField",
     "ForeignKeyField",
     "DeferredForeignKey",
 ]

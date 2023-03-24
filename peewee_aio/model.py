@@ -267,14 +267,15 @@ class AIOModel(Model, metaclass=AIOModelBase):
         """Get fk relation from the given instance cache. Raise ValueError if not loaded."""
 
         attr = fk.name
+        rel = self.__rel__
+        if attr in rel:
+            return rel[attr]
+
         fk = self.__data__.get(attr)
         if fk is None:
             return None
 
-        try:
-            return self.__rel__[attr]
-        except KeyError:
-            raise ValueError(f"Relation {attr} is not loaded into {self!r}") from None
+        raise ValueError(f"Relation {attr} is not loaded into {self!r}") from None
 
     # Support await syntax
     # --------------------
