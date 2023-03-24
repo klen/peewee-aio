@@ -267,12 +267,12 @@ class AIOModel(Model, metaclass=AIOModelBase):
         """Get fk relation from the given instance cache. Raise ValueError if not loaded."""
 
         attr = fk.name
-        rel = self.__rel__
-        if attr in rel:
-            return rel[attr]
+        relations = self.__rel__
+        if attr in relations:
+            return relations[attr]
 
-        fk = self.__data__.get(attr)
-        if fk is None:
+        value = self.__data__.get(attr)
+        if value is None:
             return None
 
         raise ValueError(f"Relation {attr} is not loaded into {self!r}") from None
