@@ -27,21 +27,23 @@ from .types import TV, TVAIOModel
 
 
 class GenericField(Generic[TV]):
-    @overload
-    def __get__(self, instance: None, owner) -> Self:
-        ...
+    if TYPE_CHECKING:
 
-    @overload
-    def __get__(self: GenericField[TV], instance: object, owner) -> TV:
-        ...
+        @overload
+        def __get__(self, instance: None, owner) -> Self:
+            ...
 
-    def __get__(  # type: ignore[empty-body]
-        self, instance: Optional[object], owner
-    ) -> Union[Self, TV]:
-        ...
+        @overload
+        def __get__(self: GenericField[TV], instance: pw.Model, owner) -> TV:
+            ...
 
-    def __set__(self, instance: object, value: TV) -> None:
-        ...
+        def __get__(  # type: ignore[empty-body]
+            self, instance: Optional[pw.Model], owner
+        ) -> Union[Self, TV]:
+            ...
+
+        def __set__(self, instance: pw.Model, value: TV) -> None:
+            ...
 
 
 class IntegerField(pw.IntegerField, GenericField[TV]):
@@ -600,9 +602,9 @@ __all__ = [
     "TimestampField",
     "IPField",
     "BooleanField",
+    "FetchForeignKeyField",
     "AIOForeignKeyField",
     "AIODeferredForeignKey",
-    "FetchForeignKeyField",
     "ForeignKeyField",
     "DeferredForeignKey",
 ]

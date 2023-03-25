@@ -18,15 +18,19 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
     overload,
 )
 
 from peewee import (
     SQL,
+    Case,
     ColumnBase,
+    CompositeKey,
     DeferredForeignKey,
     Field,
     ForeignKeyField,
+    Metadata,
     Model,
     ModelAlias,
     ModelBase,
@@ -39,6 +43,7 @@ from peewee import (
     Node,
     Query,
     Table,
+    chunked,
 )
 
 from .fields import AIODeferredForeignKey, AIOForeignKeyField, FetchForeignKey
@@ -107,7 +112,7 @@ class AIOModelBase(ModelBase):
 class AIOModel(Model, metaclass=AIOModelBase):
     if TYPE_CHECKING:
         _manager: Manager
-        _meta: Any
+        _meta: Metadata
 
         DoesNotExist: Type[Exception]
 
@@ -171,14 +176,77 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await inst.save(force_insert=True)
 
     @classmethod
-    async def bulk_create(cls, model_list, bactch_size=None):
-        # TODO: To implement
-        raise NotImplementedError("AIOModel doesnt support `bulk_create`")
+    async def bulk_create(
+        cls: Type[TVAIOModel], model_list: Iterable[TVAIOModel], batch_size: Optional[int] = None
+    ):
+        meta = cls._meta
+
+        field_names = list(meta.sorted_field_names)
+        if meta.auto_increment:
+            pk_name = meta.primary_key.name
+            field_names.remove(pk_name)
+
+        fields = [cls._meta.fields[field_name] for field_name in field_names]
+        attrs = [
+            field.object_id_name if isinstance(field, ForeignKeyField) else field.name
+            for field in fields
+        ]
+
+        if meta.database.returning_clause and meta.primary_key is not False:
+            pk_fields = meta.get_primary_keys()
+        else:
+            pk_fields = None
+
+        batches = chunked(model_list, batch_size) if batch_size is not None else [model_list]
+        for batch in batches:
+            accum = ([getattr(model, f) for f in attrs] for model in batch)
+
+            res = await cls.insert_many(accum, fields=fields)
+            if pk_fields and res is not None:
+                for row, model in zip(res, batch):
+                    for pk_field, obj_id in zip(pk_fields, row):
+                        setattr(model, pk_field.name, obj_id)
 
     @classmethod
-    async def bulk_update(cls, model_list, fields, batch_size=None):
-        # TODO: To implement
-        raise NotImplementedError("AIOModel doesnt support `bulk_update`")
+    async def bulk_update(
+        cls: Type[TVAIOModel],
+        model_list: Iterable[TVAIOModel],
+        fields: Iterable[Union[str, Field]],
+        batch_size: Optional[int] = None,
+    ) -> int:
+        meta = cls._meta
+        if isinstance(meta.primary_key, CompositeKey):
+            raise TypeError(
+                "bulk_update() is not supported for models with a composite primary key."
+            )
+
+        # First normalize list of fields so all are field instances.
+        model_fields = [cast(Field, meta.fields[f]) if isinstance(f, str) else f for f in fields]
+
+        # Now collect list of attribute names to use for values.
+        attrs = [
+            field.object_id_name if isinstance(field, ForeignKeyField) else field.name
+            for field in model_fields
+        ]
+
+        n = 0
+        pk = meta.primary_key
+        batches = chunked(model_list, batch_size) if batch_size is not None else [model_list]
+        for batch in batches:
+            id_list = [model._pk for model in batch]
+            update = {}
+            for field, attr in zip(model_fields, attrs):
+                accum = []
+                for model in batch:
+                    value = getattr(model, attr)
+                    if not isinstance(value, Node):
+                        value = field.to_value(value)
+                    accum.append((pk.to_value(model._pk), value))
+                update[field] = Case(pk, accum)
+
+            n += cast(int, await cls.update(update).where(cls._meta.primary_key.in_(id_list)))
+
+        return n
 
     # Queryset methods
     # ----------------

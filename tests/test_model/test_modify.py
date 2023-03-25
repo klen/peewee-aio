@@ -24,7 +24,6 @@ async def test_create(schema):
     assert inst.data == "data-custom"
 
 
-@pytest.mark.skip("Not implemented")
 async def test_bulk_create(schema):
     instances = [DataModel(data=f"n{n}") for n in range(3)]
     await DataModel.bulk_create(instances, 2)
@@ -96,6 +95,18 @@ async def test_update(schema):
     test = await DataModel.get_or_none(DataModel.id == inst.id)
     assert test
     assert test.data == "updated"
+
+
+async def test_bulk_update(schema):
+    await DataModel.insert_many([{"data": f"t{n}"} for n in range(3)])
+    instances = await DataModel.select()
+
+    for instance in instances:
+        instance.data = "updated"
+
+    await DataModel.bulk_update(instances, [DataModel.data], 2)
+    async for instance in DataModel.select():
+        assert instance.data == "updated"
 
 
 async def test_delete(schema):
