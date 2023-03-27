@@ -149,7 +149,7 @@ async def test_model_fetch():
     class Comment(AIOModel):
         id = fields.IntegerField()
         text = fields.CharField()
-        user = fields.ForeignKeyField(User)
+        user = fields.ForeignKeyField(User, null=False)
 
     user = User(id=1, name="test")
     comment = Comment(id=1, text="test", user=user)

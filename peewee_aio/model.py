@@ -47,7 +47,7 @@ from peewee import (
 )
 
 from .fields import AIODeferredForeignKey, AIOForeignKeyField, FetchForeignKey
-from .types import TVAIOModel
+from .types import TV, TVAIOModel
 
 if TYPE_CHECKING:
     from typing_extensions import Self  # py310,py39,py38,py37
@@ -317,22 +317,14 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await self._manager.delete_instance(self, **kwargs)
 
     @overload
-    def fetch(self, fk: AIOForeignKeyField[Coroutine[None, None, TVAIOModel]]) -> TVAIOModel:
+    def fetch(self, fk: AIOForeignKeyField[Coroutine[None, None, TV]]) -> TV:
         ...
 
     @overload
-    def fetch(
-        self, fk: AIOForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]]
-    ) -> Optional[TVAIOModel]:
+    def fetch(self, fk: AIODeferredForeignKey[Coroutine[None, None, TV]]) -> TV:
         ...
 
-    def fetch(
-        self,
-        fk: Union[
-            AIOForeignKeyField[Coroutine[None, None, TVAIOModel]],
-            AIOForeignKeyField[Coroutine[None, None, Optional[TVAIOModel]]],
-        ],
-    ) -> Union[TVAIOModel, Optional[TVAIOModel]]:
+    def fetch(self, fk):
         """Get fk relation from the given instance cache. Raise ValueError if not loaded."""
 
         attr = fk.name
