@@ -408,6 +408,16 @@ class FetchForeignKeyField(pw.ForeignKeyField, GenericField[TV]):
 
     accessor_class = FetchForeignKeyAccessor
 
+    def __init__(
+        self: FetchForeignKeyField[TVAIOModel],
+        model: Type[TVAIOModel],
+        *,
+        lazy_load: bool = True,
+        **kwargs,
+    ):
+        """Field has to be always prefetched."""
+        super().__init__(model, lazy_load=False, **kwargs)
+
     if TYPE_CHECKING:
 
         @overload
