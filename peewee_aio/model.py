@@ -135,11 +135,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await cls._manager.drop_tables(cls, safe=safe, **kwargs)
 
     @classmethod
-    async def get_or_none(
-        cls: Type[TVAIOModel],
-        *args: Node,
-        **kwargs,
-    ) -> Optional[TVAIOModel]:
+    async def get_or_none(cls: Type[TVAIOModel], *args: Node, **kwargs) -> Optional[TVAIOModel]:
         return await cls._manager.get_or_none(cls, *args, **kwargs)
 
     @classmethod
@@ -160,9 +156,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     async def get_or_create(
-        cls: Type[TVAIOModel],
-        defaults: Optional[Dict[str, Any]] = None,
-        **kwargs,
+        cls: Type[TVAIOModel], defaults: Optional[Dict[str, Any]] = None, **kwargs
     ) -> Tuple[TVAIOModel, bool]:
         async with cls._manager.transaction():
             try:
@@ -253,8 +247,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     def select(
-        cls: Type[TVAIOModel],
-        *select: Union[Type[Model], ColumnBase, Table, ModelAlias],
+        cls: Type[TVAIOModel], *select: Union[Type[Model], ColumnBase, Table, ModelAlias]
     ) -> AIOModelSelect[TVAIOModel]:
         return AIOModelSelect(
             cls,
@@ -263,26 +256,16 @@ class AIOModel(Model, metaclass=AIOModelBase):
         )
 
     @classmethod
-    def update(
-        cls: Type[TVAIOModel],
-        __data=None,
-        **update,
-    ) -> AIOModelUpdate[TVAIOModel]:
+    def update(cls: Type[TVAIOModel], __data=None, **update) -> AIOModelUpdate[TVAIOModel]:
         return AIOModelUpdate(cls, cls._normalize_data(__data, update))  # type: ignore[]
 
     @classmethod
-    def insert(
-        cls: Type[TVAIOModel],
-        __data=None,
-        **insert,
-    ) -> AIOModelInsert[TVAIOModel]:
+    def insert(cls: Type[TVAIOModel], __data=None, **insert) -> AIOModelInsert[TVAIOModel]:
         return AIOModelInsert(cls, cls._normalize_data(__data, insert))  # type: ignore[]
 
     @classmethod
     def insert_many(
-        cls: Type[TVAIOModel],
-        rows: Iterable,
-        fields=None,
+        cls: Type[TVAIOModel], rows: Iterable, fields=None
     ) -> AIOModelInsert[TVAIOModel]:
         if not rows:
             raise AIOModelInsert.DefaultValuesException("Error: no rows to insert.")
@@ -292,9 +275,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     def insert_from(
-        cls: Type[TVAIOModel],
-        query: ModelSelect,
-        fields,
+        cls: Type[TVAIOModel], query: ModelSelect, fields
     ) -> AIOModelInsert[TVAIOModel]:
         columns = [getattr(cls, field) if isinstance(field, str) else field for field in fields]
         return AIOModelInsert(cls, insert=query, columns=columns)
@@ -396,13 +377,10 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
         ...
 
     @overload
-    def __getitem__(self, value: slice) -> AIOModelSelect[TVAIOModel]:
+    def __getitem__(self, value: slice) -> Self:
         ...
 
-    def __getitem__(
-        self,
-        value,
-    ) -> Union[AIOModelSelect[TVAIOModel], Coroutine[Any, Any, TVAIOModel]]:
+    def __getitem__(self, value) -> Union[Self, Coroutine[Any, Any, TVAIOModel]]:
         limit, offset = 1, value
         if isinstance(value, slice):
             limit, offset = value.stop - value.start, value.start
@@ -459,61 +437,59 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
         _limit: Optional[int]
         _offset: Optional[int]
 
-        with_cte: Callable[..., AIOModelSelect[TVAIOModel]]
-        where: Callable[..., AIOModelSelect[TVAIOModel]]
-        filter: Callable[..., AIOModelSelect[TVAIOModel]]
-        orwhere: Callable[..., AIOModelSelect[TVAIOModel]]
-        order_by: Callable[..., AIOModelSelect[TVAIOModel]]
-        order_by_extend: Callable[..., AIOModelSelect[TVAIOModel]]
-        limit: Callable[[Union[int, None]], AIOModelSelect[TVAIOModel]]
-        offset: Callable[[int], AIOModelSelect[TVAIOModel]]
-        paginate: Callable[..., AIOModelSelect[TVAIOModel]]
+        with_cte: Callable[..., Self]
+        where: Callable[..., Self]
+        filter: Callable[..., Self]
+        orwhere: Callable[..., Self]
+        order_by: Callable[..., Self]
+        order_by_extend: Callable[..., Self]
+        limit: Callable[[Union[int, None]], Self]
+        offset: Callable[[int], Self]
+        paginate: Callable[..., Self]
 
-        columns: Callable[..., AIOModelSelect[TVAIOModel]]
-        select_extend: Callable[..., AIOModelSelect[TVAIOModel]]
-        from_: Callable[..., AIOModelSelect[TVAIOModel]]
-        join: Callable[..., AIOModelSelect[TVAIOModel]]
-        join_from: Callable[..., AIOModelSelect[TVAIOModel]]
-        group_by: Callable[..., AIOModelSelect[TVAIOModel]]
-        having: Callable[..., AIOModelSelect[TVAIOModel]]
-        distinct: Callable[..., AIOModelSelect[TVAIOModel]]
-        window: Callable[..., AIOModelSelect[TVAIOModel]]
-        for_update: Callable[..., AIOModelSelect[TVAIOModel]]
-        lateral: Callable[..., AIOModelSelect[TVAIOModel]]
+        columns: Callable[..., Self]
+        select_extend: Callable[..., Self]
+        from_: Callable[..., Self]
+        join: Callable[..., Self]
+        join_from: Callable[..., Self]
+        group_by: Callable[..., Self]
+        having: Callable[..., Self]
+        distinct: Callable[..., Self]
+        window: Callable[..., Self]
+        for_update: Callable[..., Self]
+        lateral: Callable[..., Self]
+        objects: Callable[..., Self]
 
         def __await__(self) -> Generator[Any, None, List[TVAIOModel]]:
             return self.manager.run(self).__await__()
 
 
-class AIOModelCompoundSelectQuery(
-    BaseModelSelect[TVAIOModel],
-    ModelCompoundSelectQuery,
-):
+class AIOModelCompoundSelectQuery(BaseModelSelect[TVAIOModel], ModelCompoundSelectQuery):
     if TYPE_CHECKING:
         _limit: Optional[int]
         _offset: Optional[int]
 
-        with_cte: Callable[..., AIOModelSelect[TVAIOModel]]
-        where: Callable[..., AIOModelSelect[TVAIOModel]]
-        filter: Callable[..., AIOModelSelect[TVAIOModel]]
-        orwhere: Callable[..., AIOModelSelect[TVAIOModel]]
-        order_by: Callable[..., AIOModelSelect[TVAIOModel]]
-        order_by_extend: Callable[..., AIOModelSelect[TVAIOModel]]
-        limit: Callable[[Union[int, None]], AIOModelSelect[TVAIOModel]]
-        offset: Callable[[int], AIOModelSelect[TVAIOModel]]
-        paginate: Callable[..., AIOModelSelect[TVAIOModel]]
+        with_cte: Callable[..., Self]
+        where: Callable[..., Self]
+        filter: Callable[..., Self]
+        orwhere: Callable[..., Self]
+        order_by: Callable[..., Self]
+        order_by_extend: Callable[..., Self]
+        limit: Callable[[Union[int, None]], Self]
+        offset: Callable[[int], Self]
+        paginate: Callable[..., Self]
 
-        columns: Callable[..., AIOModelSelect[TVAIOModel]]
-        select_extend: Callable[..., AIOModelSelect[TVAIOModel]]
-        from_: Callable[..., AIOModelSelect[TVAIOModel]]
-        join: Callable[..., AIOModelSelect[TVAIOModel]]
-        join_from: Callable[..., AIOModelSelect[TVAIOModel]]
-        group_by: Callable[..., AIOModelSelect[TVAIOModel]]
-        having: Callable[..., AIOModelSelect[TVAIOModel]]
-        distinct: Callable[..., AIOModelSelect[TVAIOModel]]
-        window: Callable[..., AIOModelSelect[TVAIOModel]]
-        for_update: Callable[..., AIOModelSelect[TVAIOModel]]
-        lateral: Callable[..., AIOModelSelect[TVAIOModel]]
+        columns: Callable[..., Self]
+        select_extend: Callable[..., Self]
+        from_: Callable[..., Self]
+        join: Callable[..., Self]
+        join_from: Callable[..., Self]
+        group_by: Callable[..., Self]
+        having: Callable[..., Self]
+        distinct: Callable[..., Self]
+        window: Callable[..., Self]
+        for_update: Callable[..., Self]
+        lateral: Callable[..., Self]
 
 
 class AIOModelUpdate(AIOQuery[TVAIOModel], ModelUpdate):

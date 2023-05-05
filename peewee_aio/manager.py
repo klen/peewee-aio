@@ -61,11 +61,7 @@ class Manager(Database):
     pw_database: PWDatabase
     models: "WeakSet[Type[PWModel]]"
 
-    def __init__(
-        self,
-        url: str,
-        **backend_options,
-    ):
+    def __init__(self, url: str, **backend_options):
         """Initialize dialect and database."""
         backend_options.setdefault("convert_params", True)
         super().__init__(url, logger=logger, **backend_options)
@@ -262,10 +258,7 @@ class Manager(Database):
             await self.execute(ctx)
 
     async def get_or_none(
-        self,
-        model_cls: Type[TVModel],
-        *args: Node,
-        **kwargs,
+        self, model_cls: Type[TVModel], *args: Node, **kwargs
     ) -> Optional[TVModel]:
         query: ModelSelect = model_cls.select()
         if kwargs:
@@ -276,12 +269,7 @@ class Manager(Database):
 
         return await self.fetchone(query)
 
-    async def get(
-        self,
-        model_cls: Type[TVModel],
-        *args: Node,
-        **kwargs,
-    ) -> TVModel:
+    async def get(self, model_cls: Type[TVModel], *args: Node, **kwargs) -> TVModel:
         res = await self.get_or_none(model_cls, *args, **kwargs)
         if res is None:
             raise model_cls.DoesNotExist  # type: ignore[]
@@ -304,10 +292,7 @@ class Manager(Database):
         )
 
     async def get_or_create(
-        self,
-        model_cls: Type[TVModel],
-        defaults: Optional[Dict] = None,
-        **kwargs,
+        self, model_cls: Type[TVModel], defaults: Optional[Dict] = None, **kwargs
     ) -> Tuple[TVModel, bool]:
         async with self.transaction():
             try:
@@ -385,11 +370,7 @@ class Manager(Database):
         return inst
 
     async def delete_instance(
-        self,
-        inst: PWModel,
-        *,
-        recursive: bool = False,
-        delete_nullable: bool = False,
+        self, inst: PWModel, *, recursive: bool = False, delete_nullable: bool = False
     ):
         if recursive:
             for query, fk in reversed(list(inst.dependencies(delete_nullable))):
@@ -461,10 +442,7 @@ class Constructor:
         self.query = query
         self.processor: Optional[Callable] = None
 
-    def __call__(
-        self,
-        res: Union[Mapping, Sequence[Mapping]],
-    ) -> Union[Any, Sequence[Any]]:
+    def __call__(self, res: Union[Mapping, Sequence[Mapping]]) -> Union[Any, Sequence[Any]]:
         """Process rows."""
         if not res:  # None or empty sequence
             return res
