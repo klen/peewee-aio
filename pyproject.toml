@@ -61,7 +61,6 @@ aio-databases = { version = "*", extras = [
 ruff = "*"
 black = "*"
 pre-commit = "*"
-psycopg2-binary = "^2.9.5"
 
 [tool.pytest.ini_options]
 addopts = "-xsv"
