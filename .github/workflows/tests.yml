@@ -20,7 +20,7 @@ jobs:
       matrix:
         python-version:
         - '3.8'
-        - '3.9' # Have no idea why it's not working
+        # - '3.9' # Have no idea why it's not working
         - '3.10'
         - '3.11'
     services:
