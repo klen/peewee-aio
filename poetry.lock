@@ -965,4 +965,4 @@ triopg = ["triopg"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "204b916fcd1b69e632d129477a07120f715ef80c978224a00ec6860495512c43"
+content-hash = "c9115ea62d470f433f395683b4706c3d7b566abb62dd28cdbd3db7edbc17cb69"

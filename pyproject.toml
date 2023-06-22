@@ -9,35 +9,33 @@ repository = "https://github.com/klen/peewee-aio"
 authors = ["Kirill Klenov <horneds@gmail.com>"]
 keywords = ["peewee", "asyncio", "trio", "orm"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Framework :: AsyncIO",
-    "Framework :: Trio",
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Framework :: AsyncIO",
+  "Framework :: Trio",
 ]
-packages = [
-    { include = "peewee_aio" },
-]
+packages = [{ include = "peewee_aio" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
 peewee = "^3"
 aio-databases = "^0"
-typing-extensions = {version = "*", python = "<3.11"}
+typing-extensions = { version = "*", python = "<3.11" }
 
 # Optional dependencies
-asyncpg = {version = "*", optional = true}
-aiopg = {version = "*", optional = true}
-aiomysql = {version = "*", optional = true}
-aiosqlite = {version = "*", optional = true}
-triopg = {version = "*", optional = true}
-trio_mysql = {version = "*", optional = true}
+asyncpg = { version = "*", optional = true }
+aiopg = { version = "*", optional = true }
+aiomysql = { version = "*", optional = true }
+aiosqlite = { version = "*", optional = true }
+triopg = { version = "*", optional = true }
+trio_mysql = { version = "*", optional = true }
 
 [tool.poetry.extras]
 asyncpg = ["asyncpg"]
@@ -50,12 +48,20 @@ trio_mysql = ["trio_mysql"]
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
 pytest-mypy = "*"
-pytest-aio = {version = "*", extras = ["trio"]}
+pytest-aio = { version = "*", extras = ["trio"] }
 trio_asyncio = "*"
-aio-databases = {version = "*", extras = [ "aiopg", "aiomysql", "aiosqlite", "asyncpg", "trio_mysql", "triopg"] }
+aio-databases = { version = "*", extras = [
+  "aiopg",
+  "aiomysql",
+  "aiosqlite",
+  "asyncpg",
+  "trio_mysql",
+  "triopg",
+] }
 ruff = "*"
 black = "*"
 pre-commit = "*"
+psycopg2-binary = "^2.9.5"
 
 [tool.pytest.ini_options]
 addopts = "-xsv"
@@ -87,7 +93,24 @@ line-length = 100
 target-version = "py38"
 exclude = [".venv", "docs", "examples"]
 select = ["ALL"]
-ignore = ["ARG", "D", "UP", "ANN", "DJ", "EM", "RSE", "SLF", "RET", "S101", "PLR2004", "PLR0912", "N804", "A003", "TRY003", "COM812"]
+ignore = [
+  "ARG",
+  "D",
+  "UP",
+  "ANN",
+  "DJ",
+  "EM",
+  "RSE",
+  "SLF",
+  "RET",
+  "S101",
+  "PLR2004",
+  "PLR0912",
+  "N804",
+  "A003",
+  "TRY003",
+  "COM812",
+]
 
 [tool.black]
 line-length = 100
