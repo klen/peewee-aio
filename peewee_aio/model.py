@@ -436,6 +436,7 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
     if TYPE_CHECKING:
         _limit: Optional[int]
         _offset: Optional[int]
+        _returning: Optional[Tuple[ColumnBase, ...]]
 
         columns: Callable[..., Self]
         distinct: Callable[..., Self]
