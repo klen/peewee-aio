@@ -109,6 +109,11 @@ class AIOModelBase(ModelBase):
         return cls
 
 
+class AIOModelAlias(ModelAlias, Generic[TVAIOModel]):
+    def select(self, *selection) -> AIOModelSelect[TVAIOModel]:
+        return AIOModelSelect(self, selection)
+
+
 class AIOModel(Model, metaclass=AIOModelBase):
     if TYPE_CHECKING:
         _manager: Manager
@@ -244,6 +249,10 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     # Queryset methods
     # ----------------
+
+    @classmethod
+    def alias(cls: Type[TVAIOModel], alias: Optional[str] = None) -> AIOModelAlias[TVAIOModel]:
+        return AIOModelAlias(cls, alias)
 
     @classmethod
     def select(

@@ -8,25 +8,30 @@ import pytest
 from .conftest import DataModel
 
 
-async def test_select(schema):
+@pytest.fixture()
+async def data(schema):
     await DataModel.delete()
-    inst = await DataModel.create(data="data")
+    await DataModel.insert_many([DataModel(data=f"t{n}") for n in range(3)])
+    return await DataModel.select()
+
+
+async def test_select(data):
+    inst = data[0]
 
     assert [inst] == await DataModel.select().where(DataModel.id == inst.id)
 
-    async for data in DataModel.select():
-        assert data == inst
+    async for dm in DataModel.select():
+        assert dm
 
     assert await DataModel.select().exists()
-    assert await DataModel.select().count() == 1
-    assert await DataModel.select().get() == inst
-    assert await DataModel.select().peek() == inst
-    assert await DataModel.select().first() == inst
+    assert await DataModel.select().count() == len(data)
+    assert await DataModel.select().get()
+    assert await DataModel.select().peek()
+    assert await DataModel.select().first()
     assert await DataModel.select(peewee.fn.MAX(DataModel.id)).scalar()
 
 
-async def test_select_items(schema):
-    await DataModel.insert_many([{"data": f"t{n}"} for n in range(3)])
+async def test_select_items(data):
     qs = DataModel.select()
     t1 = await qs[0]
     assert t1
@@ -64,8 +69,8 @@ async def test_get_or_create(schema):
     assert not created
 
 
-async def test_get(schema):
-    source = await DataModel.create(data="data")
+async def test_get(data):
+    source = data[0]
 
     inst = await DataModel.get_or_none(DataModel.id == source.id)
     assert inst
@@ -114,11 +119,8 @@ async def test_prefetch(manager):
     await BaseModel.drop_table(safe=True)
 
 
-async def test_union(schema):
+async def test_union(data):
     from peewee_aio.model import AIOModelCompoundSelectQuery
-
-    await DataModel.delete()
-    await DataModel.insert_many([DataModel(data=f"t{n}") for n in range(3)])
 
     qs = (
         DataModel.select().where(DataModel.data == "t1")
@@ -132,9 +134,7 @@ async def test_union(schema):
     assert res
 
 
-async def test_scalar(schema):
-    await DataModel.delete()
-    await DataModel.insert_many([DataModel(data=f"t{n}") for n in range(3)])
+async def test_scalar(data):
     assert await DataModel.select(DataModel.data).scalars() == ["t0", "t1", "t2"]
 
     assert await DataModel.select(DataModel.data).scalar() == "t0"
@@ -144,10 +144,14 @@ async def test_scalar(schema):
     }
 
 
-async def test_first(schema):
-    await DataModel.insert_many([DataModel(data=f"t{n}") for n in range(3)])
+async def test_first(data):
     qs = DataModel.select().order_by(DataModel.id)
     ts1, ts2, ts3 = await qs
     ts = await qs.first()
     assert ts == ts1
     assert (await qs) == [ts1, ts2, ts3]
+
+
+async def test_alias(data):
+    alias = DataModel.alias()
+    assert await alias.select(alias)
