@@ -26,7 +26,8 @@ async def test_sync(manager):
         list(User.select())
 
     with manager.allow_sync():
-        User.create_table(safe=True)
+        User.drop_table(safe=True)
+        User.create_table()
         User.create(name="Mickey")
         assert User.get()
         User.delete().execute()

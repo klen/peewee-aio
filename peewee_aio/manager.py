@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
@@ -63,6 +63,16 @@ class Manager(Database):
 
     def __init__(self, url: str, **backend_options):
         """Initialize dialect and database."""
+        if url.startswith(("sqlite://", "aiosqlite://")):
+            import peewee as pw
+
+            backend_options.setdefault("functions", ())
+            backend_options["functions"] = (
+                *backend_options["functions"],
+                ("date_part", 2, pw._sqlite_date_part),  # type: ignore[]
+                ("date_trunc", 2, pw._sqlite_date_trunc),  # type: ignore[]
+            )
+
         backend_options.setdefault("convert_params", True)
         super().__init__(url, logger=logger, **backend_options)
 
@@ -243,11 +253,8 @@ class Manager(Database):
 
             # Create indexes
             for query in schema._create_indexes(safe=safe):  # type: ignore[]
-                try:
+                with suppress(OperationalError):
                     await self.execute(query)
-                except OperationalError:
-                    if not safe:
-                        raise
 
     async def drop_tables(self, *models_cls: Type[PWModel], **opts):
         """Drop tables for the given models or all registered with the manager."""
