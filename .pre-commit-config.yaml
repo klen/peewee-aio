@@ -28,7 +28,7 @@ repos:
   hooks:
     - id: poetry-check
     - id: poetry-lock
-      args: ["--no-update"]
+      args: ["--no-cache"]
 
 - repo: local
   hooks:
