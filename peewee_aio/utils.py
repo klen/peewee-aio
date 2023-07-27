@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from typing import Optional, Type, cast
+from typing import Optional, Type, Union, cast
 
-from peewee import JOIN, Expression, ModelSelect, Node
+from peewee import JOIN, Expression, Model, ModelAlias, ModelSelect
+
+TSource = Union[Type[Model], Type[ModelAlias]]
 
 
 def safe_join(  # noqa: PLR0913
     query: ModelSelect,
-    dest: Type[Node],
+    dest: TSource,
     join_type: str = JOIN.INNER,
-    src: Optional[Type[Node]] = None,
+    src: Optional[TSource] = None,
     on: Optional[Expression] = None,
     attr: Optional[str] = None,
 ) -> ModelSelect:
