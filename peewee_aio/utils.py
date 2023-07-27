@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import Optional, Type, cast
 
-from peewee import JOIN, Expression, Model, ModelSelect
+from peewee import JOIN, Expression, ModelSelect, Node
 
 
 def safe_join(  # noqa: PLR0913
     query: ModelSelect,
-    dest: Type[Model],
+    dest: Type[Node],
     join_type: str = JOIN.INNER,
-    src: Optional[Type[Model]] = None,
+    src: Optional[Type[Node]] = None,
     on: Optional[Expression] = None,
     attr: Optional[str] = None,
 ) -> ModelSelect:
