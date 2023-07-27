@@ -4,7 +4,7 @@ from typing import Optional, Type, Union, cast
 
 from peewee import JOIN, Expression, Model, ModelAlias, ModelSelect
 
-TSource = Union[Type[Model], Type[ModelAlias]]
+TSource = Union[Type[Model], ModelAlias]
 
 
 def safe_join(  # noqa: PLR0913
