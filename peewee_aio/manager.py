@@ -347,7 +347,7 @@ class Manager(Database):
 
         if pk_field is None:
             await self.execute(
-                inst.insert(**field_dict).on_confict_ignore(on_conflict_ignore),
+                inst.insert(**field_dict).on_conflict_ignore(on_conflict_ignore),
             )
 
         # Update
