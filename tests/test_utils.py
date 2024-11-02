@@ -3,7 +3,7 @@ import peewee as pw
 from peewee_aio.utils import safe_join
 
 
-def test_safe_join():
+async def test_safe_join():
     class Role(pw.Model):
         name = pw.CharField()
 

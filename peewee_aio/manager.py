@@ -2,21 +2,17 @@ from __future__ import annotations
 
 from contextlib import contextmanager, suppress
 from functools import cached_property
-from typing import (
+from typing import (  # py39
     TYPE_CHECKING,
     Any,
     AsyncIterator,
     Callable,
     Coroutine,
-    Dict,
     Generator,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
-    Tuple,
-    Type,
     Union,
     overload,
 )
@@ -59,7 +55,7 @@ class Manager(Database):
     """Manage database and models."""
 
     pw_database: PWDatabase
-    models: "WeakSet[Type[PWModel]]"
+    models: "WeakSet[type[PWModel]]"
 
     def __init__(self, url: str, **backend_options):
         """Initialize dialect and database."""
@@ -80,7 +76,7 @@ class Manager(Database):
         self.pw_database = get_db(self)
 
     @cached_property
-    def Model(self) -> Type[AIOModel]:  # noqa: N802
+    def Model(self) -> type[AIOModel]:  # noqa: N802
         """Get the default model class."""
 
         class Model(AIOModel):
@@ -88,7 +84,7 @@ class Manager(Database):
 
         return Model
 
-    def register(self, model_cls: Type[TVModel]) -> Type[TVModel]:
+    def register(self, model_cls: type[TVModel]) -> type[TVModel]:
         """Register a model with the manager."""
         model_cls._manager = self  # type: ignore[]
         model_cls._meta.database = self.pw_database  # type: ignore[]
@@ -104,8 +100,8 @@ class Manager(Database):
 
     async def execute(self, query: Any, *params, **opts) -> Any:
         """Execute a given query with the given params."""
-        with process(query, params, raw=True) as (sql, params, _):
-            res = await super().execute(sql, *params, **opts)
+        with process(query, params, raw=True) as (sql, props, _):
+            res = await super().execute(sql, *props, **opts)
             if res is None:
                 return res
 
@@ -116,31 +112,31 @@ class Manager(Database):
 
     async def fetchval(self, query: Any, *params, **opts) -> Any:
         """Execute the given SQL and fetch a value."""
-        with process(query, params, raw=True) as (query, params, _):
-            return await super().fetchval(query, *params, **opts)
+        with process(query, params, raw=True) as (sql, props, _):
+            return await super().fetchval(sql, *props, **opts)
 
     async def fetchall(self, query: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch all."""
-        with process(query, params, raw=raw) as (query, params, constructor):
-            res = await super().fetchall(query, *params, **opts)
+        with process(query, params, raw=raw) as (sql, props, constructor):
+            res = await super().fetchall(sql, *props, **opts)
             return constructor(res)
 
     async def fetchmany(self, size: int, query: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch many of the size."""
-        with process(query, params, raw=raw) as (query, params, constructor):
-            res = await super().fetchmany(size, query, *params, **opts)
+        with process(query, params, raw=raw) as (sql, props, constructor):
+            res = await super().fetchmany(size, sql, *props, **opts)
             return constructor(res)
 
     async def fetchone(self, query: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch one."""
-        with process(query, params, raw=raw) as (query, params, constructor):
-            res = await super().fetchone(query, *params, **opts)
+        with process(query, params, raw=raw) as (sql, props, constructor):
+            res = await super().fetchone(sql, *props, **opts)
             return constructor(res)
 
     async def iterate(self, query: Any, *params, raw: bool = False, **opts) -> AsyncIterator:
         """Execute the given SQL and iterate through results."""
-        with process(query, params, raw=raw) as (query, params, constructor):
-            async for res in super().iterate(query, *params, **opts):
+        with process(query, params, raw=raw) as (sql, props, constructor):
+            async for res in super().iterate(sql, *props, **opts):
                 yield constructor(res)
 
     # Working with Peewee
@@ -164,8 +160,7 @@ class Manager(Database):
     # -------------
 
     @overload
-    def run(self, query: Union[Select, ModelRaw]) -> RunWrapper:
-        ...
+    def run(self, query: Union[Select, ModelRaw]) -> RunWrapper: ...
 
     @overload
     def run(self, query: Query) -> Coroutine[Any, None, Any]:  # type: ignore[misc]
@@ -208,8 +203,8 @@ class Manager(Database):
         result = None
         prefetch_type = kwargs.pop("prefetch_type", PREFETCH_TYPE.WHERE)
         fixed_queries = prefetch_add_subquery(sq, subqueries, prefetch_type)
-        deps: Dict[PWModel, Dict] = {}
-        rel_map: Dict[PWModel, List] = {}
+        deps: dict[PWModel, dict] = {}
+        rel_map: dict[PWModel, list] = {}
         for pq in reversed(fixed_queries):
             query_model = pq.model
             if pq.fields:
@@ -233,7 +228,7 @@ class Manager(Database):
     # Model methods
     # -------------
 
-    async def create_tables(self, *models_cls: Type[PWModel], safe=True, **opts):
+    async def create_tables(self, *models_cls: type[PWModel], safe=True, **opts):
         """Create tables for the given models or all registered with the manager."""
         models_cls = models_cls or tuple(self.models)
         for model_cls in sort_models(models_cls):
@@ -256,7 +251,7 @@ class Manager(Database):
                 with suppress(OperationalError):
                     await self.execute(query)
 
-    async def drop_tables(self, *models_cls: Type[PWModel], **opts):
+    async def drop_tables(self, *models_cls: type[PWModel], **opts):
         """Drop tables for the given models or all registered with the manager."""
         models_cls = models_cls or tuple(self.models)
         for model_cls in reversed(sort_models(models_cls)):
@@ -265,7 +260,7 @@ class Manager(Database):
             await self.execute(ctx)
 
     async def get_or_none(
-        self, model_cls: Type[TVModel], *args: Node, **kwargs
+        self, model_cls: type[TVModel], *args: Node, **kwargs
     ) -> Optional[TVModel]:
         query: ModelSelect = model_cls.select()
         if kwargs:
@@ -276,16 +271,16 @@ class Manager(Database):
 
         return await self.fetchone(query)
 
-    async def get(self, model_cls: Type[TVModel], *args: Node, **kwargs) -> TVModel:
+    async def get(self, model_cls: type[TVModel], *args: Node, **kwargs) -> TVModel:
         res = await self.get_or_none(model_cls, *args, **kwargs)
         if res is None:
             raise model_cls.DoesNotExist  # type: ignore[]
         return res
 
-    async def get_by_id(self, model_cls: Type[TVModel], pk) -> TVModel:
+    async def get_by_id(self, model_cls: type[TVModel], pk) -> TVModel:
         return await self.get(model_cls, model_cls._meta.primary_key == pk)  # type: ignore[]
 
-    async def set_by_id(self, model_cls: Type[PWModel], key, value) -> Any:
+    async def set_by_id(self, model_cls: type[PWModel], key, value) -> Any:
         qs = (
             model_cls.insert(value)
             if key is None
@@ -293,14 +288,14 @@ class Manager(Database):
         )
         return await self.execute(qs)
 
-    async def delete_by_id(self, model_cls: Type[PWModel], pk):
+    async def delete_by_id(self, model_cls: type[PWModel], pk):
         return await self.execute(
             model_cls.delete().where(model_cls._meta.primary_key == pk),  # type: ignore[]
         )
 
     async def get_or_create(
-        self, model_cls: Type[TVModel], defaults: Optional[Dict] = None, **kwargs
-    ) -> Tuple[TVModel, bool]:
+        self, model_cls: type[TVModel], defaults: Optional[dict] = None, **kwargs
+    ) -> tuple[TVModel, bool]:
         async with self.transaction():
             try:
                 return (await self.get(model_cls, **kwargs), False)
@@ -310,7 +305,7 @@ class Manager(Database):
                     True,
                 )
 
-    async def create(self, model_cls: Type[TVModel], **values) -> TVModel:
+    async def create(self, model_cls: type[TVModel], **values) -> TVModel:
         inst = model_cls(**values)
         return await self.save(inst, force_insert=True)
 

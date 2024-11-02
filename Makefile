@@ -2,7 +2,7 @@ VIRTUAL_ENV ?= env
 
 $(VIRTUAL_ENV): pyproject.toml
 	@poetry install --with dev
-	@poetry run pre-commit install --hook-type pre-push
+	@GIT_CONFIG=/dev/null || @poetry run pre-commit install
 	@touch $(VIRTUAL_ENV)
 
 .PHONY: test

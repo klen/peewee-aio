@@ -9,6 +9,9 @@ def backend():
 
 
 async def test_sqlite(manager):
+    if manager.backend.db_type != "sqlite":
+        return pytest.skip("SQLite only")
+
     unow = dt.datetime.now(tz=dt.timezone.utc)
 
     assert await manager.fetchval("SELECT 1") == 1

@@ -24,7 +24,7 @@ Async support for [Peewee ORM](https://github.com/coleifer/peewee)
 
 ## Requirements
 
-* python >= 3.8
+* python >= 3.9
 
 ## Installation
 
@@ -117,7 +117,19 @@ $ pip install peewee-aio[triopg]      # for PostgresQL (trio)
 
 ## Usage
 
-TODO
+### Supported schemas
+
+- `aiomyql`
+- `aiomyql+pool`
+- `aiopg`
+- `aiopg+pool`
+- `asyncpg`
+- `asyncpg+pool`
+- `aioodbc`
+- `aioodbc+pool`
+- `aiosqlite`
+- `trio-mysql`
+- `triopg`
 
 ### Sync usage
 
