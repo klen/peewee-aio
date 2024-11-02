@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "peewee-aio"
-version = "1.7.4"
+version = "2.0.0"
 description = "Async support for Peewee ORM"
 readme = "README.md"
 license = "MIT"
@@ -14,19 +14,19 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Framework :: AsyncIO",
   "Framework :: Trio",
 ]
 packages = [{ include = "peewee_aio" }]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 peewee = "^3"
-aio-databases = "^0"
+aio-databases = "*"
 typing-extensions = { version = "*", python = "<3.11" }
 
 # Optional dependencies
@@ -74,7 +74,7 @@ packages = ["peewee_aio", "tests"]
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py38,py39,py310,py311
+envlist = py39,py310,py311,py312
 isolated_buiid = true
 
 [testenv]
@@ -89,8 +89,10 @@ commands =
 
 [tool.ruff]
 line-length = 100
-target-version = "py38"
+target-version = "py39"
 exclude = [".venv", "docs", "examples"]
+
+[tool.ruff.lint]
 select = ["ALL"]
 ignore = [
   "ARG",
@@ -113,7 +115,7 @@ ignore = [
 
 [tool.black]
 line-length = 100
-target-version = ["py38", "py39", "py310", "py311"]
+target-version = ["py39", "py310", "py311", "py312"]
 preview = true
 
 [build-system]

@@ -71,7 +71,7 @@ def db_url(backend, aiolib):
         return pytest.skip("aiomysql doesnt support python 3.10")
 
     if aiolib[0] == "trio" and backend not in {"trio-mysql", "triopg"}:
-        return pytest.skip("invalid backend")
+        return pytest.skip("not supported by trio")
 
     if aiolib[0] == "asyncio" and backend not in {
         "aiosqlite",
@@ -79,7 +79,7 @@ def db_url(backend, aiolib):
         "aiopg",
         "asyncpg",
     }:
-        return pytest.skip("invalid backend")
+        return pytest.skip("not supported by asyncio")
 
     return CONNECTIONS[backend]
 
@@ -99,7 +99,7 @@ async def schema(manager):
     await manager.drop_tables()
 
 
-@pytest.fixture()
+@pytest.fixture
 async def transaction(schema, manager):
     async with manager.transaction() as trans:
         yield manager

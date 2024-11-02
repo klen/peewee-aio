@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional, Type, Union, cast
+from typing import Optional, Union, cast
 
 from peewee import JOIN, Expression, Model, ModelAlias, ModelSelect
 
-TSource = Union[Type[Model], ModelAlias]
+TSource = Union[type[Model], ModelAlias]
 
 
 def safe_join(  # noqa: PLR0913
