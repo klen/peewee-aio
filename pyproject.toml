@@ -109,3 +109,13 @@ ignore = [
   "TRY003",
   "COM812",
 ]
+
+[tool.bumpversion]
+current_version = "2.0.0"
+commit = false
+tag = false
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
