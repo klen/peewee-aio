@@ -86,8 +86,6 @@ class GenericField(TPWNode, Generic[TV]):
 
         def __get__(self, instance: pw.Model | None, owner) -> Self | TV: ...
 
-        def __set__(self, instance: pw.Model, value: TV) -> None: ...
-
 
 class JSONGenericField(GenericField[TV]):
     if TYPE_CHECKING:
