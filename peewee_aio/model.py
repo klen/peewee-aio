@@ -426,11 +426,15 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
     def first(self, n: int = 1):
         return self.peek(n)
 
-    async def scalar(self, *, as_tuple=False, as_dict=False):  # type: ignore[bad-override]
+    async def scalar(self, *, as_dict=False, as_tuple=False) -> Any:  # type: ignore[bad-override]
         if as_dict:
             return await self.dicts().peek()
+
         row = await self.tuples().peek()
-        return row[0] if row and not as_tuple else row
+        if as_tuple:
+            return row
+
+        return row[0] if row else None
 
     async def scalars(self) -> list[Any]:  # type: ignore[bad-override]
         return [row[0] for row in await self.tuples()]
