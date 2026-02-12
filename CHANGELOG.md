@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Drop support for python 3.9
+- Migrate to UV
+- Upgrade typing support
+
 ## [1.5.0] - 2023-03-25
+
 - Support AIOModel.bulk_create/bulk_update methods
 
 ## [1.0.0] - 2023-03-17
+
 - Foreign keys values are always awaitable
 - peewee_aio.fields - Fields with types
 
@@ -74,4 +80,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.12.4]: https://github.com/klen/peewee-aio/compare/0.12.3...0.12.4
 [0.12.3]: https://github.com/klen/peewee-aio/compare/0.12.1...0.12.3
 [0.12.1]: https://github.com/klen/peewee-aio/compare/0.1.0...0.12.1
-[0.1.0]: https://github.com/klen/peewee-aio/releases/tag/0.1.0

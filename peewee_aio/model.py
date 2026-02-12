@@ -11,8 +11,7 @@ from typing import (  # py39
     Generator,
     Generic,
     Iterable,
-    Optional,
-    Union,
+    Literal,
     cast,
     overload,
 )
@@ -23,6 +22,7 @@ from peewee import (
     ColumnBase,
     CompositeKey,
     DeferredForeignKey,
+    Expression,
     Field,
     ForeignKeyField,
     Metadata,
@@ -125,15 +125,15 @@ class AIOModel(Model, metaclass=AIOModelBase):
     # -------------
 
     @classmethod
-    async def create_table(cls, *, safe=True, **kwargs):
-        return await cls._manager.create_tables(cls, safe=safe, **kwargs)
+    async def create_table(cls, *, safe=True, **kwargs):  # type: ignore[bad-override]
+        await cls._manager.create_tables(cls, safe=safe, **kwargs)
 
     @classmethod
-    async def drop_table(cls, *, safe=True, **kwargs):
+    async def drop_table(cls, *, safe=True, **kwargs):  # type: ignore[bad-override]
         return await cls._manager.drop_tables(cls, safe=safe, **kwargs)
 
     @classmethod
-    async def get_or_none(cls: type[TVAIOModel], *args: Node, **kwargs) -> Optional[TVAIOModel]:
+    async def get_or_none(cls: type[TVAIOModel], *args: Node, **kwargs) -> TVAIOModel | None:
         return await cls._manager.get_or_none(cls, *args, **kwargs)
 
     @classmethod
@@ -154,7 +154,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
     @classmethod
     async def get_or_create(
-        cls: type[TVAIOModel], defaults: Optional[dict[str, Any]] = None, **kwargs
+        cls: type[TVAIOModel], defaults: dict[str, Any] | None = None, **kwargs
     ) -> tuple[TVAIOModel, bool]:
         async with cls._manager.transaction():
             try:
@@ -168,8 +168,8 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await inst.save(force_insert=True)
 
     @classmethod
-    async def bulk_create(
-        cls: type[TVAIOModel], model_list: Iterable[TVAIOModel], batch_size: Optional[int] = None
+    async def bulk_create(  # type: ignore[bad-override]
+        cls: type[TVAIOModel], model_list: Iterable[TVAIOModel], batch_size: int | None = None
     ):
         meta = cls._meta
 
@@ -195,16 +195,16 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
             res = await cls.insert_many(accum, fields=fields)
             if pk_fields and res is not None:
-                for row, model in zip(res, batch):
-                    for pk_field, obj_id in zip(pk_fields, row):
+                for row, model in zip(res, batch, strict=False):
+                    for pk_field, obj_id in zip(pk_fields, row, strict=False):
                         setattr(model, pk_field.name, obj_id)
 
     @classmethod
     async def bulk_update(
         cls: type[TVAIOModel],
         model_list: Iterable[TVAIOModel],
-        fields: Iterable[Union[str, Field]],
-        batch_size: Optional[int] = None,
+        fields: Iterable[str | Field],
+        batch_size: int | None = None,
     ) -> int:
         meta = cls._meta
         if isinstance(meta.primary_key, CompositeKey):
@@ -213,7 +213,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
             )
 
         # First normalize list of fields so all are field instances.
-        model_fields = [cast(Field, meta.fields[f]) if isinstance(f, str) else f for f in fields]
+        model_fields = [cast("Field", meta.fields[f]) if isinstance(f, str) else f for f in fields]
 
         # Now collect list of attribute names to use for values.
         attrs = [
@@ -227,7 +227,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         for batch in batches:
             id_list = [model._pk for model in batch]
             update = {}
-            for field, attr in zip(model_fields, attrs):
+            for field, attr in zip(model_fields, attrs, strict=False):
                 accum = []
                 for model in batch:
                     value = getattr(model, attr)
@@ -236,7 +236,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
                     accum.append((pk.to_value(model._pk), value))
                 update[field] = Case(pk, accum)
 
-            n += cast(int, await cls.update(update).where(cls._meta.primary_key.in_(id_list)))
+            n += cast("int", await cls.update(update).where(cls._meta.primary_key.in_(id_list)))
 
         return n
 
@@ -244,12 +244,12 @@ class AIOModel(Model, metaclass=AIOModelBase):
     # ----------------
 
     @classmethod
-    def alias(cls: type[TVAIOModel], alias: Optional[str] = None) -> AIOModelAlias[TVAIOModel]:
+    def alias(cls: type[TVAIOModel], alias: str | None = None) -> AIOModelAlias[TVAIOModel]:
         return AIOModelAlias(cls, alias)
 
     @classmethod
     def select(
-        cls: type[TVAIOModel], *select: Union[type[Model], ColumnBase, Table, ModelAlias]
+        cls: type[TVAIOModel], *select: type[Model] | ColumnBase | Table | ModelAlias
     ) -> AIOModelSelect[TVAIOModel]:
         return AIOModelSelect(
             cls,
@@ -258,11 +258,11 @@ class AIOModel(Model, metaclass=AIOModelBase):
         )
 
     @classmethod
-    def update(cls: type[TVAIOModel], __data=None, **update) -> AIOModelUpdate[TVAIOModel]:
+    def update(cls: type[TVAIOModel], __data=None, **update) -> AIOModelUpdate[TVAIOModel]:  # noqa: PYI063
         return AIOModelUpdate(cls, cls._normalize_data(__data, update))  # type: ignore[]
 
     @classmethod
-    def insert(cls: type[TVAIOModel], __data=None, **insert) -> AIOModelInsert[TVAIOModel]:
+    def insert(cls: type[TVAIOModel], __data=None, **insert) -> AIOModelInsert[TVAIOModel]:  # noqa: PYI063
         return AIOModelInsert(cls, cls._normalize_data(__data, insert))  # type: ignore[]
 
     @classmethod
@@ -293,10 +293,10 @@ class AIOModel(Model, metaclass=AIOModelBase):
     # Instance methods
     # ----------------
 
-    async def save(self, **kwargs) -> Self:
+    async def save(self, **kwargs) -> Self:  # type: ignore[bad-override]
         return await self._manager.save(self, **kwargs)
 
-    async def delete_instance(self, **kwargs):
+    async def delete_instance(self, **kwargs):  # type: ignore[bad-override]
         return await self._manager.delete_instance(self, **kwargs)
 
     @overload
@@ -333,7 +333,7 @@ class AIOQuery(Query, Generic[TVAIOModel]):
     model: type[TVAIOModel]
 
     if TYPE_CHECKING:
-        _order_by: Optional[tuple]
+        _order_by: tuple | None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -368,17 +368,35 @@ class BaseModelSelect(AIOQuery[TVAIOModel]):
         return await self.manager.prefetch(self, *subqueries)
 
 
-class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
+class TQuery:
+    if TYPE_CHECKING:
+        _limit: int | None
+        _offset: int | None
+        _where: Expression | None
+        _order_by: tuple | None
+        _cte_list = tuple | None
+
+        def with_cte(self, *cte) -> Self: ...  # type: ignore[bad-override]
+        def where(self, *expressions) -> Self: ...  # type: ignore[bad-override]
+        def orwhere(self, *expressions) -> Self: ...  # type: ignore[bad-override]
+        def order_by(self, *ordering) -> Self: ...  # type: ignore[bad-override]
+        def order_by_extend(self, *ordering) -> Self: ...  # type: ignore[bad-override]
+        def limit(self, value: int | None) -> Self: ...  # type: ignore[bad-override]
+        def offset(self, value: int | None) -> Self: ...  # type: ignore[bad-override]
+        def paginate(self, page: int, paginate_by: int = 20) -> Self: ...  # type: ignore[bad-override]
+
+
+class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
     def __aiter__(self) -> AsyncIterator[TVAIOModel]:
         return self.manager.run(self).__aiter__()  # type: ignore[return-value]
 
     @overload
-    def __getitem__(self, value: int) -> Coroutine[Any, Any, TVAIOModel]: ...
+    def __getitem__(self, value: int) -> Coroutine[None, None, TVAIOModel]: ...
 
     @overload
-    def __getitem__(self, value: slice) -> Self: ...
+    def __getitem__(self, value: slice) -> Coroutine[None, None, list[TVAIOModel]]: ...
 
-    def __getitem__(self, value) -> Union[Self, Coroutine[Any, Any, TVAIOModel]]:
+    def __getitem__(self, value) -> Any:
         limit, offset = 1, value
         if isinstance(value, slice):
             limit, offset = value.stop - value.start, value.start
@@ -388,41 +406,54 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
             return query.get()
         return query
 
-    async def peek(self, n=1) -> TVAIOModel:
+    @overload
+    async def peek(self, n: Literal[1] = 1) -> TVAIOModel | None: ...  # type: ignore[bad-override]
+
+    @overload
+    async def peek(self, n: int) -> list[TVAIOModel]: ...
+
+    async def peek(self, n: int = 1) -> Any:
         if n == 1:
             return await self.manager.fetchone(self)
         return await self.manager.fetchmany(n, self)
 
-    def first(self, n=1) -> Coroutine[Any, Any, Optional[TVAIOModel]]:
-        query = self
-        if self._limit != n:
-            query = self.limit(n)
-        return query.peek(n)
+    @overload
+    async def first(self, n: Literal[1] = 1) -> TVAIOModel | None: ...  # type: ignore[bad-override]
 
-    async def scalar(self, *, as_tuple=False, as_dict=False):
+    @overload
+    async def first(self, n: int) -> list[TVAIOModel]: ...
+
+    def first(self, n: int = 1):
+        return self.peek(n)
+
+    async def scalar(self, *, as_tuple=False, as_dict=False):  # type: ignore[bad-override]
         if as_dict:
             return await self.dicts().peek()
         row = await self.tuples().peek()
         return row[0] if row and not as_tuple else row
 
-    async def scalars(self) -> list[Any]:
+    async def scalars(self) -> list[Any]:  # type: ignore[bad-override]
         return [row[0] for row in await self.tuples()]
 
-    async def count(self) -> int:
+    async def count(self) -> int:  # type: ignore[bad-override]
         return await self.manager.count(self)
 
-    async def exists(self) -> bool:
+    async def exists(self) -> bool:  # type: ignore[bad-override]
         clone: AIOModelSelect = self.columns(SQL("1"))
         clone._limit = 1
         clone._offset = None
         return bool(await clone.scalar())
 
-    async def get(self, **filters) -> TVAIOModel:
+    async def get(self, *expressions, **filters) -> TVAIOModel:
         qs = self
-        if filters:
-            qs = self.filter(**filters)
 
-        res = await qs.first()
+        if expressions:
+            qs = qs.where(*expressions)
+
+        if filters:
+            qs = qs.filter(**filters)
+
+        res = await qs.peek()
         if res is None:
             sql, params = qs.sql()
             raise self.model.DoesNotExist(
@@ -432,9 +463,12 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
         return res
 
     if TYPE_CHECKING:
-        _limit: Optional[int]
-        _offset: Optional[int]
-        _returning: Optional[tuple[ColumnBase, ...]]
+        _returning: tuple[ColumnBase, ...] | None
+
+        def dicts(self) -> AIOModelSelect[dict[str, Any]]: ...  # type: ignore[bad-override]
+        def tuples(self) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
+        def namedtuples(self, *field_names) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
+        def objects(self) -> AIOModelSelect[TVAIOModel]: ...  # type: ignore[bad-override]
 
         columns: Callable[..., Self]
         distinct: Callable[..., Self]
@@ -446,37 +480,23 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], ModelSelect):
         join: Callable[..., Self]
         join_from: Callable[..., Self]
         lateral: Callable[..., Self]
-        limit: Callable[[Union[int, None]], Self]
         objects: Callable[..., Self]
-        offset: Callable[[int], Self]
-        order_by: Callable[..., Self]
-        order_by_extend: Callable[..., Self]
-        orwhere: Callable[..., Self]
-        paginate: Callable[..., Self]
         select_extend: Callable[..., Self]
         switch: Callable[..., Self]
-        where: Callable[..., Self]
         window: Callable[..., Self]
-        with_cte: Callable[..., Self]
 
         def __await__(self) -> Generator[Any, None, list[TVAIOModel]]:
             return self.manager.run(self).__await__()
 
 
-class AIOModelCompoundSelectQuery(BaseModelSelect[TVAIOModel], ModelCompoundSelectQuery):
+class AIOModelCompoundSelectQuery(BaseModelSelect[TVAIOModel], TQuery, ModelCompoundSelectQuery):
     if TYPE_CHECKING:
-        _limit: Optional[int]
-        _offset: Optional[int]
-
-        with_cte: Callable[..., Self]
-        where: Callable[..., Self]
         filter: Callable[..., Self]
-        orwhere: Callable[..., Self]
-        order_by: Callable[..., Self]
-        order_by_extend: Callable[..., Self]
-        limit: Callable[[Union[int, None]], Self]
-        offset: Callable[[int], Self]
-        paginate: Callable[..., Self]
+
+        def dicts(self) -> AIOModelSelect[dict[str, Any]]: ...  # type: ignore[bad-override]
+        def tuples(self) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
+        def namedtuples(self, *field_names) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
+        def objects(self) -> AIOModelSelect[TVAIOModel]: ...  # type: ignore[bad-override]
 
         columns: Callable[..., Self]
         select_extend: Callable[..., Self]
@@ -491,26 +511,22 @@ class AIOModelCompoundSelectQuery(BaseModelSelect[TVAIOModel], ModelCompoundSele
         lateral: Callable[..., Self]
 
 
-class AIOModelUpdate(AIOQuery[TVAIOModel], ModelUpdate):
+class AIOModelUpdate(AIOQuery[TVAIOModel], TQuery, ModelUpdate):
     if TYPE_CHECKING:
-        where: Callable[..., AIOModelUpdate[TVAIOModel]]
-        orwhere: Callable[..., AIOModelUpdate[TVAIOModel]]
         from_: Callable[..., AIOModelUpdate[TVAIOModel]]
         returning: Callable[..., AIOModelUpdate[TVAIOModel]]
 
 
-class AIOModelInsert(AIOQuery[TVAIOModel], ModelInsert):
+class AIOModelInsert(AIOQuery[TVAIOModel], TQuery, ModelInsert):
     if TYPE_CHECKING:
-        where: Callable[..., AIOModelInsert[TVAIOModel]]
         returning: Callable[..., AIOModelInsert[TVAIOModel]]
         on_conflict: Callable[..., AIOModelInsert[TVAIOModel]]
         on_conflict_ignore: Callable[..., AIOModelInsert[TVAIOModel]]
         on_conflict_replace: Callable[..., AIOModelInsert[TVAIOModel]]
 
 
-class AIOModelDelete(AIOQuery[TVAIOModel], ModelDelete):
-    if TYPE_CHECKING:
-        where: Callable[..., AIOModelDelete[TVAIOModel]]
+class AIOModelDelete(AIOQuery[TVAIOModel], TQuery, ModelDelete):
+    pass
 
 
 class AIOModelRaw(AIOQuery[TVAIOModel], ModelRaw):

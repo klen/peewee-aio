@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+from peewee_aio import Manager
+
 from .conftest import User
 
 
@@ -37,7 +39,6 @@ async def test_sync(manager):
 
 
 def test_databases():
-    from peewee_aio import Manager
 
     manager = Manager("sqlite:///:memory:")
     assert manager

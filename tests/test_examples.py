@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import asyncio
+
+from peewee_aio import AIOModel, Manager, fields
+
 
 def test_readme():
-    from peewee_aio import AIOModel, Manager, fields
 
     manager = Manager("aiosqlite:///:memory:")
 
@@ -55,7 +58,5 @@ def test_readme():
             # Drop the tables in database
             await User.drop_table()
             await Role.drop_table()
-
-    import asyncio
 
     asyncio.run(handler())

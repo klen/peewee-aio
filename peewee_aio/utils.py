@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Union, cast
+from typing import Optional, Union
 
 from peewee import JOIN, Expression, Model, ModelAlias, ModelSelect
 
@@ -24,4 +24,4 @@ def safe_join(  # noqa: PLR0913
             if dest_ == dest and attr_ == attr and constructor_ == constructor:
                 return query
 
-    return cast(ModelSelect, query.join(dest, join_type=join_type, on=on, src=src))
+    return query.join(dest, join_type=join_type, on=on, src=src)

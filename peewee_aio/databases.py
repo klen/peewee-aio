@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Type
+from typing import TYPE_CHECKING
 
 import peewee as pw
 from playhouse import db_url
@@ -33,7 +33,7 @@ class PostgresqlDatabase(Database, pw.PostgresqlDatabase):
     pass
 
 
-_backend_to_db: Dict[str, Type[Database]] = {
+_backend_to_db: dict[str, type[Database]] = {
     "mysql": MySQLDatabase,
     "postgres": PostgresqlDatabase,
     "sqlite": SqliteDatabase,

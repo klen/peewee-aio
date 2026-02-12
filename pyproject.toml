@@ -1,12 +1,11 @@
-[tool.poetry]
+[project]
 name = "peewee-aio"
 version = "2.0.0"
 description = "Async support for Peewee ORM"
+authors = [{ name = "Kirill Klenov", email = "horneds@gmail.com" }]
+requires-python = ">=3.9,<4"
 readme = "README.md"
 license = "MIT"
-homepage = "https://github.com/klen/peewee-aio"
-repository = "https://github.com/klen/peewee-aio"
-authors = ["Kirill Klenov <horneds@gmail.com>"]
 keywords = ["peewee", "asyncio", "trio", "orm"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -14,30 +13,21 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Framework :: AsyncIO",
   "Framework :: Trio",
 ]
-packages = [{ include = "peewee_aio" }]
+dependencies = [
+  "peewee>=3,<4",
+  "aio-databases",
+  "typing-extensions ; python_full_version < '3.11'",
+]
 
-[tool.poetry.dependencies]
-python = "^3.9"
-peewee = "^3"
-aio-databases = "*"
-typing-extensions = { version = "*", python = "<3.11" }
-
-# Optional dependencies
-asyncpg = { version = "*", optional = true }
-aiopg = { version = "*", optional = true }
-aiomysql = { version = "*", optional = true }
-aiosqlite = { version = "*", optional = true }
-triopg = { version = "*", optional = true }
-trio_mysql = { version = "*", optional = true }
-
-[tool.poetry.extras]
+[project.optional-dependencies]
 asyncpg = ["asyncpg"]
 aiopg = ["aiopg"]
 aiomysql = ["aiomysql"]
@@ -45,36 +35,42 @@ aiosqlite = ["aiosqlite"]
 triopg = ["triopg"]
 trio_mysql = ["trio_mysql"]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "*"
-pytest-mypy = "*"
-pytest-aio = { version = "*", extras = ["trio"] }
-trio_asyncio = "*"
-aio-databases = { version = "*", extras = [
-  "aiopg",
-  "aiomysql",
-  "aiosqlite",
-  "asyncpg",
-  "trio_mysql",
-  "triopg",
-] }
-ruff = "*"
-black = "*"
-pre-commit = "*"
+[project.urls]
+Homepage = "https://github.com/klen/peewee-aio"
+Repository = "https://github.com/klen/peewee-aio"
+
+[dependency-groups]
+dev = [
+  "pytest",
+  "pyrefly",
+  "pytest-aio[trio]",
+  "trio_asyncio",
+  "aio-databases[aiopg, aiomysql, aiosqlite, asyncpg, trio_mysql, triopg]",
+  "ruff",
+  "pre-commit",
+]
+
+[tool.uv]
+
+[tool.uv.build-backend]
+module-name = ["peewee_aio"]
+module-root = ""
+
+[build-system]
+requires = ["uv_build>=0.9.7,<0.10.0"]
+build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 addopts = "-xsv"
 log_cli = true
 
-[tool.mypy]
-check_untyped_defs = true
-ignore_missing_imports = true
-packages = ["peewee_aio", "tests"]
+[tool.pyrefly]
+project-includes = ["peewee_aio/*.py"]
 
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py39,py310,py311,py312
+envlist = py310,py311,py312,py313,py314
 isolated_buiid = true
 
 [testenv]
@@ -88,8 +84,9 @@ commands =
 """
 
 [tool.ruff]
+include = ["peewee_aio/*.py"]
 line-length = 100
-target-version = "py39"
+target-version = "py310"
 exclude = [".venv", "docs", "examples"]
 
 [tool.ruff.lint]
@@ -112,12 +109,3 @@ ignore = [
   "TRY003",
   "COM812",
 ]
-
-[tool.black]
-line-length = 100
-target-version = ["py39", "py310", "py311", "py312"]
-preview = true
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"

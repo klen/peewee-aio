@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import datetime as dt
-import sys
+import logging
 from uuid import uuid4
 
 import peewee as pw
 import pytest
+
+from peewee_aio import Manager
 
 CONNECTIONS = {
     "aiosqlite": "aiosqlite:///:memory:",
@@ -26,13 +28,13 @@ BACKENDS = {
 
 class Role(pw.Model):
     id = pw.UUIDField(primary_key=True, default=uuid4)
-    created = pw.DateTimeField(default=dt.datetime.utcnow)
+    created = pw.DateTimeField(default=dt.datetime.now)
     name = pw.CharField()
 
 
 class User(pw.Model):
     id = pw.AutoField()
-    created = pw.DateTimeField(default=dt.datetime.utcnow)
+    created = pw.DateTimeField(default=dt.datetime.now)
     name = pw.CharField()
     is_active = pw.BooleanField(default=True)
 
@@ -46,14 +48,13 @@ class UserToRole(pw.Model):
 
 
 class Comment(pw.Model):
-    created = pw.DateTimeField(default=dt.datetime.utcnow)
+    created = pw.DateTimeField(default=dt.datetime.now)
     body = pw.CharField()
     user = pw.ForeignKeyField(User)
 
 
 @pytest.fixture(scope="session", autouse=True)
 def _setup_logging():
-    import logging
 
     logger = logging.getLogger("peewee")
     logger.setLevel(logging.DEBUG)
@@ -67,9 +68,6 @@ def backend(request):
 # Supported drivers/databases
 @pytest.fixture(scope="session")
 def db_url(backend, aiolib):
-    if backend == "aiomysql" and sys.version_info >= (3, 10):
-        return pytest.skip("aiomysql doesnt support python 3.10")
-
     if aiolib[0] == "trio" and backend not in {"trio-mysql", "triopg"}:
         return pytest.skip("not supported by trio")
 
@@ -86,7 +84,6 @@ def db_url(backend, aiolib):
 
 @pytest.fixture(scope="session")
 async def manager(db_url):
-    from peewee_aio import Manager
 
     async with Manager(db_url) as manager, manager.connection():
         yield manager

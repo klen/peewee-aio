@@ -18,9 +18,9 @@ from typing import (  # py39
 )
 from weakref import WeakSet
 
+import peewee as pw
 from aio_databases.database import Database
 from peewee import (
-    EXCEPTIONS,  # type: ignore[]
     PREFETCH_TYPE,
     SQL,
     BaseQuery,
@@ -37,8 +37,6 @@ from peewee import (
     Select,
     __exception_wrapper__,  # type: ignore[]
     fn,
-    logger,  # type: ignore[]
-    prefetch_add_subquery,  # type: ignore[]
     sort_models,  # type: ignore[]
 )
 from peewee import Model as PWModel
@@ -60,17 +58,15 @@ class Manager(Database):
     def __init__(self, url: str, **backend_options):
         """Initialize dialect and database."""
         if url.startswith(("sqlite://", "aiosqlite://")):
-            import peewee as pw
-
             backend_options.setdefault("functions", ())
             backend_options["functions"] = (
                 *backend_options["functions"],
-                ("date_part", 2, pw._sqlite_date_part),  # type: ignore[]
-                ("date_trunc", 2, pw._sqlite_date_trunc),  # type: ignore[]
+                ("date_part", 2, pw._sqlite_date_part),  # type: ignore[missing-attribute]
+                ("date_trunc", 2, pw._sqlite_date_trunc),  # type: ignore[missing-attribute]
             )
 
         backend_options.setdefault("convert_params", True)
-        super().__init__(url, logger=logger, **backend_options)
+        super().__init__(url, logger=pw.logger, **backend_options)  # type: ignore[missing-attribute]
 
         self.models = WeakSet()
         self.pw_database = get_db(self)
@@ -93,7 +89,7 @@ class Manager(Database):
 
     def __iter__(self) -> Iterator:
         """Iterate through registered models."""
-        return iter(sort_models(self.models))
+        return iter(sort_models(self.models))  # type: ignore[missing-attribute]
 
     # Working with AIO-Databases
     # --------------------------
@@ -202,7 +198,7 @@ class Manager(Database):
 
         result = None
         prefetch_type = kwargs.pop("prefetch_type", PREFETCH_TYPE.WHERE)
-        fixed_queries = prefetch_add_subquery(sq, subqueries, prefetch_type)
+        fixed_queries = pw.prefetch_add_subquery(sq, subqueries, prefetch_type)  # type: ignore[missing-attribute]
         deps: dict[PWModel, dict] = {}
         rel_map: dict[PWModel, list] = {}
         for pq in reversed(fixed_queries):
@@ -389,9 +385,9 @@ def identity(r):
     return r
 
 
-EXCEPTIONS["UniqueViolationError"] = IntegrityError
-EXCEPTIONS["NotNullViolationError"] = InternalError
-EXCEPTIONS["DuplicateTableError"] = OperationalError
+pw.EXCEPTIONS["UniqueViolationError"] = IntegrityError  # type: ignore[missing-attribute]
+pw.EXCEPTIONS["NotNullViolationError"] = InternalError  # type: ignore[missing-attribute]
+pw.EXCEPTIONS["DuplicateTableError"] = OperationalError  # type: ignore[missing-attribute]
 
 
 @contextmanager
@@ -411,7 +407,7 @@ def process(query: Any, params: Sequence, *, raw: bool) -> Generator:
 
 
 class RunWrapper:
-    __slots__ = "manager", "query", "gen"
+    __slots__ = ("gen", "manager", "query")
 
     def __init__(self, manager: Manager, query: BaseQuery):
         self.query = query
@@ -438,7 +434,7 @@ class FakeCursor:
 class Constructor:
     """Process results."""
 
-    __slots__ = "query", "processor"
+    __slots__ = "processor", "query"
 
     def __init__(self, query: BaseQuery):
         self.query = query

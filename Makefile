@@ -1,55 +1,61 @@
 VIRTUAL_ENV ?= env
 
-$(VIRTUAL_ENV): pyproject.toml
-	@poetry install --with dev
-	@GIT_CONFIG=/dev/null || @poetry run pre-commit install
+$(VIRTUAL_ENV): uv.lock pyproject.toml
+	@uv sync
+	@uv run pre-commit install
 	@touch $(VIRTUAL_ENV)
 
 .PHONY: test
 test t: $(VIRTUAL_ENV)
 	docker start postgres mysql
-	@poetry run pytest tests
+	@uv run pytest tests
 
-.PHONY: mypy
-mypy: $(VIRTUAL_ENV)
-	@poetry run mypy
+.PHONY: types
+types: $(VIRTUAL_ENV)
+	@uv run pyrefly check
 
 .PHONY: example
 example: $(VIRTUAL_ENV)
 	@$(VIRTUAL_ENV)/bin/pip install uvicorn asgi-tools
 	@$(VIRTUAL_ENV)/bin/uvicorn --port 5000 example:app
 
-
-VERSION	?= minor
-
-.PHONY: version
-version:
-	@$(eval VFROM := $(shell poetry version -s))
-	@poetry version $(VERSION)
-	@git commit -am "build: bump version $(VFROM) → `poetry version -s`"
-	@git tag `poetry version -s`
+.PHONY: release
+VPART?=minor
+# target: release - Bump version
+release:
+	@git checkout develop
+	@git pull
+	@git merge master
+	@uvx bump-my-version bump $(VPART)
+	@uv lock
+	@{ \
+	  printf 'build(release): %s\n\n' "$$(uv version --short)"; \
+	  printf 'Changes:\n\n'; \
+	  git log --oneline --pretty=format:'%s [%an]' master..develop | grep -Evi 'github|^Merge' || true; \
+	} | git commit -a -F -
+	@git tag `uv version --short`
 	@git checkout master
+	@git pull
 	@git merge develop
 	@git checkout develop
 	@git push origin develop master
-	@git push --tags
+	@git push origin --tags
+	@echo "Release process complete for `uv version --short`."
 
 .PHONY: minor
-minor:
-	make version VERSION=minor
+minor: release
 
 .PHONY: patch
 patch:
-	make version VERSION=patch
+	make release VPART=patch
 
 .PHONY: major
 major:
-	make version VERSION=major
+	make release VPART=major
 
-.PHONY: clean
-# target: clean - Display callable targets
-clean:
-	rm -rf build/ dist/ docs/_build *.egg-info
-	find $(CURDIR) -name "*.py[co]" -delete
-	find $(CURDIR) -name "*.orig" -delete
-	find $(CURDIR)/$(MODULE) -name "__pycache__" | xargs rm -rf
+version v:
+	uv version --short
+
+.PHONY: setup-postgres
+setup-postgres:
+	docker exec -i postgres psql -U postgres < tests/assets/init-postgres.sql
