@@ -1,6 +1,6 @@
 [project]
 name = "peewee-aio"
-version = "2.2.1"
+version = "2.2.2"
 description = "Async support for Peewee ORM"
 authors = [{ name = "Kirill Klenov", email = "horneds@gmail.com" }]
 requires-python = ">=3.10,<4"
@@ -110,7 +110,7 @@ ignore = [
 ]
 
 [tool.bumpversion]
-current_version = "2.2.1"
+current_version = "2.2.2"
 commit = false
 tag = false
 
