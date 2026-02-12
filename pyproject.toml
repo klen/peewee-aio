@@ -32,7 +32,6 @@ asyncpg = ["asyncpg"]
 aiopg = ["aiopg"]
 aiomysql = ["aiomysql"]
 aiosqlite = ["aiosqlite"]
-triopg = ["triopg"]
 trio_mysql = ["trio_mysql"]
 
 [project.urls]
@@ -45,7 +44,7 @@ dev = [
   "pyrefly",
   "pytest-aio[trio]",
   "trio_asyncio",
-  "aio-databases[aiopg, aiomysql, aiosqlite, asyncpg, trio_mysql, triopg]",
+  "aio-databases[aiopg, aiomysql, aiosqlite, asyncpg, trio_mysql]",
   "ruff",
   "pre-commit",
 ]

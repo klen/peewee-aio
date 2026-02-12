@@ -370,9 +370,6 @@ asyncpg = [
 trio-mysql = [
     { name = "trio-mysql" },
 ]
-triopg = [
-    { name = "triopg" },
-]
 
 [package.dev-dependencies]
 dev = [
@@ -394,14 +391,13 @@ requires-dist = [
     { name = "asyncpg", marker = "extra == 'asyncpg'" },
     { name = "peewee", specifier = ">=3,<4" },
     { name = "trio-mysql", marker = "extra == 'trio-mysql'" },
-    { name = "triopg", marker = "extra == 'triopg'" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
-provides-extras = ["asyncpg", "aiopg", "aiomysql", "aiosqlite", "triopg", "trio-mysql"]
+provides-extras = ["asyncpg", "aiopg", "aiomysql", "aiosqlite", "trio-mysql"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "aio-databases", extras = ["aiopg", "aiomysql", "aiosqlite", "asyncpg", "trio-mysql", "triopg"] },
+    { name = "aio-databases", extras = ["aiopg", "aiomysql", "aiosqlite", "asyncpg", "trio-mysql"] },
     { name = "pre-commit" },
     { name = "pyrefly" },
     { name = "pytest" },
@@ -790,20 +786,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/eb/eb/3f5a8db4b9475c7f8b3ae0925689ec556065443374b6ac4c6e2c9ad71395/trio_mysql-1.0.3.tar.gz", hash = "sha256:110de7b9ddc77cd9cfeaa08492d2b0dceafd393bc5ab2daec2be30114fea83e3", size = 47352, upload-time = "2021-09-29T00:45:57.093Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/79/c62d91546a81b8fab18278d57aac8533e415eecd30078f2b5da79a4e63bd/trio_mysql-1.0.3-py2.py3-none-any.whl", hash = "sha256:1a59acd39f439219ee87e0c23f507cecc18f7b282fca1f4253c34cef44d942ab", size = 45288, upload-time = "2021-09-29T00:45:54.524Z" },
-]
-
-[[package]]
-name = "triopg"
-version = "0.6.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "asyncpg" },
-    { name = "trio" },
-    { name = "trio-asyncio" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5a/a9/0b2d1d66d922f4712c710de87c90adf073e252737a846e77b981eeb95688/triopg-0.6.0.tar.gz", hash = "sha256:ead3505aa702da02e4ec78710385cfa3c216747279d0ab4e6c37fff4236ff162", size = 19716, upload-time = "2021-03-03T12:32:44.499Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/95/79/adb39234737385586bb407ed854355556120db982074724b972be30d7b18/triopg-0.6.0-py3-none-any.whl", hash = "sha256:a65147183c0992d0902f6acdeb2b177bb23efbff1ca971ee4f480d02c9cd5442", size = 13778, upload-time = "2021-03-03T12:32:42.332Z" },
 ]
 
 [[package]]
