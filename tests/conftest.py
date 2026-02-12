@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import sys
 from uuid import uuid4
 
 import peewee as pw
@@ -68,6 +69,9 @@ def backend(request):
 # Supported drivers/databases
 @pytest.fixture(scope="session")
 def db_url(backend, aiolib):
+    if backend == "trio-asyncio" and sys.version_info >= (3, 14):
+        return pytest.skip("trio-asyncio doesnt support python 3.14")
+
     if aiolib[0] == "trio" and backend not in {"trio-mysql", "triopg"}:
         return pytest.skip("not supported by trio")
 
