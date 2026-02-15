@@ -376,6 +376,7 @@ class TQuery:
         _order_by: tuple | None
         _cte_list = tuple | None
 
+        def select(self, *select: type[Model] | Node) -> Self: ...  # type: ignore[bad-override]
         def with_cte(self, *cte) -> Self: ...  # type: ignore[bad-override]
         def where(self, *expressions) -> Self: ...  # type: ignore[bad-override]
         def orwhere(self, *expressions) -> Self: ...  # type: ignore[bad-override]
