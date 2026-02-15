@@ -20,13 +20,13 @@ example: $(VIRTUAL_ENV)
 	@$(VIRTUAL_ENV)/bin/uvicorn --port 5000 example:app
 
 VERSION	?= minor
-MAIN_BRANCH = master
+MAIN_BRANCH = main
 
 .PHONY: release
 VPART?=minor
 # target: release - Bump version
 release:
-	git checkout master
+	git checkout $(MAIN_BRANCH)
 	git pull
 	git checkout develop
 	git pull
