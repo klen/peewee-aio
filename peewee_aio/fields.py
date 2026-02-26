@@ -406,12 +406,16 @@ class AIOForeignKeyField(GenericField[TV], pw.ForeignKeyField):
 
         @overload
         def __new__(
-            cls, model: type[TVAIOModel], *, null: Literal[True], **kwargs
+            cls, model: type[TVAIOModel] | Literal["self"], *, null: Literal[True], **kwargs
         ) -> AIOForeignKeyField[Coroutine[None, None, TVAIOModel | None]]: ...
 
         @overload
         def __new__(
-            cls, model: type[TVAIOModel], *, null: Literal[False] = False, **kwargs
+            cls,
+            model: type[TVAIOModel] | Literal["self"],
+            *,
+            null: Literal[False] = False,
+            **kwargs,
         ) -> AIOForeignKeyField[Coroutine[None, None, TVAIOModel]]: ...
 
         def __new__(cls, *args, **kwargs) -> AIOForeignKeyField[Coroutine[None, None, Any]]: ...
