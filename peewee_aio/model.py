@@ -470,10 +470,10 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
     if TYPE_CHECKING:
         _returning: tuple[ColumnBase, ...] | None
 
-        def dicts(self) -> AIOModelSelect[dict[str, Any]]: ...  # type: ignore[bad-override]
-        def tuples(self) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
+        def dicts(self, *, as_dict=True) -> AIOModelSelect[dict[str, Any]]: ...  # type: ignore[bad-override]
+        def tuples(self, *, as_tuples=True) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
         def namedtuples(self, *field_names) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
-        def objects(self) -> AIOModelSelect[TVAIOModel]: ...  # type: ignore[bad-override]
+        def objects(self, constructor: Callable | None = None) -> AIOModelSelect[Any]: ...
 
         columns: Callable[..., Self]
         distinct: Callable[..., Self]
@@ -498,10 +498,10 @@ class AIOModelCompoundSelectQuery(BaseModelSelect[TVAIOModel], TQuery, ModelComp
     if TYPE_CHECKING:
         filter: Callable[..., Self]
 
-        def dicts(self) -> AIOModelSelect[dict[str, Any]]: ...  # type: ignore[bad-override]
-        def tuples(self) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
+        def dicts(self, *, as_dict=True) -> AIOModelSelect[dict[str, Any]]: ...  # type: ignore[bad-override]
+        def tuples(self, *, as_tuples=True) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
         def namedtuples(self, *field_names) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
-        def objects(self) -> AIOModelSelect[TVAIOModel]: ...  # type: ignore[bad-override]
+        def objects(self, constructor: Callable | None = None) -> AIOModelSelect[Any]: ...  # type: ignore[bad-override]
 
         columns: Callable[..., Self]
         select_extend: Callable[..., Self]
