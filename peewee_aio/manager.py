@@ -356,7 +356,7 @@ class Manager(Database):
         # Insert
         else:
             query = inst.insert(**field_dict).on_conflict_ignore(on_conflict_ignore)
-            if query._returning:
+            if query._returning:  # type: ignore[]
                 pk = await self.fetchval(query)
             else:
                 pk = await self.execute(query)

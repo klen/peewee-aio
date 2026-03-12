@@ -22,7 +22,7 @@ classifiers = [
   "Framework :: Trio",
 ]
 dependencies = [
-  "peewee>=3,<4",
+  "peewee",
   "aio-databases",
   "typing-extensions ; python_full_version < '3.11'",
 ]

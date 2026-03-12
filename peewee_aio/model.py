@@ -163,7 +163,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
                 return (await cls.create(**dict(defaults or {}, **kwargs)), True)
 
     @classmethod
-    async def create(cls: type[TVAIOModel], **kwargs) -> TVAIOModel:
+    async def create(cls: type[TVAIOModel], **kwargs) -> TVAIOModel:  # type: ignore[]
         inst = cls(**kwargs)
         return await inst.save(force_insert=True)
 
@@ -506,7 +506,7 @@ class AIOModelCompoundSelectQuery(BaseModelSelect[TVAIOModel], TQuery, ModelComp
         columns: Callable[..., Self]
         select_extend: Callable[..., Self]
         from_: Callable[..., Self]
-        join: Callable[..., Self]
+        join: Callable[..., Self]  # type: ignore[bad-override]
         join_from: Callable[..., Self]
         group_by: Callable[..., Self]
         having: Callable[..., Self]
