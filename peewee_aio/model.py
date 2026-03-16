@@ -21,7 +21,6 @@ from peewee import (
     Case,
     ColumnBase,
     CompositeKey,
-    DeferredForeignKey,
     Expression,
     Field,
     ForeignKeyField,
@@ -41,11 +40,12 @@ from peewee import (
     chunked,
 )
 
-from .fields import AIODeferredForeignKey, AIOForeignKeyField, FetchForeignKey
 from .types import TV, TVAIOModel
 
 if TYPE_CHECKING:
-    from typing_extensions import Self  # py310,py39,py38,py37
+    from typing_extensions import Self  # py310
+
+    from peewee_aio.fields import AIODeferredForeignKey, AIOForeignKeyField
 
     from .manager import Manager
 
@@ -54,48 +54,6 @@ class AIOModelBase(ModelBase):
     inheritable = ModelBase.inheritable & {"manager"}
 
     def __new__(cls, name, bases, attrs):
-        # Replace fields to AIO fields
-        for attr_name, attr in attrs.items():
-            if not isinstance(attr, Field) or isinstance(
-                attr, (AIOForeignKeyField, AIODeferredForeignKey, FetchForeignKey)
-            ):
-                continue
-
-            if isinstance(attr, ForeignKeyField):
-                attrs[attr_name] = AIOForeignKeyField(
-                    attr.rel_model,
-                    field=attr.rel_field,
-                    backref=attr.declared_backref,
-                    on_delete=attr.on_delete,
-                    on_update=attr.on_update,
-                    deferrable=attr.deferrable,
-                    _deferred=attr.deferred,
-                    object_id_name=attr.object_id_name,
-                    lazy_load=attr.lazy_load,
-                    constraint_name=attr.constraint_name,
-                    null=attr.null,
-                    index=attr.index,
-                    unique=attr.unique,
-                    default=attr.default,
-                    primary_key=attr.primary_key,
-                    constraints=attr.constraints,
-                    sequence=attr.sequence,
-                    collation=attr.collation,
-                    unindexed=attr.unindexed,
-                    choices=attr.choices,
-                    help_text=attr.help_text,
-                    verbose_name=attr.verbose_name,
-                    index_type=attr.index_type,
-                    _hidden=attr._hidden,
-                )
-
-            elif isinstance(attr, DeferredForeignKey):
-                attrs[attr_name] = AIODeferredForeignKey(
-                    attr.rel_model_name,
-                    **attr.field_kwargs,
-                )
-                DeferredForeignKey._unresolved.discard(attr)  # type: ignore[]
-
         kls = super(AIOModelBase, cls).__new__(cls, name, bases, attrs)
         meta = kls._meta
         if getattr(kls, "_manager", None) and not meta.database:

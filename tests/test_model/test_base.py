@@ -5,11 +5,13 @@ from typing import Any, Optional
 import pytest
 from playhouse.test_utils import count_queries
 
+from peewee_aio import AIOModel, fields
+from peewee_aio.model import AIOModelSelect
+
 from .conftest import DataModel
 
 
 async def test_base_model(manager):
-    from peewee_aio import fields
 
     assert DataModel._manager is manager
     assert DataModel._meta.database is manager.pw_database
@@ -21,7 +23,6 @@ async def test_base_model(manager):
 
 
 async def test_backref(manager, schema):
-    from peewee_aio import AIOModel, fields
 
     class BaseModel(DataModel):
         ref_set: Any
@@ -39,8 +40,6 @@ async def test_backref(manager, schema):
     await Ref.create_table()
 
     source = await BaseModel.create(data="data")
-
-    from peewee_aio.model import AIOModelSelect
 
     assert isinstance(source.ref_set, AIOModelSelect)
 
@@ -80,16 +79,12 @@ async def test_backref(manager, schema):
 
 
 async def test_fk(manager, schema):
-    from peewee_aio import AIOModel, fields
-
     @manager.register
     class ParentModel(AIOModel):
         child_id: Optional[int]
         child = fields.ForeignKeyField(DataModel, null=True, on_delete="CASCADE")
 
-    from peewee_aio.model import AIOForeignKeyField
-
-    assert isinstance(ParentModel.child, AIOForeignKeyField)
+    assert isinstance(ParentModel.child, fields.AIOForeignKeyField)
 
     await ParentModel.create_table()
 
@@ -106,7 +101,6 @@ async def test_fk(manager, schema):
 
 
 async def test_deferred_fk(manager):
-    from peewee_aio import AIOModel, fields
 
     @manager.register
     class ParentModel(AIOModel):
@@ -116,9 +110,7 @@ async def test_deferred_fk(manager):
     class ChildModel(AIOModel):
         id = fields.AutoField()
 
-    from peewee_aio.model import AIOForeignKeyField
-
-    assert isinstance(ParentModel.child, AIOForeignKeyField)
+    assert isinstance(ParentModel.child, fields.AIOForeignKeyField)
 
     await ChildModel.create_table()
     await ParentModel.create_table()
@@ -140,7 +132,6 @@ async def test_await_model():
 
 
 async def test_model_fetch():
-    from peewee_aio import AIOModel, fields
 
     class User(AIOModel):
         id = fields.IntegerField()

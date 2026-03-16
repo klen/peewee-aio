@@ -5,8 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0] - 2026-03-16
 
+- Do not automatically convery ForeignKeyField to AIOForeignKeyField,
+  user should explicitly use AIOForeignKeyField if they want async support for foreign keys
 - Drop support for python 3.9
 - Migrate to UV
 - Upgrade typing support

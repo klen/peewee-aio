@@ -75,12 +75,7 @@ def db_url(backend, aiolib):
     if aiolib[0] == "trio" and backend not in {"trio-mysql", "triopg"}:
         return pytest.skip("not supported by trio")
 
-    if aiolib[0] == "asyncio" and backend not in {
-        "aiosqlite",
-        "aiomysql",
-        "aiopg",
-        "asyncpg",
-    }:
+    if aiolib[0] == "asyncio" and backend not in {"aiosqlite", "aiomysql", "aiopg", "asyncpg"}:
         return pytest.skip("not supported by asyncio")
 
     return CONNECTIONS[backend]
