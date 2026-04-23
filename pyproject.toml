@@ -47,6 +47,7 @@ dev = [
   "aio-databases[aiopg, aiomysql, aiosqlite, asyncpg, trio_mysql]",
   "ruff",
   "pre-commit",
+  "types-peewee",
 ]
 
 [tool.uv]
