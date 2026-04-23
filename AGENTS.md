@@ -1,159 +1,68 @@
 # AGENTS Guide for peewee-aio
 
-This file is for coding agents working in this repository.
-Follow it as the default operating guide.
+Default operating guide for coding agents in this repository.
 
-## Project Snapshot
+## Repository Overview
 
-- Project: `peewee-aio`
-- Purpose: async support layer for Peewee ORM
-- Language: Python (`>=3.10,<4`)
-- Package manager + runner: `uv`
-- Core package: `peewee_aio/`
-- Tests: `tests/` (pytest, async backends)
+- **Project:** `peewee-aio` — async support layer for Peewee ORM
+- **Language:** Python (`>=3.10,<4`), package manager `uv`
+- **Core:** `peewee_aio/` — `manager.py`, `model.py`, `fields.py`, `databases.py`, `utils.py`,
+  `types.py`
+- **Tests:** `tests/` — pytest with asyncio/trio backends; shared fixtures in `tests/conftest.py`
+- **Config:** `pyproject.toml` (pytest, ruff, pyrefly); `Makefile`
+  (dev + release targets); `.pre-commit-config.yaml`
 
-## Repository Layout
+## Safe Validation Commands
 
-- `peewee_aio/manager.py`: async manager, query execution wrappers, table lifecycle
-- `peewee_aio/model.py`: async model/query classes and overrides
-- `peewee_aio/fields.py`: typed field shims and async foreign key accessors
-- `peewee_aio/databases.py`: sync-guarded Peewee DB wrappers
-- `peewee_aio/utils.py`: small query helper utilities
-- `tests/`: integration-heavy pytest suite across sqlite/mysql/postgres + asyncio/trio
-- `pyproject.toml`: tool config (pytest, ruff, pyrefly, build backend)
-- `Makefile`: common dev commands and release helpers
-- `.pre-commit-config.yaml`: commit, lint, format, typing, and pre-push test hooks
+- `uv run ruff check` / `uv run ruff format`
+- `uv run pyrefly check`
+- `uv run pytest tests/test_base.py` — single file
+- `uv run pytest tests/test_base.py::test_databases` — single function
+- `uv run pytest tests -k <pattern>` — filter by expression
+- `uv run pytest tests` — full suite (needs `docker start postgres mysql`)
+- `uv run uv check` — verify lockfile metadata
 
-## Environment Setup
+## High-Risk Commands — Avoid Unless Instructed
 
-1. Install dependencies:
-   - `uv sync --locked --all-extras --dev`
-2. Install git hooks:
-   - `uv run pre-commit install`
-3. Optional (matches `make test` behavior): start local databases:
-   - `docker start postgres mysql`
+- `make release` / `patch` / `minor` / `major` — version bump, tag, merge, push (maintainer-only)
+- `git push`, `git tag`, `git merge main` — get explicit user approval first
+- `docker stop postgres mysql`, `rm -rf .venv` — destructive; prefer `uv sync`
 
-If `--locked` fails after dependency edits, run:
-- `uv lock`
+## Files and Directories to Avoid
 
-## Build, Lint, Typecheck, Test
+- `uv.lock` — auto-generated; update via `uv lock`
+- `CHANGELOG.md` — maintained by release process
+- `.git-commits.yaml` — commit convention whitelist
+- `.github/workflows/tests.yml` — CI definition
 
-Primary commands (prefer these):
+## Editing Guidelines
 
-- Full test suite:
-  - `uv run pytest tests`
-  - or `make test`
-- Single test file:
-  - `uv run pytest tests/test_base.py`
-- Single test function (important):
-  - `uv run pytest tests/test_base.py::test_databases`
-- Filter by test name expression:
-  - `uv run pytest tests -k databas`
-- Type checking:
-  - `uv run pyrefly check`
-  - or `make types`
-- Lint:
-  - `uv run ruff check`
-- Format:
-  - `uv run ruff format`
-- Verify lockfile metadata:
-  - `uv run uv check`
+- `from __future__ import annotations` at the top of every module
+- Import order: stdlib → third-party → local; explicit only; `import peewee as pw`
+- `ruff format` is source of truth; max line length 100
+- Typed codebase: built-in generics (`list[T]`), precise types over `Any`, `TYPE_CHECKING` guards,
+  `# type: ignore[...]` OK for Peewee internals
+- Naming: `snake_case` modules/functions/variables, `PascalCase` classes,
+  type vars `TV`/`TVModel`/`TVAIOModel`, tests `test_*.py`/`test_*`
+- Favor async APIs (`Manager`, `AIOModel`); no sync Peewee outside `manager.allow_sync()`
+- Guard clauses and early returns; specific exceptions
+  (`DoesNotExist`, `RuntimeError`, `ValueError`);
+  preserve `__exception_wrapper__`; avoid broad `except Exception`
+- Reuse `tests/conftest.py` fixtures
+  (`manager`, `transaction`, `schema`); backend-aware tests; async test functions directly
 
-Notes:
+## Repo-Specific Notes
 
-- `pytest` default options come from `pyproject.toml` (`-xsv`, `log_cli=true`).
-- Some tests require running MySQL/PostgreSQL services.
-- Pre-push hook runs `uv run pytest tests`.
+- Ruff lint: `select = ["ALL"]` with curated ignores in `pyproject.toml`
+- Conventional commits enforced: `feat`, `fix`, `perf`, `refactor`, `style`, `test`, `build`, `ops`,
+  `docs`, `merge`
+- Pre-push hook runs `uv run pytest tests`;
+  CI runs across Python 3.10–3.14 with MySQL and Postgres services
+- If `uv sync --locked` fails after dependency edits, run `uv lock`
 
-## CI Expectations
+## Good Defaults for Agents
 
-GitHub Actions (`.github/workflows/tests.yml`) runs:
-
-1. `uv sync --locked --all-extras --dev`
-2. `uv run ruff check`
-3. `uv run pyrefly check`
-4. `uv run pytest tests`
-
-It tests Python 3.10-3.14 and starts MySQL/Postgres services.
-
-## Code Style and Conventions
-
-### Imports
-
-- Keep `from __future__ import annotations` at the top of Python modules.
-- Group imports in order:
-  1) stdlib
-  2) third-party
-  3) local package imports
-- Use explicit imports; avoid wildcard imports.
-- Prefer module aliases only when conventional (`import peewee as pw`).
-
-### Formatting
-
-- Use `ruff format` output as source of truth.
-- Max line length: 100 (configured in Ruff).
-- Keep code compact; add vertical spacing for logical blocks.
-- Avoid adding comments unless the logic is non-obvious.
-
-### Typing
-
-- This is a typed codebase; preserve and improve typing when editing.
-- Use built-in generics (`list[T]`, `dict[K, V]`, `type[T]`) on Python 3.10+.
-- Prefer precise return types over `Any`; use `Any` only for dynamic boundaries.
-- Use overloads where API surface is polymorphic.
-- Keep `TYPE_CHECKING` imports and typing-only helpers behind guards.
-- When interacting with Peewee internals, targeted `# type: ignore[...]` is accepted.
-
-### Naming
-
-- Modules/functions/variables: `snake_case`.
-- Classes/types: `PascalCase`.
-- Type variables follow existing pattern (`TV`, `TVModel`, `TVAIOModel`).
-- Test files: `test_*.py`; test functions: `test_*`.
-
-### Async and Query Patterns
-
-- Favor async APIs exposed by `Manager` and `AIOModel`.
-- Do not introduce sync Peewee operations unless wrapped in `manager.allow_sync()`.
-- For selects, prefer existing await/iteration patterns used by `AIOModelSelect`.
-- Keep query/result conversion behavior consistent with `manager.process()` and `Constructor`.
-
-### Error Handling
-
-- Use guard clauses and early returns to reduce nesting.
-- Raise specific exceptions already used by project APIs (`DoesNotExist`, `RuntimeError`, `ValueError`).
-- Preserve Peewee exception wrapping behavior (`__exception_wrapper__`).
-- Avoid broad `except Exception`; catch expected concrete exceptions.
-
-### Testing Conventions
-
-- Reuse fixtures from `tests/conftest.py` (`manager`, `transaction`, `schema`).
-- Keep tests backend-aware; avoid hardcoding assumptions for a single driver.
-- For async tests, follow existing pytest-aio style (async test functions directly).
-- Prefer assertions on behavior and returned model objects over implementation details.
-
-## Lint Rules Snapshot
-
-- Ruff lint uses `select = ["ALL"]` with a curated ignore list in `pyproject.toml`.
-- Do not assume strict docstring/type-annotation enforcement for every symbol.
-- Keep new code compliant with active rules; run `ruff check` locally.
-
-## Commit and Hook Conventions
-
-- Conventional commits are enforced via pre-commit commit-msg hook.
-- Allowed commit types include:
-  - `feat`, `fix`, `perf`, `refactor`, `style`, `test`, `build`, `ops`, `docs`, `merge`
-- Before finishing substantial changes, run:
-  1) `uv run ruff check`
-  2) `uv run pyrefly check`
-  3) `uv run pytest tests` (or targeted subset while iterating)
-
-## Cursor/Copilot Rules
-
-No repository-specific Cursor or Copilot instruction files were found:
-
-- `.cursorrules`: not present
-- `.cursor/rules/`: not present
-- `.github/copilot-instructions.md`: not present
-
-If these files are added later, update this guide and follow them as highest-priority repo rules.
+- Read relevant source and tests before editing
+- After changes: `uv run ruff check`, `uv run pyrefly check`, targeted `uv run pytest`
+- Do not commit or push unless explicitly instructed
+- Keep changes focused; avoid unrelated refactors
