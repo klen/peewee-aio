@@ -258,11 +258,13 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await self._manager.delete_instance(self, **kwargs)
 
     @overload
-    def fetch(self, fk: AIOForeignKeyField[Coroutine[None, None, TV]], *, silent: bool) -> TV: ...
+    def fetch(
+        self, fk: AIOForeignKeyField[Coroutine[None, None, TV]], *, silent: bool = False
+    ) -> TV: ...
 
     @overload
     def fetch(
-        self, fk: AIODeferredForeignKey[Coroutine[None, None, TV]], *, silent: bool
+        self, fk: AIODeferredForeignKey[Coroutine[None, None, TV]], *, silent: bool = False
     ) -> TV: ...
 
     def fetch(self, fk, *, silent: bool = False):
