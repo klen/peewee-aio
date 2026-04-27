@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `AIOModel.fetch` now accepts a `silent=False` parameter. When `silent=True`, returns `None` instead of raising `ValueError` if the relation is not loaded.
+
+### Fixed
+
+- `AIOModel.fetch` correctly distinguishes a missing FK key (partial select) from a `NULL` value. Missing keys now raise `ValueError` as documented.
+
+### Changed
+
+- Suppressed noisy MySQL warnings (`Table already exists`, `Unknown table`) and `trio_mysql` `ResourceWarning` in test output via pytest `filterwarnings`.
+
 ## [3.0.0] - 2026-03-16
 
 - Do not automatically convery ForeignKeyField to AIOForeignKeyField,
