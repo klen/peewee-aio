@@ -260,12 +260,12 @@ class AIOModel(Model, metaclass=AIOModelBase):
     @overload
     def fetch(
         self, fk: AIOForeignKeyField[Coroutine[None, None, TV]], *, silent: bool = False
-    ) -> TV | None: ...
+    ) -> TV: ...
 
     @overload
     def fetch(
         self, fk: AIODeferredForeignKey[Coroutine[None, None, TV]], *, silent: bool = False
-    ) -> TV | None: ...
+    ) -> TV: ...
 
     def fetch(self, fk, *, silent: bool = False):
         """Get fk relation from the given instance cache. Raise ValueError if not loaded."""
