@@ -258,12 +258,29 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await self._manager.delete_instance(self, **kwargs)
 
     @overload
-    def fetch(self, fk: AIOForeignKeyField[Coroutine[None, None, TV]]) -> TV: ...
+    def fetch(
+        self, fk: AIOForeignKeyField[Coroutine[None, None, TV]], *, silent: Literal[False] = False
+    ) -> TV: ...
 
     @overload
-    def fetch(self, fk: AIODeferredForeignKey[Coroutine[None, None, TV]]) -> TV: ...
+    def fetch(
+        self,
+        fk: AIODeferredForeignKey[Coroutine[None, None, TV]],
+        *,
+        silent: Literal[False] = False,
+    ) -> TV: ...
 
-    def fetch(self, fk):
+    @overload
+    def fetch(
+        self, fk: AIOForeignKeyField[Coroutine[None, None, TV]], *, silent: Literal[True]
+    ) -> TV | None: ...
+
+    @overload
+    def fetch(
+        self, fk: AIODeferredForeignKey[Coroutine[None, None, TV]], *, silent: Literal[True]
+    ) -> TV | None: ...
+
+    def fetch(self, fk, *, silent: bool = False):
         """Get fk relation from the given instance cache. Raise ValueError if not loaded."""
 
         attr = fk.name
@@ -271,10 +288,16 @@ class AIOModel(Model, metaclass=AIOModelBase):
         if attr in relations:
             return relations[attr]
 
-        value = self.__data__.get(attr)
-        if value is None:
+        if attr not in self.__data__:
+            if silent:
+                return None
+            raise ValueError(f"Relation {attr} is not loaded into {self!r}") from None
+
+        if self.__data__[attr] is None:
             return None
 
+        if silent:
+            return None
         raise ValueError(f"Relation {attr} is not loaded into {self!r}") from None
 
     # Support await syntax
