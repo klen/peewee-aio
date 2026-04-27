@@ -55,7 +55,7 @@ release:
 	@VERSION="$$(uv version --short)"; \
 		git push origin $(MAIN_BRANCH); \
 		git tag -a "$$VERSION" -m "$$VERSION"; \
-		git push origin "$$VERSION"
+		git push origin tag "$$VERSION"
 	git checkout $(DEV_BRANCH)
 	git merge $(MAIN_BRANCH)
 	git push origin $(DEV_BRANCH)
