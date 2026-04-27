@@ -258,27 +258,12 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await self._manager.delete_instance(self, **kwargs)
 
     @overload
+    def fetch(self, fk: AIOForeignKeyField[Coroutine[None, None, TV]], *, silent: bool) -> TV: ...
+
+    @overload
     def fetch(
-        self, fk: AIOForeignKeyField[Coroutine[None, None, TV]], *, silent: Literal[False] = False
+        self, fk: AIODeferredForeignKey[Coroutine[None, None, TV]], *, silent: bool
     ) -> TV: ...
-
-    @overload
-    def fetch(
-        self,
-        fk: AIODeferredForeignKey[Coroutine[None, None, TV]],
-        *,
-        silent: Literal[False] = False,
-    ) -> TV: ...
-
-    @overload
-    def fetch(
-        self, fk: AIOForeignKeyField[Coroutine[None, None, TV]], *, silent: Literal[True]
-    ) -> TV | None: ...
-
-    @overload
-    def fetch(
-        self, fk: AIODeferredForeignKey[Coroutine[None, None, TV]], *, silent: Literal[True]
-    ) -> TV | None: ...
 
     def fetch(self, fk, *, silent: bool = False):
         """Get fk relation from the given instance cache. Raise ValueError if not loaded."""
