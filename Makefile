@@ -31,17 +31,16 @@ example: $(VIRTUAL_ENV)
 #  Bump version
 # ==============
 
-VERSION	?= minor
+VPART	?= minor
 MAIN_BRANCH = main
-STAGE_BRANCH = develop
+DEV_BRANCH = develop
 
 .PHONY: release
-VPART?=minor
 # target: release - Bump version
 release:
 	git checkout $(MAIN_BRANCH)
 	git pull
-	git checkout $(STAGE_BRANCH)
+	git checkout $(DEV_BRANCH)
 	git pull
 	uvx bump-my-version bump $(VPART)
 	uv lock
@@ -49,15 +48,17 @@ release:
 		{ \
 			printf 'build(release): %s\n\n' "$$VERSION"; \
 			printf 'Changes:\n\n'; \
-			git log --oneline --pretty=format:'%s [%an]' $(MAIN_BRANCH)..$(STAGE_BRANCH) | grep -Evi 'github|^Merge' || true; \
-		} | git commit -a -F -; \
-		git tag -a "$$VERSION" -m "$$VERSION";
+			git log --oneline --pretty=format:'%s [%an]' $(MAIN_BRANCH)..$(DEV_BRANCH) | grep -Evi 'github|^Merge' || true; \
+		} | git commit -a -F -
 	git checkout $(MAIN_BRANCH)
-	git merge $(STAGE_BRANCH)
-	git checkout $(STAGE_BRANCH)
+	git merge $(DEV_BRANCH)
+	@VERSION="$$(uv version --short)"; \
+		git push origin $(MAIN_BRANCH); \
+		git tag -a "$$VERSION" -m "$$VERSION"; \
+		git push origin "$$VERSION"
+	git checkout $(DEV_BRANCH)
 	git merge $(MAIN_BRANCH)
-	@git -c push.followTags=false push origin $(STAGE_BRANCH) $(MAIN_BRANCH)
-	@git push --tags origin
+	git push origin $(DEV_BRANCH)
 	@echo "Release process complete for `uv version --short`"
 
 .PHONY: minor
