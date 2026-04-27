@@ -61,8 +61,12 @@ requires = ["uv_build>=0.9.7,<0.10.0"]
 build-backend = "uv_build"
 
 [tool.pytest.ini_options]
-addopts = "-xsv"
+addopts = "-xsv -W ignore::ResourceWarning"
 log_cli = true
+filterwarnings = [
+    "ignore::Warning:aiomysql",
+    "ignore::Warning:trio_mysql",
+]
 
 [tool.pyrefly]
 project-includes = ["peewee_aio/*.py"]
