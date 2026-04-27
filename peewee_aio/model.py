@@ -55,7 +55,7 @@ class AIOModelBase(ModelBase):
 
     def __new__(cls, name, bases, attrs):
         kls = super(AIOModelBase, cls).__new__(cls, name, bases, attrs)
-        meta = kls._meta
+        meta = kls._meta  # type: ignore[missing-attribute]
         if getattr(kls, "_manager", None) and not meta.database:
             meta.database = kls._manager.pw_database
 
