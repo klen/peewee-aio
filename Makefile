@@ -15,7 +15,7 @@ types: $(VIRTUAL_ENV)
 	@uv run pyrefly check
 
 .PHONY: lint
-lint: $(VIRTUAL_ENV) types
+lint: $(VIRTUAL_ENV)
 	@uv run ruff check
 
 outdated:
