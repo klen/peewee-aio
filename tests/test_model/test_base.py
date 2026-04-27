@@ -131,27 +131,92 @@ async def test_await_model():
     assert await test == test
 
 
-async def test_model_fetch():
+class _FetchUser(AIOModel):
+    id = fields.IntegerField()
+    name = fields.CharField()
 
-    class User(AIOModel):
+
+class _FetchComment(AIOModel):
+    id = fields.IntegerField()
+    text = fields.CharField()
+    user = fields.ForeignKeyField(_FetchUser, null=False)
+
+
+class _FetchNullableComment(AIOModel):
+    id = fields.IntegerField()
+    text = fields.CharField()
+    user = fields.ForeignKeyField(_FetchUser, null=True)
+
+
+async def test_model_fetch_from_cache():
+    user = _FetchUser(id=1, name="test")
+    comment = _FetchComment(id=1, text="test", user=user)
+
+    assert comment.fetch(_FetchComment.user) is user
+    assert comment.fetch(_FetchComment.user, silent=True) is user
+
+
+async def test_model_fetch_unsaved_instance():
+    new_user = _FetchUser(name="test")
+    comment = _FetchComment(id=1, text="test", user=new_user)
+
+    assert comment.fetch(_FetchComment.user) is new_user
+
+
+async def test_model_fetch_not_loaded_raises():
+    comment = _FetchComment(id=1, text="test", user_id=1)
+
+    with pytest.raises(ValueError, match="Relation user is not loaded into"):
+        comment.fetch(_FetchComment.user)
+
+
+async def test_model_fetch_silent():
+    comment = _FetchComment(id=1, text="test", user_id=1)
+    assert comment.fetch(_FetchComment.user, silent=True) is None
+
+    comment = _FetchComment.__new__(_FetchComment)
+    comment.__data__ = {"id": 1, "text": "test"}
+    comment.__rel__ = {}
+    assert comment.fetch(_FetchComment.user, silent=True) is None
+
+
+async def test_model_fetch_nullable():
+    comment = _FetchNullableComment(id=1, text="test", user=None)
+
+    assert comment.fetch(_FetchNullableComment.user) is None
+    assert comment.fetch(_FetchNullableComment.user, silent=True) is None
+
+
+async def test_model_fetch_missing_key():
+    comment = _FetchComment.__new__(_FetchComment)
+    comment.__data__ = {"id": 1, "text": "test"}
+    comment.__rel__ = {}
+
+    with pytest.raises(ValueError, match="Relation user is not loaded into"):
+        comment.fetch(_FetchComment.user)
+
+
+async def test_model_fetch_deferred(manager):
+    @manager.register
+    class Tag(AIOModel):
         id = fields.IntegerField()
         name = fields.CharField()
+        post = fields.DeferredForeignKey("Post", null=False)
 
-    class Comment(AIOModel):
+    @manager.register
+    class Post(AIOModel):
         id = fields.IntegerField()
-        text = fields.CharField()
-        user = fields.ForeignKeyField(User, null=False)
+        title = fields.CharField()
 
-    user = User(id=1, name="test")
-    comment = Comment(id=1, text="test", user=user)
+    assert isinstance(Tag.post, fields.AIOForeignKeyField)
 
-    test = comment.fetch(Comment.user)
-    assert test == user
+    post = Post(id=1, title="test")
+    tag = Tag(id=1, name="tag", post=post)
 
-    comment = Comment(id=1, text="test", user_id=1)
-    with pytest.raises(ValueError, match="Relation user is not loaded into"):
-        comment.fetch(Comment.user)
+    assert tag.fetch(Tag.post) is post
+    assert tag.fetch(Tag.post, silent=True) is post
 
-    new_user = User(name="test")
-    comment = Comment(id=1, text="test", user=new_user)
-    assert comment.fetch(Comment.user) is new_user
+    tag = Tag(id=1, name="tag", post_id=1)
+    with pytest.raises(ValueError, match="Relation post is not loaded into"):
+        tag.fetch(Tag.post)
+    assert tag.fetch(Tag.post, silent=True) is None
