@@ -7,18 +7,16 @@ from .conftest import DataModel
 
 
 async def test_create(schema):
-    from .conftest import DataModel  # type: ignore[]
 
-    Base = DataModel  # noqa: N806
+    class DM(DataModel):
+        class Meta:
+            table_name = "datamodel"
 
-    await Base.delete()
-
-    class DataModel(Base):  # type: ignore[no-redef,valid-type,misc]
         async def save(self, **kwargs):
             self.data += "-custom"
             return await super().save(**kwargs)
 
-    inst = await DataModel.create(data="data")
+    inst = await DM.create(data="data")
     assert inst
     assert inst.id
     assert inst.data == "data-custom"
@@ -75,7 +73,7 @@ async def test_insert_many(schema):
 async def test_insert_many_returning(schema, manager):
     qs = DataModel.insert_many([{"data": f"t{n}"} for n in range(1, 4)])
     qs = qs.returning(DataModel)
-    if manager.backend.db_type not in {"postgresql"}:
+    if manager.backend.db_type != "postgresql":
         return pytest.skip("only postgres is supported")
 
     res = await qs
@@ -101,12 +99,14 @@ async def test_bulk_update(schema):
     await DataModel.insert_many([{"data": f"t{n}"} for n in range(3)])
     instances = await DataModel.select()
 
-    for instance in instances:
+    for n, instance in enumerate(instances):
         instance.data = "updated"
+        instance.num = n + 1
 
-    await DataModel.bulk_update(instances, [DataModel.data], 2)
+    await DataModel.bulk_update(instances, [DataModel.data, DataModel.num], 2)
     async for instance in DataModel.select():
         assert instance.data == "updated"
+        assert instance.num is not None
 
 
 async def test_delete(schema):

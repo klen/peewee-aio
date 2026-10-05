@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from peewee_aio import AIOModel
-from peewee_aio.fields import AutoField, CharField
+from peewee_aio.fields import AutoField, CharField, IntegerField
 
 if TYPE_CHECKING:
     from peewee_aio.manager import Manager
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 class DataModel(AIOModel):
     id = AutoField()
     data = CharField()
+    num = IntegerField(null=True)
 
 
 @pytest.fixture(scope="session", autouse=True)

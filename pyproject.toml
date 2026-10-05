@@ -63,10 +63,7 @@ build-backend = "uv_build"
 [tool.pytest.ini_options]
 addopts = "-xsv -W ignore::ResourceWarning"
 log_cli = true
-filterwarnings = [
-    "ignore::Warning:aiomysql",
-    "ignore::Warning:trio_mysql",
-]
+filterwarnings = ["ignore::Warning:aiomysql", "ignore::Warning:trio_mysql"]
 
 [tool.pyrefly]
 project-includes = ["peewee_aio/*.py"]
@@ -96,22 +93,24 @@ exclude = [".venv", "docs", "examples"]
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  "ARG",
-  "D",
-  "UP",
+  "A003",
   "ANN",
+  "ARG",
+  "COM812",
+  "CPY",
+  "D",
   "DJ",
   "EM",
-  "RSE",
-  "SLF",
-  "RET",
-  "S101",
-  "PLR2004",
-  "PLR0912",
   "N804",
-  "A003",
+  "PLR0912",
+  "PLR2004",
+  "PT001",
+  "RET",
+  "RSE",
+  "S101",
+  "SLF",
   "TRY003",
-  "COM812",
+  "UP",
 ]
 
 [tool.bumpversion]

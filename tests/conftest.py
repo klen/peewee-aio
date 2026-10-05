@@ -84,15 +84,20 @@ def db_url(backend, aiolib):
 @pytest.fixture(scope="session")
 async def manager(db_url):
 
-    async with Manager(db_url) as manager, manager.connection():
-        yield manager
+    async with Manager(db_url) as manager:
+        async with manager.connection():
+            yield manager
+
+        # Drop tables using a fresh connection: by the time this runs the
+        # connection context above may already be gone (pytest-aio reuses one
+        # runner across fixtures), which would leave `current_conn` empty.
+        async with manager.connection():
+            await manager.drop_tables(safe=True)
 
 
 @pytest.fixture(scope="session")
 async def schema(manager):
     await manager.create_tables()
-    yield True
-    await manager.drop_tables()
 
 
 @pytest.fixture

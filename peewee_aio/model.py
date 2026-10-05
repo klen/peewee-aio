@@ -192,7 +192,10 @@ class AIOModel(Model, metaclass=AIOModelBase):
                     if not isinstance(value, Node):
                         value = field.to_value(value)
                     accum.append((pk.to_value(model._pk), value))
-                update[field] = Case(pk, accum)
+                # The ELSE branch is unreachable (every row is in `accum`) but it gives
+                # the CASE expression the column's type, otherwise Postgres infers
+                # untyped THEN parameters as `text` and rejects the assignment.
+                update[field] = Case(pk, accum, default=field)
 
             n += cast("int", await cls.update(update).where(cls._meta.primary_key.in_(id_list)))
 
