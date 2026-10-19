@@ -144,6 +144,40 @@ with manager.allow_sync():
     Test.update(data="new-test").execute()
 ```
 
+### Late initialization
+
+`Manager` needs the database URL in `__init__`, but models don't need a manager
+when they are declared. Declare them first, then create the manager and
+register the models (the URL can come from config or env at any point):
+
+```python
+from peewee_aio import AIOModel, Manager, fields
+
+
+class Base(AIOModel):
+    pass
+
+
+class Role(Base):
+    name = fields.CharField()
+
+
+class User(Base):
+    name = fields.CharField()
+    role = fields.ForeignKeyField(Role, null=True)
+
+
+# Later, when the URL is known
+manager = Manager(db_url)
+
+for model in (Role, User):
+    manager.register(model)
+```
+
+`register()` sets both `Model._manager` and `Model._meta.database`, so neither a
+`peewee.DatabaseProxy` nor a manager subclass is needed. `Model._manager =
+manager` alone is not enough.
+
 ### Get prefetched relations
 
 TODO
