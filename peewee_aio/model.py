@@ -426,8 +426,8 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
     async def scalars(self) -> list[Any]:  # type: ignore[bad-override]
         return [row[0] for row in await self.tuples()]
 
-    async def count(self) -> int:  # type: ignore[bad-override]
-        return await self.manager.count(self)
+    async def count(self, *, clear_limit: bool = False) -> int:  # type: ignore[bad-override]
+        return await self.manager.count(self, clear_limit=clear_limit)
 
     async def exists(self) -> bool:  # type: ignore[bad-override]
         clone: AIOModelSelect = self.columns(SQL("1"))

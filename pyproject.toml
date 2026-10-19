@@ -43,7 +43,6 @@ dev = [
   "pytest",
   "pyrefly",
   "pytest-aio[trio]",
-  "trio_asyncio",
   "aio-databases[aiopg, aiomysql, aiosqlite, asyncpg, trio_mysql]",
   "ruff",
   "pre-commit",
@@ -67,22 +66,6 @@ filterwarnings = ["ignore::Warning:aiomysql", "ignore::Warning:trio_mysql"]
 
 [tool.pyrefly]
 project-includes = ["peewee_aio/*.py"]
-
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-envlist = py310,py311,py312,py313,py314
-isolated_buiid = true
-
-[testenv]
-allowlist_externals = poetry
-skip_install = true
-commands_pre =
-    poetry install
-deps = -e .[dev]
-commands =
-    poetry run pytest tests --import-mode importlib
-"""
 
 [tool.ruff]
 include = ["peewee_aio/*.py"]

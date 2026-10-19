@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-import sys
 from uuid import uuid4
 
 import peewee as pw
@@ -16,7 +15,6 @@ CONNECTIONS = {
     "aiopg": "aiopg://test:test@localhost:5432/tests",
     "asyncpg": "asyncpg://test:test@localhost:5432/tests",
     "trio-mysql": "trio-mysql://root@127.0.0.1:3306/tests",
-    "triopg": "triopg://test:test@localhost:5432/tests",
 }
 BACKENDS = {
     "aiosqlite",
@@ -69,10 +67,7 @@ def backend(request):
 # Supported drivers/databases
 @pytest.fixture(scope="session")
 def db_url(backend, aiolib):
-    if backend == "trio-asyncio" and sys.version_info >= (3, 14):
-        return pytest.skip("trio-asyncio doesnt support python 3.14")
-
-    if aiolib[0] == "trio" and backend not in {"trio-mysql", "triopg"}:
+    if aiolib[0] == "trio" and backend != "trio-mysql":
         return pytest.skip("not supported by trio")
 
     if aiolib[0] == "asyncio" and backend not in {"aiosqlite", "aiomysql", "aiopg", "asyncpg"}:

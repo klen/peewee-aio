@@ -8,6 +8,7 @@ import peewee as pw
 
 if TYPE_CHECKING:
     from datetime import date, datetime, time
+    from decimal import Decimal
     from uuid import UUID
 
     from typing_extensions import Self  # py310
@@ -195,10 +196,12 @@ class DecimalField(GenericField[TV], pw.DecimalField):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[True], **kwargs) -> DecimalField[float | None]: ...
+        def __new__(cls, *args, null: Literal[True], **kwargs) -> DecimalField[Decimal | None]: ...
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> DecimalField[float]: ...
+        def __new__(
+            cls, *args, null: Literal[False] = False, **kwargs
+        ) -> DecimalField[Decimal]: ...
 
         def __new__(cls, *args, **kwargs) -> Any: ...
 
@@ -345,10 +348,14 @@ class TimestampField(GenericField[TV], pw.TimestampField):
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, *args, null: Literal[True], **kwargs) -> TimestampField[int | None]: ...
+        def __new__(
+            cls, *args, null: Literal[True], **kwargs
+        ) -> TimestampField[datetime | None]: ...
 
         @overload
-        def __new__(cls, *args, null: Literal[False] = False, **kwargs) -> TimestampField[int]: ...
+        def __new__(
+            cls, *args, null: Literal[False] = False, **kwargs
+        ) -> TimestampField[datetime]: ...
 
         def __new__(cls, *args, **kwargs) -> Any: ...
 
@@ -442,13 +449,7 @@ class FetchForeignKeyField(GenericField[TV], pw.ForeignKeyField):
 
     accessor_class = FetchForeignKeyAccessor
 
-    def __init__(
-        self: FetchForeignKeyField[TVAIOModel],
-        model: type[TVAIOModel],
-        *,
-        lazy_load: bool = True,
-        **kwargs,
-    ):
+    def __init__(self: FetchForeignKeyField[TVAIOModel], model: type[TVAIOModel], **kwargs):
         """Field has to be always prefetched."""
         super().__init__(model, lazy_load=False, **kwargs)
 

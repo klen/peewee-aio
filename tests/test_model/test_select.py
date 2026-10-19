@@ -201,3 +201,8 @@ async def test_first_applies_limit(manager, schema, monkeypatch):
     assert queries[0]._limit == 1
     assert "LIMIT" in queries[0].sql()[0]
     assert qs._limit is None
+
+
+async def test_count_clear_limit(data):
+    assert await DataModel.select().limit(1).count() == 1
+    assert await DataModel.select().limit(1).count(clear_limit=True) == len(data)
