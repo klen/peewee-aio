@@ -7,7 +7,7 @@ from peewee import JOIN, Expression, Model, ModelAlias, ModelSelect
 TSource = Union[type[Model], ModelAlias]
 
 
-def safe_join(  # noqa: PLR0913
+def safe_join(  # noqa: PLR0913, PLR0917
     query: ModelSelect,
     dest: TSource,
     join_type: str = JOIN.INNER,
@@ -19,7 +19,8 @@ def safe_join(  # noqa: PLR0913
 
     joins = query._joins.get(src)  # type: ignore[]
     if joins:
-        on, attr, constructor = query._normalize_join(src, dest, on, attr)  # type: ignore[]
+        # peewee >= 4.5 also returns a join context as the 4th value
+        on, attr, constructor = query._normalize_join(src, dest, on, attr)[:3]  # type: ignore[]
         for dest_, attr_, constructor_, _ in joins:
             if dest_ == dest and attr_ == attr and constructor_ == constructor:
                 return query

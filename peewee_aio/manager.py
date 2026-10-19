@@ -68,6 +68,13 @@ class Manager(Database):
         backend_options.setdefault("convert_params", True)
         super().__init__(url, logger=pw.logger, **backend_options)  # type: ignore[missing-attribute]
 
+        # aio-databases >= 1.8 drops isolation_level unless uri=True; keep sqlite autocommit
+        for backend in (self.backend, *self.replica_backends):
+            if backend.db_type == "sqlite":
+                backend.options.setdefault(
+                    "isolation_level", backend_options.get("isolation_level")
+                )
+
         self.models = WeakSet()
         self.pw_database = get_db(self)
 
@@ -258,7 +265,7 @@ class Manager(Database):
     async def get_or_none(
         self, model_cls: type[TVModel], *args: Node, **kwargs
     ) -> Optional[TVModel]:
-        query: ModelSelect = model_cls.select()
+        query: ModelSelect[TVModel] = model_cls.select()
         if kwargs:
             query = query.filter(**kwargs)
 
@@ -344,7 +351,7 @@ class Manager(Database):
         # Update
         elif pk_value is not None and not force_insert:
             if meta.composite_key:
-                for pk_part_name in pk_field.field_names:
+                for pk_part_name in pk_field.field_names:  # type: ignore[missing-attribute]
                     field_dict.pop(pk_part_name, None)
             else:
                 field_dict.pop(pk_field.name, None)
@@ -378,7 +385,7 @@ class Manager(Database):
                 else:
                     await self.execute(fk.model.delete().where(query))
 
-        return await self.execute(inst.delete().where(inst._pk_expr()))  # type: ignore[]
+        return await self.execute(inst.__class__.delete().where(inst._pk_expr()))  # type: ignore[]
 
 
 def identity(r):

@@ -263,7 +263,7 @@ class BitField(GenericField[TV], pw.BitField):
         def __new__(cls, *args, **kwargs) -> Any: ...
 
 
-class BigBitField(GenericField[TV], pw.BigBitField):
+class BigBitField(GenericField[TV], pw.BigBitField):  # type: ignore[inconsistent-inheritance]
     if TYPE_CHECKING:
 
         @overload

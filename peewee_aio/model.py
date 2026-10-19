@@ -91,15 +91,21 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return await cls._manager.drop_tables(cls, safe=safe, **kwargs)
 
     @classmethod
-    async def get_or_none(cls: type[TVAIOModel], *args: Node, **kwargs) -> TVAIOModel | None:
+    async def get_or_none(  # type: ignore[bad-override]
+        cls: type[TVAIOModel], *args: Node, **kwargs
+    ) -> TVAIOModel | None:
         return await cls._manager.get_or_none(cls, *args, **kwargs)
 
     @classmethod
-    async def get(cls: type[TVAIOModel], *args: Node, **kwargs) -> TVAIOModel:
+    async def get(  # type: ignore[bad-override]
+        cls: type[TVAIOModel], *args: Node, **kwargs
+    ) -> TVAIOModel:
         return await cls._manager.get(cls, *args, **kwargs)
 
     @classmethod
-    async def get_by_id(cls: type[TVAIOModel], pk) -> TVAIOModel:
+    async def get_by_id(  # type: ignore[bad-override]
+        cls: type[TVAIOModel], pk
+    ) -> TVAIOModel:
         return await cls._manager.get_by_id(cls, pk)
 
     @classmethod
@@ -133,7 +139,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
         field_names = list(meta.sorted_field_names)
         if meta.auto_increment:
-            pk_name = meta.primary_key.name
+            pk_name = cast("Field", meta.primary_key).name
             field_names.remove(pk_name)
 
         fields = [cls._meta.fields[field_name] for field_name in field_names]
@@ -180,7 +186,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         ]
 
         n = 0
-        pk = meta.primary_key
+        pk = cast("Field", meta.primary_key)
         batches = chunked(model_list, batch_size) if batch_size is not None else [model_list]
         for batch in batches:
             id_list = [model._pk for model in batch]
@@ -197,7 +203,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
                 # untyped THEN parameters as `text` and rejects the assignment.
                 update[field] = Case(pk, accum, default=field)
 
-            n += cast("int", await cls.update(update).where(cls._meta.primary_key.in_(id_list)))
+            n += cast("int", await cls.update(update).where(pk.in_(id_list)))  # type: ignore[]
 
         return n
 
@@ -205,11 +211,13 @@ class AIOModel(Model, metaclass=AIOModelBase):
     # ----------------
 
     @classmethod
-    def alias(cls: type[TVAIOModel], alias: str | None = None) -> AIOModelAlias[TVAIOModel]:
+    def alias(  # type: ignore[bad-override]
+        cls: type[TVAIOModel], alias: str | None = None
+    ) -> AIOModelAlias[TVAIOModel]:
         return AIOModelAlias(cls, alias)
 
     @classmethod
-    def select(
+    def select(  # type: ignore[bad-override]
         cls: type[TVAIOModel], *select: type[Model] | ColumnBase | Table | ModelAlias
     ) -> AIOModelSelect[TVAIOModel]:
         return AIOModelSelect(
@@ -248,7 +256,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
         return AIOModelRaw(cls, sql, params)
 
     @classmethod
-    def delete(cls: type[TVAIOModel]) -> AIOModelDelete[TVAIOModel]:
+    def delete(cls: type[TVAIOModel]) -> AIOModelDelete[TVAIOModel]:  # type: ignore[bad-override]
         return AIOModelDelete(cls)
 
     # Instance methods
@@ -420,7 +428,9 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
         clone._offset = None
         return bool(await clone.scalar())
 
-    async def get(self, *expressions, **filters) -> TVAIOModel:
+    async def get(  # type: ignore[bad-override]
+        self, *expressions, **filters
+    ) -> TVAIOModel:
         qs = self
 
         if expressions:
