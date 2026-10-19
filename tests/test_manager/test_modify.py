@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import asyncio
+from uuid import UUID
+
+import pytest
+
+from peewee_aio import AIOModel, fields
 from tests.conftest import Role, User, UserToRole
 
 
@@ -49,8 +55,6 @@ async def test_create(manager, transaction):
 
 
 async def test_create_uid(manager, transaction):
-    from uuid import UUID
-
     role = await manager.create(Role, name="admin")
     assert role
     assert role.id
@@ -109,3 +113,80 @@ async def test_delete(manager, transaction):
     assert res is None
 
     assert await manager.run(User.select())
+
+
+async def test_save_only_keeps_unsaved_fields_dirty(manager):
+    @manager.register
+    class DirtyUser(AIOModel):
+        name = fields.CharField()
+        num = fields.IntegerField(null=True)
+
+        class Meta:
+            only_save_dirty = True
+
+    await DirtyUser.drop_table(safe=True)
+    await DirtyUser.create_table()
+    try:
+        inst = await DirtyUser.create(name="a", num=1)
+        inst.name = "b"
+        inst.num = 2
+
+        await inst.save(only=[DirtyUser.name])
+
+        assert inst.is_dirty()
+        row = await DirtyUser.get_by_id(inst.id)
+        assert row.name == "b"
+        assert row.num == 1
+
+        await inst.save()
+
+        row = await DirtyUser.get_by_id(inst.id)
+        assert row.num == 2
+    finally:
+        await DirtyUser.drop_table(safe=True)
+
+
+async def test_save_on_conflict_ignore(manager):
+    @manager.register
+    class UniqueUser(AIOModel):
+        name = fields.CharField(unique=True)
+
+    await UniqueUser.drop_table(safe=True)
+    await UniqueUser.create_table()
+    try:
+        first = await UniqueUser.create(name="Mickey")
+
+        duplicate = UniqueUser(name="Mickey")
+        await duplicate.save(force_insert=True, on_conflict_ignore=True)
+
+        assert duplicate._pk is None
+        assert duplicate.is_dirty()
+        assert await UniqueUser.select().count() == 1
+        assert (await UniqueUser.get()).id == first.id
+    finally:
+        await UniqueUser.drop_table(safe=True)
+
+
+async def test_get_or_create_concurrent(manager):
+    if manager.backend.db_type != "postgresql":
+        pytest.skip("needs separate connections; in-memory sqlite has separate databases")
+
+    @manager.register
+    class RaceUser(AIOModel):
+        name = fields.CharField(unique=True)
+
+    await RaceUser.drop_table(safe=True)
+    await RaceUser.create_table()
+    try:
+
+        async def create():
+            async with manager.connection():
+                return await RaceUser.get_or_create(name="Mickey")
+
+        results = await asyncio.gather(create(), create())
+
+        assert sorted(created for _, created in results) == [False, True]
+        assert results[0][0].id == results[1][0].id
+        assert await RaceUser.select().count() == 1
+    finally:
+        await RaceUser.drop_table(safe=True)

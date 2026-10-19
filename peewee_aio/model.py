@@ -120,11 +120,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
     async def get_or_create(
         cls: type[TVAIOModel], defaults: dict[str, Any] | None = None, **kwargs
     ) -> tuple[TVAIOModel, bool]:
-        async with cls._manager.transaction():
-            try:
-                return (await cls.get(**kwargs), False)
-            except cls.DoesNotExist:
-                return (await cls.create(**dict(defaults or {}, **kwargs)), True)
+        return await cls._manager.get_or_create(cls, defaults, **kwargs)
 
     @classmethod
     async def create(cls: type[TVAIOModel], **kwargs) -> TVAIOModel:  # type: ignore[]
@@ -377,14 +373,23 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
     def __getitem__(self, value: slice) -> Coroutine[None, None, list[TVAIOModel]]: ...
 
     def __getitem__(self, value) -> Any:
-        limit, offset = 1, value
         if isinstance(value, slice):
-            limit, offset = value.stop - value.start, value.start
+            if value.step not in (None, 1):
+                raise IndexError("slice step is not supported")
 
-        query = self.limit(limit).offset(offset)
-        if limit == 1:
-            return query.get()
-        return query
+            start = value.start or 0
+            stop = value.stop
+            if start < 0 or (stop is not None and stop < 0):
+                raise IndexError("negative indexes are not supported")
+
+            query = self.offset(start)
+            if stop is not None:
+                query = query.limit(max(stop - start, 0))
+            return query
+
+        if value < 0:
+            raise IndexError("negative indexes are not supported")
+        return self.limit(1).offset(value).get()
 
     @overload
     async def peek(self, n: Literal[1] = 1) -> TVAIOModel | None: ...  # type: ignore[bad-override]

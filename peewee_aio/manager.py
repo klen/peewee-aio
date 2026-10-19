@@ -109,7 +109,8 @@ class Manager(Database):
                 return res
 
             if isinstance(query, Insert) and query._query_type == Insert.SIMPLE:  # type: ignore[]
-                return res[1]
+                # rowcount 0 means ON CONFLICT IGNORE wrote nothing; lastrowid is stale
+                return res[1] if res[0] else None
 
             return res[0]
 
@@ -299,17 +300,27 @@ class Manager(Database):
     async def get_or_create(
         self, model_cls: type[TVModel], defaults: Optional[dict] = None, **kwargs
     ) -> tuple[TVModel, bool]:
-        async with self.transaction():
-            try:
-                return (await self.get(model_cls, **kwargs), False)
-            except model_cls.DoesNotExist:  # type: ignore[]
-                return (
-                    await self.create(model_cls, **dict(defaults or {}, **kwargs)),
-                    True,
-                )
+        try:
+            async with self.transaction():
+                try:
+                    return (await self.get(model_cls, **kwargs), False)
+                except model_cls.DoesNotExist:  # type: ignore[]
+                    return (
+                        await self.create(model_cls, **dict(defaults or {}, **kwargs)),
+                        True,
+                    )
+        except IntegrityError:
+            # Another coroutine inserted the row between our SELECT and INSERT.
+            row = await self.get_or_none(model_cls, **kwargs)
+            if row is None:
+                raise
+            return (row, False)
 
     async def create(self, model_cls: type[TVModel], **values) -> TVModel:
         inst = model_cls(**values)
+        if isinstance(inst, AIOModel):
+            # Dispatch through AIOModel.save so model overrides keep working.
+            return await inst.save(force_insert=True)  # type: ignore[return-value]
         return await self.save(inst, force_insert=True)
 
     # Instance methods
@@ -370,8 +381,13 @@ class Manager(Database):
 
             if pk is not None and (meta.auto_increment or pk_value is None):
                 inst._pk = pk  # type: ignore[]
+                inst._dirty.discard(pk_field.name)  # type: ignore[]
 
-        inst._dirty.clear()  # type: ignore[]
+            if pk is None and on_conflict_ignore:
+                # Nothing was inserted: keep the fields dirty.
+                return inst
+
+        inst._dirty -= set(field_dict)  # only fields that were saved  # type: ignore[]
         return inst
 
     async def delete_instance(

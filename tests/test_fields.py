@@ -1,9 +1,9 @@
 import pytest
 
+from peewee_aio import AIOModel, fields
+
 
 async def test_fetchfk():
-    from peewee_aio import AIOModel, fields
-
     class User(AIOModel):
         id = fields.IntegerField()
         name = fields.CharField()
@@ -19,7 +19,7 @@ async def test_fetchfk():
 
     comment = Comment(id=1, text="test", user_id=user.id)
     with pytest.raises(RuntimeError):
-        comment.user
+        _ = comment.user
 
     user2 = User(name="test2")
     comment = Comment(id=1, text="test", user=user2)
@@ -27,8 +27,6 @@ async def test_fetchfk():
 
 
 async def test_aiofk():
-    from peewee_aio import AIOModel, fields
-
     class User(AIOModel):
         id = fields.IntegerField()
         name = fields.CharField()

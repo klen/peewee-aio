@@ -5,6 +5,9 @@ from typing import Any
 import peewee
 import pytest
 
+from peewee_aio import AIOModel
+from peewee_aio.model import AIOModelCompoundSelectQuery
+
 from .conftest import DataModel
 
 
@@ -47,24 +50,23 @@ async def test_select_items(data):
 
 
 async def test_get_or_create(schema):
-    from .conftest import DataModel  # type: ignore[]
-
-    Base = DataModel  # noqa: N806
-
     with pytest.raises(peewee.DatabaseError):
         inst, created = await DataModel.get_or_create(defaults={})
 
-    class DataModel(Base):  # type: ignore[no-redef,valid-type,misc]
+    class CustomModel(DataModel):
+        class Meta:
+            table_name = "datamodel"
+
         async def save(self, **kwargs):
             self.data += "-custom"
             return await super().save(**kwargs)
 
-    inst, created = await DataModel.get_or_create(data="data")
+    inst, created = await CustomModel.get_or_create(data="data")
     assert inst
     assert inst.data == "data-custom"
     assert created
 
-    inst2, created = await DataModel.get_or_create(data="data-custom")
+    inst2, created = await CustomModel.get_or_create(data="data-custom")
     assert inst2 == inst
     assert not created
 
@@ -89,8 +91,6 @@ async def test_get(data):
 
 
 async def test_prefetch(manager):
-    from peewee_aio import AIOModel
-
     @manager.register
     class BaseModel(AIOModel):
         data = peewee.CharField()
@@ -120,8 +120,6 @@ async def test_prefetch(manager):
 
 
 async def test_union(data):
-    from peewee_aio.model import AIOModelCompoundSelectQuery
-
     qs = (
         DataModel.select().where(DataModel.data == "t1")
         | DataModel.select().where(DataModel.data == "t2")
@@ -155,3 +153,22 @@ async def test_first(data):
 async def test_alias(data):
     alias = DataModel.alias()
     assert await alias.select(alias)
+
+
+async def test_select_slices(data):
+    qs = DataModel.select().order_by(DataModel.id)
+    t1 = await qs[0]
+
+    assert await qs[0:1] == [t1]
+    assert await qs[:2] == await qs[0:2]
+    assert len(await qs[1:]) == 2
+    assert await qs[2:1] == []
+
+    with pytest.raises(IndexError):
+        qs[-1]
+
+    with pytest.raises(IndexError):
+        qs[::2]
+
+    with pytest.raises(IndexError):
+        qs[-1:]
