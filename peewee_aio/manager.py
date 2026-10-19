@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from functools import cached_property
 from typing import (  # py39
     TYPE_CHECKING,
@@ -27,7 +27,6 @@ from peewee import (
     Context,
     Insert,
     IntegrityError,
-    InternalError,
     ModelRaw,
     ModelSelect,
     Node,
@@ -252,8 +251,7 @@ class Manager(Database):
 
             # Create indexes
             for query in schema._create_indexes(safe=safe):  # type: ignore[]
-                with suppress(OperationalError):
-                    await self.execute(query)
+                await self.execute(query)
 
     async def drop_tables(self, *models_cls: type[PWModel], **opts):
         """Drop tables for the given models or all registered with the manager."""
@@ -409,7 +407,6 @@ def identity(r):
 
 
 pw.EXCEPTIONS["UniqueViolationError"] = IntegrityError  # type: ignore[missing-attribute]
-pw.EXCEPTIONS["NotNullViolationError"] = InternalError  # type: ignore[missing-attribute]
 pw.EXCEPTIONS["DuplicateTableError"] = OperationalError  # type: ignore[missing-attribute]
 
 

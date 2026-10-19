@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from uuid import UUID
 
+import peewee
 import pytest
 
 from peewee_aio import AIOModel, fields
@@ -190,3 +191,58 @@ async def test_get_or_create_concurrent(manager):
         assert await RaceUser.select().count() == 1
     finally:
         await RaceUser.drop_table(safe=True)
+
+
+async def test_create_uses_model_save(manager):
+    @manager.register
+    class SaveUser(AIOModel):
+        data = fields.CharField()
+
+        async def save(self, **kwargs):
+            self.data += "-custom"
+            return await super().save(**kwargs)
+
+    await SaveUser.drop_table(safe=True)
+    await SaveUser.create_table()
+    try:
+        inst = await manager.create(SaveUser, data="data")
+        assert inst.data == "data-custom"
+
+        inst, created = await manager.get_or_create(SaveUser, data="other")
+        assert created
+        assert inst.data == "other-custom"
+    finally:
+        await SaveUser.drop_table(safe=True)
+
+
+async def test_create_table_index_error(manager):
+    if manager.backend.db_type != "mysql":
+        pytest.skip("MySQL only: key length error")
+
+    @manager.register
+    class LongIndex(AIOModel):
+        code = fields.CharField(max_length=1000, index=True)
+
+    await LongIndex.drop_table(safe=True)
+    try:
+        with pytest.raises(peewee.OperationalError):
+            await LongIndex.create_table()
+    finally:
+        await LongIndex.drop_table(safe=True)
+
+
+async def test_not_null_violation_is_integrity_error(manager):
+    if manager.backend.db_type != "postgresql":
+        pytest.skip("asyncpg maps NotNullViolationError through its base class")
+
+    @manager.register
+    class NotNullUser(AIOModel):
+        data = fields.CharField(null=False)
+
+    await NotNullUser.drop_table(safe=True)
+    await NotNullUser.create_table()
+    try:
+        with pytest.raises(peewee.IntegrityError):
+            await manager.create(NotNullUser, data=None)
+    finally:
+        await NotNullUser.drop_table(safe=True)

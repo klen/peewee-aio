@@ -18,7 +18,6 @@ Async support for [Peewee ORM](https://github.com/coleifer/peewee)
   - [aiomysql](https://github.com/aio-libs/aiomysql)
   - [aiopg](https://github.com/aio-libs/aiopg)
   - [asyncpg](https://github.com/MagicStack/asyncpg)
-  - [triopg](https://github.com/python-trio/triopg)
   - [trio_mysql](https://github.com/python-trio/trio-mysql)
 
 ## Requirements
@@ -41,110 +40,108 @@ pip install peewee-aio[aiomysql]    # for MySQL (asyncio)
 pip install peewee-aio[aiopg]       # for Postgresql (asyncio)
 pip install peewee-aio[asyncpg]     # for Postgresql (asyncio)
 pip install peewee-aio[trio_mysql]  # for MySQL (trio)
-pip install peewee-aio[triopg]      # for PostgresQL (trio)
 ```
 
 ### Quickstart
 
 ```python
-    import peewee
-    from peewee_aio import Manager, AIOModel, fields
+import peewee
+from peewee_aio import Manager, AIOModel, fields
 
-    manager = Manager('aiosqlite:///:memory:')
+manager = Manager("aiosqlite:///:memory:")
 
-    @manager.register
-    class Role(AIOModel):
-        # Pay attention that we are using fields from Peewee-AIO for better typing support
-        id = fields.AutoField()
-        name = fields.CharField()
 
-    @manager.register
-    class User(AIOModel):
+@manager.register
+class Role(AIOModel):
+    # Pay attention that we are using fields from Peewee-AIO for better typing support
+    id = fields.AutoField()
+    name = fields.CharField()
 
-        # Pay attention that we are using fields from Peewee-AIO for better typing support
-        id = fields.AutoField()
-        name = fields.CharField()
-        role = fields.ForeignKeyField(Role)
 
-    async def handler():
+@manager.register
+class User(AIOModel):
+    # Pay attention that we are using fields from Peewee-AIO for better typing support
+    id = fields.AutoField()
+    name = fields.CharField()
+    role = fields.ForeignKeyField(Role)
 
-        # Initialize the database's pool (optional)
-        async with manager:
 
-            # Acquire a connection
-            async with manager.connection():
+async def handler():
 
-                # Create the tables in database
-                await Role.create_table()
-                await User.create_table()
+    # Initialize the database's pool (optional)
+    async with manager:
+        # Acquire a connection
+        async with manager.connection():
+            # Create the tables in database
+            await Role.create_table()
+            await User.create_table()
 
-                # Create a record
-                role = await Role.create(name='user')
-                assert role
-                assert role.id  # role.id contains correct string type
-                user = await User.create(name="Andrey", role=role)
-                assert user
+            # Create a record
+            role = await Role.create(name="user")
+            assert role
+            assert role.id  # role.id contains correct string type
+            user = await User.create(name="Andrey", role=role)
+            assert user
+            assert user.id
+            role = await user.role  # Load role from DB using the foreign key
+            assert role  # role has a correct Role Type
+
+            # Iterate through records
+            async for user in User.select(User, Role).join(Role):
+                assert user  # user has a corrent User Type
                 assert user.id
-                role = await user.role  # Load role from DB using the foreign key
-                assert role  # role has a correct Role Type
+                role = await user.role  # No DB query here, because the fk is preloaded
 
-                # Iterate through records
-                async for user in User.select(User, Role).join(Role):
-                    assert user  # user has a corrent User Type
-                    assert user.id
-                    role = await user.role  # No DB query here, because the fk is preloaded
+            # Change records
+            user.name = "Dmitry"
+            await user.save()
 
-                # Change records
-                user.name = "Dmitry"
-                await user.save()
+            # Update records
+            await User.update({"name": "Anonimous"}).where(User.id == user.id)
 
-                # Update records
-                await User.update({"name": "Anonimous"}).where(User.id == user.id)
+            # Delete records
+            await User.delete().where(User.id == user.id)
 
-                # Delete records
-                await User.delete().where(User.id == user.id)
+            # Drop the tables in database
+            await User.drop_table()
+            await Role.drop_table()
 
-                # Drop the tables in database
-                await User.drop_table()
-                await Role.drop_table()
 
-    # Run the handler with your async library
-    import asyncio
+# Run the handler with your async library
+import asyncio
 
-    asyncio.run(handler())
+asyncio.run(handler())
 ```
 
 ## Usage
 
 ### Supported schemas
 
-- `aiomyql`
-- `aiomyql+pool`
+- `aiomysql`
+- `aiomysql+pool`
 - `aiopg`
 - `aiopg+pool`
 - `asyncpg`
 - `asyncpg+pool`
-- `aioodbc`
-- `aioodbc+pool`
 - `aiosqlite`
 - `trio-mysql`
-- `triopg`
 
 ### Sync usage
 
 The library still supports sync mode (use `manager.allow_sync`):
 
 ```python
-
 class Test(peewee.Model):
-  data = peewee.CharField()
+    data = peewee.CharField()
+
+
+manager.register(Test)
 
 with manager.allow_sync():
-  Test.create_table()
-  Test.create(data='test')
-  assert Test.select().count()
-  Test.update(data='new-test').execute()
-
+    Test.create_table()
+    Test.create(data="test")
+    assert Test.select().count()
+    Test.update(data="new-test").execute()
 ```
 
 ### Get prefetched relations
@@ -154,8 +151,7 @@ TODO
 ```python
 # We prefetched roles here
 async for user in User.select(User, Role).join(Role):
-  role = user.fetch(User.role)  # get role from user relations cache
-
+    role = user.fetch(User.role)  # get role from user relations cache
 ```
 
 ## Bug tracker

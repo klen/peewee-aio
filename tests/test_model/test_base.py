@@ -220,3 +220,18 @@ async def test_model_fetch_deferred(manager):
     with pytest.raises(ValueError, match="Relation post is not loaded into"):
         tag.fetch(Tag.post)
     assert tag.fetch(Tag.post, silent=True) is None
+
+
+async def test_meta_inheritance():
+    class Base(AIOModel):
+        class Meta:
+            only_save_dirty = True
+            temporary = True
+            table_settings = "ENGINE=InnoDB"
+
+    class Child(Base):
+        pass
+
+    assert Child._meta.only_save_dirty
+    assert Child._meta.temporary
+    assert Child._meta.table_settings == "ENGINE=InnoDB"

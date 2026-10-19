@@ -172,3 +172,32 @@ async def test_select_slices(data):
 
     with pytest.raises(IndexError):
         qs[-1:]
+
+
+async def test_get_or_none(data):
+    source = data[0]
+
+    inst = await DataModel.select().where(DataModel.id == source.id).get_or_none()
+    assert inst == source
+
+    inst = await DataModel.select().where(DataModel.id == 999).get_or_none()
+    assert inst is None
+
+
+async def test_first_applies_limit(manager, schema, monkeypatch):
+    queries = []
+    fetchone = manager.fetchone
+
+    async def spy(query, *args, **kwargs):
+        queries.append(query)
+        return await fetchone(query, *args, **kwargs)
+
+    monkeypatch.setattr(manager, "fetchone", spy)
+
+    qs = DataModel.select()
+    await qs.first()
+
+    assert queries
+    assert queries[0]._limit == 1
+    assert "LIMIT" in queries[0].sql()[0]
+    assert qs._limit is None

@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 
 
 class AIOModelBase(ModelBase):
-    inheritable = ModelBase.inheritable & {"manager"}
+    inheritable = ModelBase.inheritable | {"manager"}
 
     def __new__(cls, name, bases, attrs):
         kls = super(AIOModelBase, cls).__new__(cls, name, bases, attrs)
@@ -398,9 +398,11 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
     async def peek(self, n: int) -> list[TVAIOModel]: ...
 
     async def peek(self, n: int = 1) -> Any:
+        limit = self._limit
+        query = self if limit is not None and limit <= n else self.limit(n)
         if n == 1:
-            return await self.manager.fetchone(self)
-        return await self.manager.fetchmany(n, self)
+            return await self.manager.fetchone(query)
+        return await self.manager.fetchmany(n, query)
 
     @overload
     async def first(self, n: Literal[1] = 1) -> TVAIOModel | None: ...  # type: ignore[bad-override]
@@ -452,6 +454,14 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
                 % (self.model, sql, params)
             )
         return res
+
+    async def get_or_none(  # type: ignore[bad-override]
+        self, *expressions, **filters
+    ) -> TVAIOModel | None:
+        try:
+            return await self.get(*expressions, **filters)
+        except self.model.DoesNotExist:
+            return None
 
     if TYPE_CHECKING:
         _returning: tuple[ColumnBase, ...] | None
