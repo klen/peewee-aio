@@ -34,6 +34,13 @@ async def test_select(data):
     assert await DataModel.select(peewee.fn.MAX(DataModel.id)).scalar()
 
 
+async def test_raw(data, manager):
+    inst = data[0]
+    param = manager.pw_database.param
+    res = await DataModel.raw(f"SELECT * FROM datamodel WHERE id = {param}", inst.id)  # noqa: S608
+    assert res == [inst]
+
+
 async def test_select_items(data):
     qs = DataModel.select()
     t1 = await qs[0]

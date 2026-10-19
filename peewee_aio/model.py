@@ -1,4 +1,4 @@
-"""TODO: To implement."""
+"""Async model classes and queries."""
 
 from __future__ import annotations
 
@@ -530,5 +530,5 @@ class AIOModelDelete(AIOQuery[TVAIOModel], TQuery, ModelDelete):
     pass
 
 
-class AIOModelRaw(AIOQuery[TVAIOModel], ModelRaw):
+class AIOModelRaw(ModelRaw, AIOQuery[TVAIOModel]):
     pass
