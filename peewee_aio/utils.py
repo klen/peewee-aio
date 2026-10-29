@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from typing import Optional, Union
-
 from peewee import JOIN, Expression, Model, ModelAlias, ModelSelect
 
-TSource = Union[type[Model], ModelAlias]
+TSource = type[Model] | ModelAlias
 
 
 def safe_join(  # noqa: PLR0913, PLR0917
     query: ModelSelect,
     dest: TSource,
     join_type: str = JOIN.INNER,
-    src: Optional[TSource] = None,
-    on: Optional[Expression] = None,
-    attr: Optional[str] = None,
+    src: TSource | None = None,
+    on: Expression | None = None,
+    attr: str | None = None,
 ) -> ModelSelect:
     """Join a model to a query if it is not already joined."""
 

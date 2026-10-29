@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-10-29
+
 ### Added
 
 - `AIOModel.fetch` now accepts a `silent=False` parameter. When `silent=True`, returns `None` instead of raising `ValueError` if the relation is not loaded.
@@ -17,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Python 3.11 is now the minimum supported version; Python 3.15 added to the test matrix.
+- Dropped `typing-extensions` dependency: `typing.Self`, `X | Y` and `X | None` annotations are used directly.
+- Runtime abstract types are imported from `collections.abc` instead of `typing`.
 - Suppressed noisy MySQL warnings (`Table already exists`, `Unknown table`) and `trio_mysql` `ResourceWarning` in test output via pytest `filterwarnings`.
 
 ## [3.0.0] - 2026-03-16

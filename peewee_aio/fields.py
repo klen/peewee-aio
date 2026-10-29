@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Coroutine, Generic, Literal, overload  # py39
+from collections.abc import Coroutine
+from typing import TYPE_CHECKING, Any, Generic, Literal, overload
 
 import peewee as pw
 
 if TYPE_CHECKING:
     from datetime import date, datetime, time
     from decimal import Decimal
+    from typing import Self
     from uuid import UUID
-
-    from typing_extensions import Self  # py310
 
     from .model import AIOModel
 

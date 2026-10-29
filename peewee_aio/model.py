@@ -2,19 +2,8 @@
 
 from __future__ import annotations
 
-from typing import (  # py39
-    TYPE_CHECKING,
-    Any,
-    AsyncIterator,
-    Callable,
-    Coroutine,
-    Generator,
-    Generic,
-    Iterable,
-    Literal,
-    cast,
-    overload,
-)
+from collections.abc import AsyncIterator, Callable, Coroutine, Generator, Iterable
+from typing import TYPE_CHECKING, Any, Generic, Literal, cast, overload
 
 from peewee import (
     SQL,
@@ -43,7 +32,7 @@ from peewee import (
 from .types import TV, TVAIOModel
 
 if TYPE_CHECKING:
-    from typing_extensions import Self  # py310
+    from typing import Self
 
     from peewee_aio.fields import AIODeferredForeignKey, AIOForeignKeyField
 
@@ -54,7 +43,7 @@ class AIOModelBase(ModelBase):
     inheritable = ModelBase.inheritable | {"manager"}
 
     def __new__(cls, name, bases, attrs):
-        kls = super(AIOModelBase, cls).__new__(cls, name, bases, attrs)
+        kls = super().__new__(cls, name, bases, attrs)
         meta = kls._meta  # type: ignore[missing-attribute]
         if getattr(kls, "_manager", None) and not meta.database:
             meta.database = kls._manager.pw_database
@@ -456,8 +445,7 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
         if res is None:
             sql, params = qs.sql()
             raise self.model.DoesNotExist(
-                "%s matching query does not exist:\n SQL: %s\n Params: %s"
-                % (self.model, sql, params)
+                f"{self.model} matching query does not exist:\n SQL: {sql}\n Params: {params}"
             )
         return res
 

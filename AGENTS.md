@@ -1,7 +1,7 @@
 # AGENTS Guide for peewee-aio
 
 - **Project:** `peewee-aio` — async support layer for Peewee ORM
-- **Language:** Python (`>=3.10,<4`), package manager `uv`
+- **Language:** Python (`>=3.11,<4`), package manager `uv`
 - **Core:** `peewee_aio/` — `manager.py`, `model.py`, `fields.py`, `databases.py`, `utils.py`,
   `types.py`
 - **Tests:** `tests/` — pytest with asyncio/trio backends; shared fixtures in `tests/conftest.py`

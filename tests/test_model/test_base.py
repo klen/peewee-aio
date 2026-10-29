@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from playhouse.test_utils import count_queries
@@ -43,7 +43,7 @@ async def test_backref(manager, schema):
 
     assert isinstance(source.ref_set, AIOModelSelect)
 
-    ref: Optional[Ref] = await Ref.create(data="ref", test=source)
+    ref: Ref | None = await Ref.create(data="ref", test=source)
     assert ref == await source.ref_set.first()
 
     # Load foreing keys
@@ -81,7 +81,7 @@ async def test_backref(manager, schema):
 async def test_fk(manager, schema):
     @manager.register
     class ParentModel(AIOModel):
-        child_id: Optional[int]
+        child_id: int | None
         child = fields.ForeignKeyField(DataModel, null=True, on_delete="CASCADE")
 
     assert isinstance(ParentModel.child, fields.AIOForeignKeyField)

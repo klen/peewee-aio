@@ -3,7 +3,7 @@ name = "peewee-aio"
 version = "3.4.0"
 description = "Async support for Peewee ORM"
 authors = [{ name = "Kirill Klenov", email = "horneds@gmail.com" }]
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 readme = "README.md"
 license = "MIT"
 keywords = ["peewee", "asyncio", "trio", "orm"]
@@ -13,18 +13,17 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Framework :: AsyncIO",
   "Framework :: Trio",
 ]
 dependencies = [
   "peewee",
   "aio-databases",
-  "typing-extensions ; python_full_version < '3.11'",
 ]
 
 [project.optional-dependencies]
@@ -70,7 +69,7 @@ project-includes = ["peewee_aio/*.py"]
 [tool.ruff]
 include = ["peewee_aio/*.py"]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 exclude = [".venv", "docs", "examples"]
 
 [tool.ruff.lint]
@@ -92,8 +91,8 @@ ignore = [
   "RSE",
   "S101",
   "SLF",
+  "TC003", # abc types stay at runtime: isinstance checks and user-facing annotations
   "TRY003",
-  "UP",
 ]
 
 [tool.bumpversion]

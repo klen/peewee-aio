@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
-from functools import cached_property
-from typing import (  # py39
-    TYPE_CHECKING,
-    Any,
+from collections.abc import (
     AsyncIterator,
     Callable,
     Coroutine,
     Generator,
     Iterator,
     Mapping,
-    Optional,
     Sequence,
-    Union,
-    overload,
 )
+from contextlib import contextmanager
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, overload
 from weakref import WeakSet
 
 import peewee as pw
@@ -52,7 +48,7 @@ class Manager(Database):
     """Manage database and models."""
 
     pw_database: PWDatabase
-    models: "WeakSet[type[PWModel]]"
+    models: WeakSet[type[PWModel]]
 
     def __init__(self, url: str, **backend_options):
         """Initialize dialect and database."""
@@ -163,13 +159,13 @@ class Manager(Database):
     # -------------
 
     @overload
-    def run(self, query: Union[Select, ModelRaw]) -> RunWrapper: ...
+    def run(self, query: Select | ModelRaw) -> RunWrapper: ...
 
     @overload
     def run(self, query: Query) -> Coroutine[Any, None, Any]:  # type: ignore[misc]
         ...
 
-    def run(self, query) -> Union[Coroutine[Any, None, Any], RunWrapper]:
+    def run(self, query) -> Coroutine[Any, None, Any] | RunWrapper:
         """Run the given Peewee ORM Query."""
         if isinstance(query, (Select, ModelRaw)) or getattr(query, "_returning", None):
             return RunWrapper(self, query)
@@ -267,9 +263,7 @@ class Manager(Database):
             ctx = schema._drop_table(**opts)  # type: ignore[]
             await self.execute(ctx)
 
-    async def get_or_none(
-        self, model_cls: type[TVModel], *args: Node, **kwargs
-    ) -> Optional[TVModel]:
+    async def get_or_none(self, model_cls: type[TVModel], *args: Node, **kwargs) -> TVModel | None:
         query: ModelSelect[TVModel] = model_cls.select()
         if kwargs:
             query = query.filter(**kwargs)
@@ -302,7 +296,7 @@ class Manager(Database):
         )
 
     async def get_or_create(
-        self, model_cls: type[TVModel], defaults: Optional[dict] = None, **kwargs
+        self, model_cls: type[TVModel], defaults: dict | None = None, **kwargs
     ) -> tuple[TVModel, bool]:
         try:
             async with self.transaction():
@@ -335,7 +329,7 @@ class Manager(Database):
         inst: TVModel,
         *,
         force_insert: bool = False,
-        only: Optional[Sequence] = None,
+        only: Sequence | None = None,
         on_conflict_ignore: bool = False,
     ) -> TVModel:
         field_dict = inst.__data__.copy()
@@ -464,9 +458,9 @@ class Constructor:
 
     def __init__(self, query: BaseQuery):
         self.query = query
-        self.processor: Optional[Callable] = None
+        self.processor: Callable | None = None
 
-    def __call__(self, res: Union[Mapping, Sequence[Mapping]]) -> Union[Any, Sequence[Any]]:
+    def __call__(self, res: Mapping | Sequence[Mapping]) -> Any | Sequence[Any]:
         """Process rows."""
         if not res:  # None or empty sequence
             return res
