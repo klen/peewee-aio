@@ -407,6 +407,8 @@ class AIOForeignKeyAccessor(pw.ForeignKeyAccessor):
 
 
 class AIOForeignKeyField(GenericField[TV], pw.ForeignKeyField):
+    """Foreign key whose accessor is awaitable: ``await instance.name``."""
+
     accessor_class = AIOForeignKeyAccessor
 
     if TYPE_CHECKING:
@@ -469,6 +471,11 @@ class FetchForeignKeyField(GenericField[TV], pw.ForeignKeyField):
 
 
 class AIODeferredForeignKey(pw.DeferredForeignKey, GenericField[TV]):
+    """Deferred foreign key for forward references.
+
+    Self references are not supported; use AIOForeignKeyField("self").
+    """
+
     def set_model(self, rel_model: type[AIOModel]):
         field = AIOForeignKeyField(rel_model, _deferred=True, **self.field_kwargs)
         self.model._meta.add_field(self.name, field)

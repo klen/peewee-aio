@@ -199,7 +199,13 @@ class Manager(Database):
         return await self.fetchval(query)
 
     async def prefetch(self, sq: Query, *subqueries, **kwargs) -> Any:
-        """Prefetch results for the given query and subqueries.."""
+        """Prefetch related objects for a query and its subqueries.
+
+        Runs the base query plus one query per subquery and populates relation
+        caches on the returned instances. Subqueries are matched in order and
+        can be model classes or select queries. ``prefetch_type`` selects the
+        strategy (`PREFETCH_TYPE.WHERE` by default).
+        """
         if not subqueries:
             return await self.run(sq)
 

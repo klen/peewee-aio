@@ -68,6 +68,8 @@ class AIOModelAlias(ModelAlias, Generic[TVAIOModel]):
 
 
 class AIOModel(Model, metaclass=AIOModelBase):
+    """Peewee model with awaitable class methods and queries."""
+
     if TYPE_CHECKING:
         _manager: Manager
         _meta: Metadata
@@ -275,7 +277,10 @@ class AIOModel(Model, metaclass=AIOModelBase):
     ) -> TV: ...
 
     def fetch(self, fk, *, silent: bool = False):
-        """Get fk relation from the given instance cache. Raise ValueError if not loaded."""
+        """Get a relation from the instance cache, raising ValueError if not loaded.
+
+        Pass ``silent=True`` to return None instead.
+        """
 
         attr = fk.name
         relations = self.__rel__
@@ -340,6 +345,7 @@ class BaseModelSelect(AIOQuery[TVAIOModel]):
     __sub__ = except_
 
     async def prefetch(self, *subqueries) -> list[TVAIOModel]:
+        """Prefetch related objects for this query; see ``Manager.prefetch``."""
         return await self.manager.prefetch(self, *subqueries)
 
 
