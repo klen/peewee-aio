@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import (
     AsyncIterator,
+    Awaitable,
     Callable,
     Coroutine,
     Generator,
@@ -11,7 +12,7 @@ from collections.abc import (
 )
 from contextlib import contextmanager
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 from weakref import WeakSet
 
 import peewee as pw
@@ -41,7 +42,8 @@ from .databases import get_db
 from .model import AIOModel
 
 if TYPE_CHECKING:
-    from .types import TVModel
+    from .model import AIOModelSelect
+    from .types import TVAIOModel, TVModel
 
 
 class Manager(Database):
@@ -114,11 +116,42 @@ class Manager(Database):
         with process(query, params, raw=True) as (sql, props, _):
             return await super().fetchval(sql, *props, **opts)
 
+    @overload
+    async def fetchall(
+        self, query: AIOModelSelect[TVAIOModel], *params, raw: Literal[False] = False, **opts
+    ) -> list[TVAIOModel]: ...
+
+    @overload
+    async def fetchall(
+        self, query: ModelSelect[TVModel], *params, raw: Literal[False] = False, **opts
+    ) -> list[TVModel]: ...
+
+    @overload
+    async def fetchall(self, query: Any, *params, raw: bool = False, **opts) -> Any: ...
+
     async def fetchall(self, query: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch all."""
         with process(query, params, raw=raw) as (sql, props, constructor):
             res = await super().fetchall(sql, *props, **opts)
             return constructor(res)
+
+    @overload
+    async def fetchmany(
+        self,
+        size: int,
+        query: AIOModelSelect[TVAIOModel],
+        *params,
+        raw: Literal[False] = False,
+        **opts,
+    ) -> list[TVAIOModel]: ...
+
+    @overload
+    async def fetchmany(
+        self, size: int, query: ModelSelect[TVModel], *params, raw: Literal[False] = False, **opts
+    ) -> list[TVModel]: ...
+
+    @overload
+    async def fetchmany(self, size: int, query: Any, *params, raw: bool = False, **opts) -> Any: ...
 
     async def fetchmany(self, size: int, query: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch many of the size."""
@@ -126,13 +159,39 @@ class Manager(Database):
             res = await super().fetchmany(size, sql, *props, **opts)
             return constructor(res)
 
+    @overload
+    async def fetchone(
+        self, query: AIOModelSelect[TVAIOModel], *params, raw: Literal[False] = False, **opts
+    ) -> TVAIOModel | None: ...
+
+    @overload
+    async def fetchone(
+        self, query: ModelSelect[TVModel], *params, raw: Literal[False] = False, **opts
+    ) -> TVModel | None: ...
+
+    @overload
+    async def fetchone(self, query: Any, *params, raw: bool = False, **opts) -> Any: ...
+
     async def fetchone(self, query: Any, *params, raw: bool = False, **opts) -> Any:
         """Execute the given SQL and fetch one."""
         with process(query, params, raw=raw) as (sql, props, constructor):
             res = await super().fetchone(sql, *props, **opts)
             return constructor(res)
 
-    async def iterate(self, query: Any, *params, raw: bool = False, **opts) -> AsyncIterator:
+    @overload
+    def iterate(
+        self, query: AIOModelSelect[TVAIOModel], *params, raw: Literal[False] = False, **opts
+    ) -> AsyncIterator[TVAIOModel]: ...
+
+    @overload
+    def iterate(
+        self, query: ModelSelect[TVModel], *params, raw: Literal[False] = False, **opts
+    ) -> AsyncIterator[TVModel]: ...
+
+    @overload
+    def iterate(self, query: Any, *params, raw: bool = False, **opts) -> AsyncIterator[Any]: ...
+
+    async def iterate(self, query: Any, *params, raw: bool = False, **opts) -> AsyncIterator[Any]:
         """Execute the given SQL and iterate through results."""
         with process(query, params, raw=raw) as (sql, props, constructor):
             async for res in super().iterate(sql, *props, **opts):
@@ -165,7 +224,7 @@ class Manager(Database):
     def run(self, query: Query) -> Coroutine[Any, None, Any]:  # type: ignore[misc]
         ...
 
-    def run(self, query) -> Coroutine[Any, None, Any] | RunWrapper:
+    def run(self, query: BaseQuery) -> Coroutine[Any, None, Any] | RunWrapper:
         """Run the given Peewee ORM Query."""
         if isinstance(query, (Select, ModelRaw)) or getattr(query, "_returning", None):
             return RunWrapper(self, query)
@@ -296,7 +355,7 @@ class Manager(Database):
         )
 
     async def get_or_create(
-        self, model_cls: type[TVModel], defaults: dict | None = None, **kwargs
+        self, model_cls: type[TVModel], defaults: dict[str, Any] | None = None, **kwargs
     ) -> tuple[TVModel, bool]:
         try:
             async with self.transaction():
@@ -411,7 +470,9 @@ pw.EXCEPTIONS["DuplicateTableError"] = OperationalError  # type: ignore[missing-
 
 
 @contextmanager
-def process(query: Any, params: Sequence, *, raw: bool) -> Generator:
+def process(
+    query: Any, params: Sequence, *, raw: bool
+) -> Generator[tuple[str, Sequence, Callable], None, None]:
     constructor = identity
 
     if isinstance(query, BaseQuery):
@@ -434,13 +495,13 @@ class RunWrapper:
         self.manager = manager
         self.gen = self.manager.iterate(self.query)
 
-    def __aiter__(self) -> RunWrapper:
+    def __aiter__(self) -> AsyncIterator[Any]:
         return self
 
-    def __await__(self):
+    def __await__(self) -> Generator[Any, None, list[Any]]:
         return self.manager.fetchall(self.query).__await__()
 
-    def __anext__(self):
+    def __anext__(self) -> Awaitable[Any]:
         return self.gen.__anext__()
 
 

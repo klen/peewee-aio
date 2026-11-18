@@ -34,7 +34,7 @@ from .types import TV, TVAIOModel
 if TYPE_CHECKING:
     from typing import Self
 
-    from peewee_aio.fields import AIODeferredForeignKey, AIOForeignKeyField
+    from peewee_aio.fields import AIODeferredForeignKey, AIOForeignKeyField, GenericField
 
     from .manager import Manager
 
@@ -121,7 +121,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
     @classmethod
     async def bulk_create(  # type: ignore[bad-override]
         cls: type[TVAIOModel], model_list: Iterable[TVAIOModel], batch_size: int | None = None
-    ):
+    ) -> None:
         meta = cls._meta
 
         field_names = list(meta.sorted_field_names)
@@ -265,6 +265,9 @@ class AIOModel(Model, metaclass=AIOModelBase):
         self, fk: AIODeferredForeignKey[Coroutine[None, None, TV]], *, silent: bool = False
     ) -> TV: ...
 
+    @overload
+    def fetch(self, fk: GenericField[Coroutine[None, None, TV]], *, silent: bool = False) -> TV: ...
+
     def fetch(self, fk, *, silent: bool = False):
         """Get a relation from the instance cache, raising ValueError if not loaded.
 
@@ -300,6 +303,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
 
 class AIOQuery(Query, Generic[TVAIOModel]):
     model: type[TVAIOModel]
+    manager: Manager
 
     if TYPE_CHECKING:
         _order_by: tuple | None
@@ -344,7 +348,8 @@ class TQuery:
         _offset: int | None
         _where: Expression | None
         _order_by: tuple | None
-        _cte_list = tuple | None
+        _group_by: tuple | None
+        _having: Expression | None
 
         def select(self, *select: type[Model] | Node) -> Self: ...  # type: ignore[bad-override]
         def with_cte(self, *cte) -> Self: ...  # type: ignore[bad-override]
@@ -359,13 +364,13 @@ class TQuery:
 
 class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
     def __aiter__(self) -> AsyncIterator[TVAIOModel]:
-        return self.manager.run(self).__aiter__()  # type: ignore[return-value]
+        return self.manager.run(self).__aiter__()
 
     @overload
     def __getitem__(self, value: int) -> Coroutine[None, None, TVAIOModel]: ...
 
     @overload
-    def __getitem__(self, value: slice) -> Coroutine[None, None, list[TVAIOModel]]: ...
+    def __getitem__(self, value: slice) -> AIOModelSelect[TVAIOModel]: ...
 
     def __getitem__(self, value) -> Any:
         if isinstance(value, slice):
