@@ -392,7 +392,7 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
         return self.limit(1).offset(value).get()
 
     @overload
-    async def peek(self, n: Literal[1] = 1) -> TVAIOModel | None: ...  # type: ignore[bad-override]
+    async def peek(self, n: Literal[1] = 1) -> TVAIOModel | None: ...  # type: ignore[bad-override, overload-overlap]
 
     @overload
     async def peek(self, n: int) -> list[TVAIOModel]: ...
@@ -405,7 +405,7 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
         return await self.manager.fetchmany(n, query)
 
     @overload
-    async def first(self, n: Literal[1] = 1) -> TVAIOModel | None: ...  # type: ignore[bad-override]
+    async def first(self, n: Literal[1] = 1) -> TVAIOModel | None: ...  # type: ignore[bad-override, overload-overlap]
 
     @overload
     async def first(self, n: int) -> list[TVAIOModel]: ...
@@ -465,10 +465,16 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
     if TYPE_CHECKING:
         _returning: tuple[ColumnBase, ...] | None
 
-        def dicts(self, *, as_dict=True) -> AIOModelSelect[dict[str, Any]]: ...  # type: ignore[bad-override]
-        def tuples(self, *, as_tuples=True) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
-        def namedtuples(self, *field_names) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
-        def objects(self, constructor: Callable | None = None) -> AIOModelSelect[Any]: ...
+        def dicts(self, *, as_dict=True) -> AIOModelSelect[dict[str, Any]]: ...  # type: ignore[bad-override, type-var]
+        def tuples(self, *, as_tuples=True) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override, type-var]
+        def namedtuples(self, *field_names) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override, type-var]
+        @overload
+        def objects(self, constructor: None = None) -> AIOModelSelect[TVAIOModel]: ...
+
+        @overload
+        def objects(self, constructor: Callable[..., Any]) -> AIOModelSelect[Any]: ...
+
+        def objects(self, constructor=None) -> AIOModelSelect[Any]: ...
 
         columns: Callable[..., Self]
         distinct: Callable[..., Self]
@@ -480,7 +486,6 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
         join: Callable[..., Self]
         join_from: Callable[..., Self]
         lateral: Callable[..., Self]
-        objects: Callable[..., Self]
         select_extend: Callable[..., Self]
         switch: Callable[..., Self]
         window: Callable[..., Self]
@@ -493,9 +498,9 @@ class AIOModelCompoundSelectQuery(BaseModelSelect[TVAIOModel], TQuery, ModelComp
     if TYPE_CHECKING:
         filter: Callable[..., Self]
 
-        def dicts(self, *, as_dict=True) -> AIOModelSelect[dict[str, Any]]: ...  # type: ignore[bad-override]
-        def tuples(self, *, as_tuples=True) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
-        def namedtuples(self, *field_names) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override]
+        def dicts(self, *, as_dict=True) -> AIOModelSelect[dict[str, Any]]: ...  # type: ignore[bad-override, type-var]
+        def tuples(self, *, as_tuples=True) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override, type-var]
+        def namedtuples(self, *field_names) -> AIOModelSelect[tuple]: ...  # type: ignore[bad-override, type-var]
         def objects(self, constructor: Callable | None = None) -> AIOModelSelect[Any]: ...  # type: ignore[bad-override]
 
         columns: Callable[..., Self]
@@ -526,15 +531,27 @@ class AIOModelUpdateReturning(AIOModelUpdate[TVAIOModel]):
     if TYPE_CHECKING:
         _returning: tuple[ColumnBase, ...] | None
 
-        def __await__(self) -> Generator[Any, None, list[Any]]: ...  # type: ignore[bad-override]
+        def __await__(self) -> Generator[Any, None, list[TVAIOModel]]: ...  # type: ignore[bad-override, override]
 
 
 class AIOModelInsert(AIOQuery[TVAIOModel], TQuery, ModelInsert):
     if TYPE_CHECKING:
-        returning: Callable[..., AIOModelInsert[TVAIOModel]]
+        _returning: tuple[ColumnBase, ...] | None
+
+        def returning(self, *returning) -> AIOModelInsertReturning[TVAIOModel]: ...
+
         on_conflict: Callable[..., AIOModelInsert[TVAIOModel]]
         on_conflict_ignore: Callable[..., AIOModelInsert[TVAIOModel]]
         on_conflict_replace: Callable[..., AIOModelInsert[TVAIOModel]]
+
+
+class AIOModelInsertReturning(AIOModelInsert[TVAIOModel]):
+    """`returning()` switches the awaited result from rowcount to rows."""
+
+    if TYPE_CHECKING:
+        _returning: tuple[ColumnBase, ...] | None
+
+        def __await__(self) -> Generator[Any, None, list[TVAIOModel]]: ...
 
 
 class AIOModelDelete(AIOQuery[TVAIOModel], TQuery, ModelDelete):
@@ -552,7 +569,7 @@ class AIOModelDeleteReturning(AIOModelDelete[TVAIOModel]):
     if TYPE_CHECKING:
         _returning: tuple[ColumnBase, ...] | None
 
-        def __await__(self) -> Generator[Any, None, list[Any]]: ...  # type: ignore[bad-override]
+        def __await__(self) -> Generator[Any, None, list[TVAIOModel]]: ...  # type: ignore[bad-override, override]
 
 
 class AIOModelRaw(ModelRaw, AIOQuery[TVAIOModel]):
