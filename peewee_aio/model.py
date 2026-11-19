@@ -294,7 +294,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
     # Support await syntax
     # --------------------
 
-    def __await__(self):
+    def __await__(self) -> Generator[Any, None, Self]:
         return self.__anext__().__await__()
 
     async def __anext__(self):
