@@ -480,7 +480,6 @@ class AIOModelSelect(BaseModelSelect[TVAIOModel], TQuery, ModelSelect):
         join: Callable[..., Self]
         join_from: Callable[..., Self]
         lateral: Callable[..., Self]
-        objects: Callable[..., Self]
         select_extend: Callable[..., Self]
         switch: Callable[..., Self]
         window: Callable[..., Self]
@@ -526,15 +525,27 @@ class AIOModelUpdateReturning(AIOModelUpdate[TVAIOModel]):
     if TYPE_CHECKING:
         _returning: tuple[ColumnBase, ...] | None
 
-        def __await__(self) -> Generator[Any, None, list[Any]]: ...  # type: ignore[bad-override]
+        def __await__(self) -> Generator[Any, None, list[TVAIOModel]]: ...  # type: ignore[bad-override, override]
 
 
 class AIOModelInsert(AIOQuery[TVAIOModel], TQuery, ModelInsert):
     if TYPE_CHECKING:
-        returning: Callable[..., AIOModelInsert[TVAIOModel]]
+        _returning: tuple[ColumnBase, ...] | None
+
+        def returning(self, *returning) -> AIOModelInsertReturning[TVAIOModel]: ...
+
         on_conflict: Callable[..., AIOModelInsert[TVAIOModel]]
         on_conflict_ignore: Callable[..., AIOModelInsert[TVAIOModel]]
         on_conflict_replace: Callable[..., AIOModelInsert[TVAIOModel]]
+
+
+class AIOModelInsertReturning(AIOModelInsert[TVAIOModel]):
+    """`returning()` switches the awaited result from rowcount to rows."""
+
+    if TYPE_CHECKING:
+        _returning: tuple[ColumnBase, ...] | None
+
+        def __await__(self) -> Generator[Any, None, list[TVAIOModel]]: ...
 
 
 class AIOModelDelete(AIOQuery[TVAIOModel], TQuery, ModelDelete):
@@ -552,7 +563,7 @@ class AIOModelDeleteReturning(AIOModelDelete[TVAIOModel]):
     if TYPE_CHECKING:
         _returning: tuple[ColumnBase, ...] | None
 
-        def __await__(self) -> Generator[Any, None, list[Any]]: ...  # type: ignore[bad-override]
+        def __await__(self) -> Generator[Any, None, list[TVAIOModel]]: ...  # type: ignore[bad-override, override]
 
 
 class AIOModelRaw(ModelRaw, AIOQuery[TVAIOModel]):

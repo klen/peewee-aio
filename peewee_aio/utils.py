@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from typing import TypeAlias
+
 from peewee import JOIN, Expression, Model, ModelAlias, ModelSelect
 
-TSource = type[Model] | ModelAlias
+TSource: TypeAlias = type[Model] | ModelAlias
 
 
 def safe_join(  # noqa: PLR0913, PLR0917
