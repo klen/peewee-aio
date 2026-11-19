@@ -24,8 +24,8 @@ async def register_test_model(manager: Manager):
 
 @pytest.fixture()
 async def schema(manager: Manager):
+    cascade = manager.backend.db_type != "sqlite"
+    await DataModel.drop_table(safe=True, cascade=cascade)
     await DataModel.create_table()
     yield True
-    await DataModel.drop_table(
-        cascade=manager.backend.db_type != "sqlite",
-    )
+    await DataModel.drop_table(cascade=cascade)

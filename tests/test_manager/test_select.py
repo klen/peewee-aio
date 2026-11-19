@@ -7,6 +7,7 @@ from tests.conftest import Comment, Role, User, UserToRole
 
 
 async def test_get(manager, transaction):
+    await manager.execute(User.delete())
     res = await manager.run(User.select())
     assert not res
 

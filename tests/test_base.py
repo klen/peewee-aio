@@ -1,23 +1,29 @@
 from __future__ import annotations
 
+import peewee as pw
 import pytest
 
 from peewee_aio import Manager
 
-from .conftest import User
-
 
 async def test_sync(manager):
-    with pytest.raises(RuntimeError):
-        User.create(name="Mickey")
+    # A dedicated table: the test used to drop and recreate the shared `User` one
+    class SyncUser(pw.Model):
+        name = pw.CharField()
+
+        class Meta:
+            database = manager.pw_database
 
     with pytest.raises(RuntimeError):
-        User.insert(name="Mickey").execute()
+        SyncUser.create(name="Mickey")
 
     with pytest.raises(RuntimeError):
-        User.update(name="Mickey").execute()
+        SyncUser.insert(name="Mickey").execute()
 
-    user = User(id=1, name="Mickey")
+    with pytest.raises(RuntimeError):
+        SyncUser.update(name="Mickey").execute()
+
+    user = SyncUser(id=1, name="Mickey")
     with pytest.raises(RuntimeError):
         user.save()
 
@@ -25,17 +31,20 @@ async def test_sync(manager):
         user.delete_instance()
 
     with pytest.raises(RuntimeError):
-        list(User.select())
+        list(SyncUser.select())
 
     with manager.allow_sync():
-        User.drop_table(safe=True)
-        User.create_table()
-        User.create(name="Mickey")
-        assert User.get()
-        User.delete().execute()
+        SyncUser.drop_table(safe=True)
+        SyncUser.create_table()
+        try:
+            SyncUser.create(name="Mickey")
+            assert SyncUser.get()
+            SyncUser.delete().execute()
+        finally:
+            SyncUser.drop_table()
 
     with pytest.raises(RuntimeError):
-        User.create(name="Mickey")
+        SyncUser.create(name="Mickey")
 
 
 def test_databases():
@@ -63,4 +72,4 @@ def test_databases():
     assert manager
     assert manager.backend.db_type == "dummy"
     assert manager.pw_database
-    assert manager.pw_database.database == ""  # noqa:
+    assert manager.pw_database.database == ""

@@ -92,6 +92,7 @@ async def manager(db_url):
 
 @pytest.fixture(scope="session")
 async def schema(manager):
+    await manager.drop_tables(safe=True)
     await manager.create_tables()
 
 
