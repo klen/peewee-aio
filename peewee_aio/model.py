@@ -190,7 +190,7 @@ class AIOModel(Model, metaclass=AIOModelBase):
                 # untyped THEN parameters as `text` and rejects the assignment.
                 update[field] = Case(pk, accum, default=field)
 
-            n += cast("int", await cls.update(update).where(pk.in_(id_list)))  # type: ignore[]
+            n += await cls.update(update).where(pk.in_(id_list))  # type: ignore[]
 
         return n
 
@@ -514,7 +514,19 @@ class AIOModelCompoundSelectQuery(BaseModelSelect[TVAIOModel], TQuery, ModelComp
 class AIOModelUpdate(AIOQuery[TVAIOModel], TQuery, ModelUpdate):
     if TYPE_CHECKING:
         from_: Callable[..., AIOModelUpdate[TVAIOModel]]
-        returning: Callable[..., AIOModelUpdate[TVAIOModel]]
+
+        def returning(self, *returning) -> AIOModelUpdateReturning[TVAIOModel]: ...
+
+        def __await__(self) -> Generator[Any, None, int]: ...
+
+
+class AIOModelUpdateReturning(AIOModelUpdate[TVAIOModel]):
+    """`returning()` switches the awaited result from rowcount to rows."""
+
+    if TYPE_CHECKING:
+        _returning: tuple[ColumnBase, ...] | None
+
+        def __await__(self) -> Generator[Any, None, list[Any]]: ...  # type: ignore[bad-override]
 
 
 class AIOModelInsert(AIOQuery[TVAIOModel], TQuery, ModelInsert):
@@ -526,7 +538,21 @@ class AIOModelInsert(AIOQuery[TVAIOModel], TQuery, ModelInsert):
 
 
 class AIOModelDelete(AIOQuery[TVAIOModel], TQuery, ModelDelete):
-    pass
+    if TYPE_CHECKING:
+        _returning: tuple[ColumnBase, ...] | None
+
+        def returning(self, *returning) -> AIOModelDeleteReturning[TVAIOModel]: ...
+
+        def __await__(self) -> Generator[Any, None, int]: ...
+
+
+class AIOModelDeleteReturning(AIOModelDelete[TVAIOModel]):
+    """`returning()` switches the awaited result from rowcount to rows."""
+
+    if TYPE_CHECKING:
+        _returning: tuple[ColumnBase, ...] | None
+
+        def __await__(self) -> Generator[Any, None, list[Any]]: ...  # type: ignore[bad-override]
 
 
 class AIOModelRaw(ModelRaw, AIOQuery[TVAIOModel]):
