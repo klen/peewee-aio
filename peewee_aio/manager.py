@@ -52,7 +52,7 @@ class Manager(Database):
     pw_database: PWDatabase
     models: WeakSet[type[PWModel]]
 
-    def __init__(self, url: str, **backend_options):
+    def __init__(self, url: str, **backend_options: Any):
         """Initialize dialect and database."""
         if url.startswith(("sqlite://", "aiosqlite://")):
             backend_options.setdefault("functions", ())
@@ -98,7 +98,7 @@ class Manager(Database):
     # Working with AIO-Databases
     # --------------------------
 
-    async def execute(self, query: Any, *params, **opts) -> Any:
+    async def execute(self, query: Any, *params: Any, **opts: Any) -> Any:
         """Execute a given query with the given params."""
         with process(query, params, raw=True) as (sql, props, _):
             res = await super().execute(sql, *props, **opts)
@@ -111,25 +111,29 @@ class Manager(Database):
 
             return res[0]
 
-    async def fetchval(self, query: Any, *params, **opts) -> Any:
+    async def fetchval(self, query: Any, *params: Any, **opts: Any) -> Any:
         """Execute the given SQL and fetch a value."""
         with process(query, params, raw=True) as (sql, props, _):
             return await super().fetchval(sql, *props, **opts)
 
     @overload
     async def fetchall(
-        self, query: AIOModelSelect[TVAIOModel], *params, raw: Literal[False] = False, **opts
+        self,
+        query: AIOModelSelect[TVAIOModel],
+        *params: Any,
+        raw: Literal[False] = False,
+        **opts: Any,
     ) -> list[TVAIOModel]: ...
 
     @overload
     async def fetchall(
-        self, query: ModelSelect[TVModel], *params, raw: Literal[False] = False, **opts
+        self, query: ModelSelect[TVModel], *params: Any, raw: Literal[False] = False, **opts: Any
     ) -> list[TVModel]: ...
 
     @overload
-    async def fetchall(self, query: Any, *params, raw: bool = False, **opts) -> Any: ...
+    async def fetchall(self, query: Any, *params: Any, raw: bool = False, **opts: Any) -> Any: ...
 
-    async def fetchall(self, query: Any, *params, raw: bool = False, **opts) -> Any:
+    async def fetchall(self, query: Any, *params: Any, raw: bool = False, **opts: Any) -> Any:
         """Execute the given SQL and fetch all."""
         with process(query, params, raw=raw) as (sql, props, constructor):
             res = await super().fetchall(sql, *props, **opts)
@@ -140,20 +144,29 @@ class Manager(Database):
         self,
         size: int,
         query: AIOModelSelect[TVAIOModel],
-        *params,
+        *params: Any,
         raw: Literal[False] = False,
-        **opts,
+        **opts: Any,
     ) -> list[TVAIOModel]: ...
 
     @overload
     async def fetchmany(
-        self, size: int, query: ModelSelect[TVModel], *params, raw: Literal[False] = False, **opts
+        self,
+        size: int,
+        query: ModelSelect[TVModel],
+        *params: Any,
+        raw: Literal[False] = False,
+        **opts: Any,
     ) -> list[TVModel]: ...
 
     @overload
-    async def fetchmany(self, size: int, query: Any, *params, raw: bool = False, **opts) -> Any: ...
+    async def fetchmany(
+        self, size: int, query: Any, *params: Any, raw: bool = False, **opts: Any
+    ) -> Any: ...
 
-    async def fetchmany(self, size: int, query: Any, *params, raw: bool = False, **opts) -> Any:
+    async def fetchmany(
+        self, size: int, query: Any, *params: Any, raw: bool = False, **opts: Any
+    ) -> Any:
         """Execute the given SQL and fetch many of the size."""
         with process(query, params, raw=raw) as (sql, props, constructor):
             res = await super().fetchmany(size, sql, *props, **opts)
@@ -161,18 +174,22 @@ class Manager(Database):
 
     @overload
     async def fetchone(
-        self, query: AIOModelSelect[TVAIOModel], *params, raw: Literal[False] = False, **opts
+        self,
+        query: AIOModelSelect[TVAIOModel],
+        *params: Any,
+        raw: Literal[False] = False,
+        **opts: Any,
     ) -> TVAIOModel | None: ...
 
     @overload
     async def fetchone(
-        self, query: ModelSelect[TVModel], *params, raw: Literal[False] = False, **opts
+        self, query: ModelSelect[TVModel], *params: Any, raw: Literal[False] = False, **opts: Any
     ) -> TVModel | None: ...
 
     @overload
-    async def fetchone(self, query: Any, *params, raw: bool = False, **opts) -> Any: ...
+    async def fetchone(self, query: Any, *params: Any, raw: bool = False, **opts: Any) -> Any: ...
 
-    async def fetchone(self, query: Any, *params, raw: bool = False, **opts) -> Any:
+    async def fetchone(self, query: Any, *params: Any, raw: bool = False, **opts: Any) -> Any:
         """Execute the given SQL and fetch one."""
         with process(query, params, raw=raw) as (sql, props, constructor):
             res = await super().fetchone(sql, *props, **opts)
@@ -180,18 +197,26 @@ class Manager(Database):
 
     @overload
     def iterate(
-        self, query: AIOModelSelect[TVAIOModel], *params, raw: Literal[False] = False, **opts
+        self,
+        query: AIOModelSelect[TVAIOModel],
+        *params: Any,
+        raw: Literal[False] = False,
+        **opts: Any,
     ) -> AsyncIterator[TVAIOModel]: ...
 
     @overload
     def iterate(
-        self, query: ModelSelect[TVModel], *params, raw: Literal[False] = False, **opts
+        self, query: ModelSelect[TVModel], *params: Any, raw: Literal[False] = False, **opts: Any
     ) -> AsyncIterator[TVModel]: ...
 
     @overload
-    def iterate(self, query: Any, *params, raw: bool = False, **opts) -> AsyncIterator[Any]: ...
+    def iterate(
+        self, query: Any, *params: Any, raw: bool = False, **opts: Any
+    ) -> AsyncIterator[Any]: ...
 
-    async def iterate(self, query: Any, *params, raw: bool = False, **opts) -> AsyncIterator[Any]:
+    async def iterate(
+        self, query: Any, *params: Any, raw: bool = False, **opts: Any
+    ) -> AsyncIterator[Any]:
         """Execute the given SQL and iterate through results."""
         with process(query, params, raw=raw) as (sql, props, constructor):
             async for res in super().iterate(sql, *props, **opts):
@@ -253,7 +278,7 @@ class Manager(Database):
         query._database = self.pw_database  # type: ignore[]
         return await self.fetchval(query)
 
-    async def prefetch(self, sq: Query, *subqueries, **kwargs) -> Any:
+    async def prefetch(self, sq: Query, *subqueries: Any, **kwargs: Any) -> Any:
         """Prefetch related objects for a query and its subqueries.
 
         Runs the base query plus one query per subquery and populates relation
@@ -292,7 +317,7 @@ class Manager(Database):
     # Model methods
     # -------------
 
-    async def create_tables(self, *models_cls: type[PWModel], safe=True, **opts):
+    async def create_tables(self, *models_cls: type[PWModel], safe: bool = True, **opts: Any):
         """Create tables for the given models or all registered with the manager."""
         models_cls = models_cls or tuple(self.models)
         for model_cls in sort_models(models_cls):
@@ -314,7 +339,7 @@ class Manager(Database):
             for query in schema._create_indexes(safe=safe):  # type: ignore[]
                 await self.execute(query)
 
-    async def drop_tables(self, *models_cls: type[PWModel], **opts):
+    async def drop_tables(self, *models_cls: type[PWModel], **opts: Any):
         """Drop tables for the given models or all registered with the manager."""
         models_cls = models_cls or tuple(self.models)
         for model_cls in reversed(sort_models(models_cls)):
@@ -322,7 +347,9 @@ class Manager(Database):
             ctx = schema._drop_table(**opts)  # type: ignore[]
             await self.execute(ctx)
 
-    async def get_or_none(self, model_cls: type[TVModel], *args: Node, **kwargs) -> TVModel | None:
+    async def get_or_none(
+        self, model_cls: type[TVModel], *args: Node, **kwargs: Any
+    ) -> TVModel | None:
         query: ModelSelect[TVModel] = model_cls.select()
         if kwargs:
             query = query.filter(**kwargs)
@@ -332,16 +359,16 @@ class Manager(Database):
 
         return await self.fetchone(query)
 
-    async def get(self, model_cls: type[TVModel], *args: Node, **kwargs) -> TVModel:
+    async def get(self, model_cls: type[TVModel], *args: Node, **kwargs: Any) -> TVModel:
         res = await self.get_or_none(model_cls, *args, **kwargs)
         if res is None:
             raise model_cls.DoesNotExist  # type: ignore[]
         return res
 
-    async def get_by_id(self, model_cls: type[TVModel], pk) -> TVModel:
+    async def get_by_id(self, model_cls: type[TVModel], pk: Any) -> TVModel:
         return await self.get(model_cls, model_cls._meta.primary_key == pk)  # type: ignore[]
 
-    async def set_by_id(self, model_cls: type[PWModel], key, value) -> Any:
+    async def set_by_id(self, model_cls: type[PWModel], key: Any, value: Any) -> Any:
         qs = (
             model_cls.insert(value)
             if key is None
@@ -349,13 +376,13 @@ class Manager(Database):
         )
         return await self.execute(qs)
 
-    async def delete_by_id(self, model_cls: type[PWModel], pk):
+    async def delete_by_id(self, model_cls: type[PWModel], pk: Any):
         return await self.execute(
             model_cls.delete().where(model_cls._meta.primary_key == pk),  # type: ignore[]
         )
 
     async def get_or_create(
-        self, model_cls: type[TVModel], defaults: dict[str, Any] | None = None, **kwargs
+        self, model_cls: type[TVModel], defaults: dict[str, Any] | None = None, **kwargs: Any
     ) -> tuple[TVModel, bool]:
         try:
             async with self.transaction():
@@ -373,7 +400,7 @@ class Manager(Database):
                 raise
             return (row, False)
 
-    async def create(self, model_cls: type[TVModel], **values) -> TVModel:
+    async def create(self, model_cls: type[TVModel], **values: Any) -> TVModel:
         inst = model_cls(**values)
         if isinstance(inst, AIOModel):
             # Dispatch through AIOModel.save so model overrides keep working.
